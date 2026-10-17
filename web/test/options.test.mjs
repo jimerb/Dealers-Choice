@@ -353,3 +353,119 @@ test('tarot: poignées add to the winning side’s score', async () => {
   }
   assert.ok(checked > 0, 'some deal had a poignée');
 });
+
+// ------------------------------------------------------------------ Skat
+test('skat: every option plays out', async () => {
+  await everyOption('skat', 1);
+  const game = await load('skat');
+  playOut(game, { ramsch: 'schieben', kontra: 'bid18', ramschSkat: 'loser', ramschMoon: 'no' }, 3);
+});
+
+/** A Skat deal where everyone passes: Middlehand and Rearhand pass, then Forehand (you) passes too. */
+async function skatAllPass(opts) {
+  const game = await load('skat');
+  let s = game.newGame({ names: NAMES, seed: 1, opts: { ...defaults(game), ...opts } });
+  Object.assign(s, { F: 0, M: 1, R: 2, phase: 'bid', turn: 0, bid: { stage: 3, caller: 0, listener: 0, value: 0, step: 'last' } });
+  return { game, s: game.act(s, { act: 'last', v: 'pass' }) };
+}
+
+test('skat: Ramsch is played when everyone passes (or the deal is redealt)', async () => {
+  const { s } = await skatAllPass({ ramsch: 'ramsch' });
+  assert.deepEqual([s.phase, s.ramsch, s.game, s.declarer, s.turn], ['play', true, 'G', null, 0]);
+  const { s: redeal } = await skatAllPass({ ramsch: 'none' });
+  assert.equal(redeal.phase, 'bid');
+  assert.equal(redeal.ramsch, false);
+});
+
+test('skat: Ramsch scoring', async () => {
+  const { points } = await import(new URL('skat.js', dir));
+  const c = (rank, suit) => ({ id: `${rank}${suit}`, rank, suit });
+  /** Ends a Ramsch deal with these cards taken and tricks won (the last trick won by `last`). */
+  const end = async (opts, taken, tricks, skat, last) => {
+    const { game, s } = await skatAllPass({ ramsch: 'ramsch', ...opts });
+    Object.assign(s, { taken, skat, trick: [], trickNo: 9, phase: 'trickDone', winner: last, tricks: tricks.map((n, p) => n - (p === last ? 1 : 0)) });
+    return game.aiAct(s);
+  };
+  const big = [c('A', 'S'), c('A', 'H'), c('10', 'S')], mid = [c('K', 'S'), c('Q', 'S')], small = [c('J', 'S')];
+  const skat = [c('A', 'C'), c('7', 'C')];
+  const pts = (cs) => cs.reduce((t, x) => t + points(x), 0);
+  // Skat with the last trick: it counts for whoever took that trick.
+  let r = await end({}, [big, mid, small], [4, 3, 3], skat, 0);
+  assert.deepEqual(r.result.delta, [-(pts(big) + 11), 0, 0]);
+  // Skat to the loser: it doesn't count.
+  r = await end({ ramschSkat: 'loser' }, [big, mid, small], [4, 3, 3], skat, 2);
+  assert.deepEqual(r.result.delta, [-pts(big), 0, 0]);
+  // Someone took no tricks: the loss doubles.
+  r = await end({ ramschSkat: 'loser' }, [big, mid, []], [6, 4, 0], skat, 0);
+  assert.deepEqual(r.result.delta, [-2 * pts(big), 0, 0]);
+  // Every trick to one player: +120, or with that option off four times the points lost.
+  r = await end({}, [[...big, ...mid, ...small], [], []], [10, 0, 0], skat, 0);
+  assert.deepEqual(r.result.delta, [120, 0, 0]);
+  r = await end({ ramschSkat: 'loser', ramschMoon: 'no' }, [[...big, ...mid], [], []], [10, 0, 0], skat, 0);
+  assert.deepEqual(r.result.delta, [-4 * pts([...big, ...mid]), 0, 0]);
+});
+
+test('skat: Schieberamsch offers a grand hand, then passes the skat round', async () => {
+  const { game, s } = await skatAllPass({ ramsch: 'schieben' });
+  assert.deepEqual([s.phase, s.turn], ['grandOffer', 0]);
+  // A grand hand at 18 against the other two.
+  const grand = game.act(s, { act: 'grand', v: 'yes' });
+  assert.deepEqual([grand.phase, grand.declarer, grand.game, grand.hand, grand.bid.value], ['play', 0, 'G', true, 18]);
+  // Everyone passes: each player may pick up the skat and push two cards on (no jacks), or leave it (×2).
+  let t = s;
+  while (t.phase === 'grandOffer') t = game.act({ ...t, turn: 0 }, { act: 'grand', v: 'pass' }); // all three pass
+  assert.deepEqual([t.phase, t.turn], ['push', 0]);
+  const picked = game.act(t, { act: 'push', v: 'pick' });
+  assert.equal(picked.hands[0].length, 12);
+  const jack = picked.hands[0].find((x) => x.rank === 'J');
+  const plain = picked.hands[0].filter((x) => x.rank !== 'J');
+  if (jack) assert.throws(() => game.act(picked, { act: 'pushDiscard', ids: [jack.id, plain[0].id] }), /Jacks/);
+  const pushed = game.act(picked, { act: 'pushDiscard', ids: [plain[0].id, plain[1].id] });
+  assert.equal(pushed.hands[0].length, 10);
+  assert.deepEqual(pushed.skat.map((x) => x.id), [plain[0].id, plain[1].id]);
+  let left = game.act(t, { act: 'push', v: 'leave' });
+  assert.equal(left.ramschMult, 2);
+  for (let k = 0; k < 2; k++) left = game.act({ ...left, turn: 0 }, { act: 'push', v: 'leave' });
+  assert.deepEqual([left.phase, left.ramsch, left.ramschMult], ['play', true, 8]);
+});
+
+/** Plays one Skat deal to its end; `tweak` changes the state as play starts. */
+async function skatDeal(seed, opts, tweak = () => {}) {
+  const game = await load('skat');
+  let s = game.newGame({ names: NAMES, seed, opts: { ...defaults(game), ...opts } });
+  let tweaked = false;
+  while (s.phase !== 'handOver' && s.phase !== 'gameOver') {
+    if (s.phase === 'play' && !tweaked) { tweak(s); tweaked = true; }
+    s = game.aiAct(s);
+  }
+  return s;
+}
+
+test('skat: kontra doubles the score and re doubles it again', async () => {
+  const { canKontra, canRe } = await import(new URL('skat.js', dir));
+  let checked = 0;
+  for (let seed = 1; seed <= 10 && checked < 3; seed++) {
+    const plain = await skatDeal(seed, {});
+    if (!plain.result || plain.result.ramsch) continue;
+    const k = await skatDeal(seed, {}, (s) => { s.kontra = 1; s.rePlayed = true; }); // too late for re
+    const kr = await skatDeal(seed, {}, (s) => { s.kontra = 2; });
+    assert.equal(k.result.delta, 2 * plain.result.delta);
+    assert.equal(kr.result.delta, 4 * plain.result.delta);
+    checked++;
+  }
+  assert.ok(checked > 0);
+  // Who may call: defenders before their first card (with the bid-18 rule, only one who bid); the declarer answers re.
+  const game = await load('skat');
+  let s = game.newGame({ names: NAMES, seed: 2, opts: { ...defaults(game), kontra: 'yes' } });
+  while (s.phase !== 'play') s = game.aiAct(s);
+  const def = [0, 1, 2].find((p) => p !== s.declarer);
+  assert.ok(canKontra(s, def));
+  assert.ok(!canKontra(s, s.declarer));
+  assert.ok(!canKontra({ ...s, opts: { ...s.opts, kontra: 'no' } }, def));
+  assert.equal(canKontra({ ...s, opts: { ...s.opts, kontra: 'bid18' }, bidders: [] }, def), false);
+  assert.ok(canKontra({ ...s, opts: { ...s.opts, kontra: 'bid18' }, bidders: [def] }, def));
+  const said = { ...s, kontra: 1, rePlayed: false };
+  assert.ok(canRe(said, s.declarer));
+  assert.ok(!canRe({ ...said, rePlayed: true }, s.declarer));
+  assert.ok(!canKontra({ ...s, trickNo: 1 }, def));
+});
