@@ -256,7 +256,7 @@ export default {
       overlay = panel('Discard one card', `<p>You picked up the ${s.up.rank}${'♠♥♣♦'['SHCD'.indexOf(s.up.suit)]}. Choose a card to bury.</p><div class="row">${btn('Discard', 'discard', `data-with-sel ${ui.selected.size === 1 ? '' : 'disabled'}`, true)}</div>`);
     } else if (s.phase === 'handOver' || s.phase === 'gameOver') {
       const r = s.result;
-      overlay = panel(s.phase === 'gameOver' ? (s.scores[0] >= s.opts.target ? 'You and North win!' : 'West and East win') : `Hand ${s.handNo}`,
+      overlay = panel(s.phase === 'gameOver' ? (s.scores[0] >= s.opts.target ? `You and ${s.names[2]} win!` : `${s.names[1]} and ${s.names[3]} win`) : `Hand ${s.handNo}`,
         `<div class="verdict ${(r.gain[0] > 0) ? 'good' : 'bad'}">${r.note}</div>${scoreTable(['Us', 'Them'], [['This hand', r.gain[0], r.gain[1]], ['Score', `<b>${s.scores[0]}</b>`, `<b>${s.scores[1]}</b>`]])}
         <div class="row" style="justify-content:flex-end">${s.phase === 'gameOver' ? btn('Play again', 'again', '', true) : btn('Next hand', 'next', '', true)}</div>`);
     } else if (s.phase === 'trickDone') banner = `${who(s, s.winner)} ${s.winner === 0 ? 'take' : 'takes'} it`;

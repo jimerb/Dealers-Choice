@@ -62,7 +62,7 @@ function pegPoints(pile, count) {
 function addPoints(s, p, pts, why) {
   if (!pts || s.phase === 'gameOver') return s;
   s.scores[p] = Math.min(WIN, s.scores[p] + pts);
-  log(s, `${p === 0 ? 'You' : 'North'} peg ${pts} (${why}).`);
+  log(s, `${p === 0 ? 'You peg' : `${s.names[p]} pegs`} ${pts} (${why}).`);
   fx(s, 'score');
   if (s.scores[p] >= WIN) {
     s.phase = 'gameOver'; s.winner = p; s.turn = null;
@@ -82,7 +82,7 @@ function deal(s) {
   s.crib = []; s.starter = null; s.phase = 'discard'; s.turn = 0;
   s.count = 0; s.pile = []; s.played = [[], []]; s.go = [false, false]; s.lastPlayer = null; s.show = null; s.pegHands = null;
   fx(s, 'shuffle');
-  log(s, `Hand ${s.handNo}: ${s.dealer === 0 ? 'your crib' : "North's crib"}.`);
+  log(s, `Hand ${s.handNo}: ${s.dealer === 0 ? 'your crib' : `${s.names[1]}'s crib`}.`);
   return s;
 }
 
@@ -132,7 +132,7 @@ function autoGo(s) {
     const p = s.turn;
     if (canPlay(s, p).length) return s;
     const o = 1 - p;
-    if (canPlay(s, o).length) { if (!s.go[p] && s.hands[p].length) log(s, `${p === 0 ? 'You say' : 'North says'} "Go".`); s.go[p] = true; s.turn = o; return s; }
+    if (canPlay(s, o).length) { if (!s.go[p] && s.hands[p].length) log(s, `${p === 0 ? 'You say' : `${s.names[p]} says`} "Go".`); s.go[p] = true; s.turn = o; return s; }
     // Neither can play: last player scores 1 for the go and the count resets.
     if (s.count < 31 && s.lastPlayer !== null) addPoints(s, s.lastPlayer, 1, 'go');
     if (s.phase === 'gameOver') return s;
@@ -189,10 +189,10 @@ const RULES = `<p>Two players race to 121 points. Each player gets six cards and
 <h3>Counting</h3><p>Then each hand (non-dealer first) and the crib are counted with the starter: fifteens 2 each, pairs 2, runs 1 per card, flush 4 (5 with the starter; the crib needs 5), and the jack of the starter's suit 1 ("his nobs").</p>`;
 
 export default {
-  id: 'cribbage', title: 'Cribbage', version: 1, rulesHTML: RULES,
-  settings: [{ key: 'first', label: 'First dealer', options: [['me', 'Me'], ['north', 'North'], ['random', 'Random']], default: 'random' }],
+  id: 'cribbage', title: 'Cribbage', version: 1, seats: 2, rulesHTML: RULES,
+  settings: [{ key: 'first', label: 'First dealer', options: [['me', 'Me'], ['north', 'Opponent'], ['random', 'Random']], default: 'random' }],
   newGame({ names, seed, opts }) {
-    const s = { v: 1, seed, rngN: 0, names: [names[0], 'North'], opts, scores: [0, 0], handNo: 0, log: [], fx: [], partners: false };
+    const s = { v: 1, seed, rngN: 0, names: names.slice(0, 2), opts, scores: [0, 0], handNo: 0, log: [], fx: [], partners: false };
     s.dealer = opts.first === 'me' ? 0 : opts.first === 'north' ? 1 : (rngOf(s)() < 0.5 ? 0 : 1);
     return deal(s);
   },
@@ -218,26 +218,28 @@ export default {
   },
   view(s, ui) {
     let overlay = '', banner = '';
-    const counts = (x) => `<div style="margin-bottom:10px"><b>${x.who === 0 ? 'Your' : "North's"} ${x.kind}</b> · ${x.total} pts${cardsRow([...x.cards, s.starter], 40)}<div style="font-size:13px;color:var(--ink-2)">${x.items.map(([n, p]) => `${n} ${p}`).join(' · ') || 'Nineteen (nothing)'}</div></div>`;
-    if (s.phase === 'discard') overlay = panel(s.dealer === 0 ? 'Your crib' : "North's crib", `<p>Choose two cards to lay away (${ui.selected.size}/2).</p><div class="row">${btn('Send to crib', 'crib', `data-with-sel ${ui.selected.size === 2 ? '' : 'disabled'}`, true)}</div>`);
+    const opp = s.names[1];
+    const whose = (p) => (p === 0 ? 'Your' : `${opp}'s`);
+    const counts = (x) => `<div style="margin-bottom:10px"><b>${whose(x.who)} ${x.kind}</b> · ${x.total} pts${cardsRow([...x.cards, s.starter], 40)}<div style="font-size:13px;color:var(--ink-2)">${x.items.map(([n, p]) => `${n} ${p}`).join(' · ') || 'Nineteen (nothing)'}</div></div>`;
+    if (s.phase === 'discard') overlay = panel(`${whose(s.dealer)} crib`, `<p>Choose two cards to lay away (${ui.selected.size}/2).</p><div class="row">${btn('Send to crib', 'crib', `data-with-sel ${ui.selected.size === 2 ? '' : 'disabled'}`, true)}</div>`);
     else if (s.phase === 'show') overlay = panel(`Hand ${s.handNo}: the count`, `<div style="max-height:50vh;overflow:auto">${s.show.map(counts).join('')}</div><div class="row" style="justify-content:flex-end">${btn('Next hand', 'next', '', true)}</div>`, 'max-width:520px');
-    else if (s.phase === 'gameOver') overlay = panel(s.winner === 0 ? 'You win!' : 'North wins', `<p>${s.scores[0]} – ${s.scores[1]}${s.skunk ? ` · a ${s.skunk}!` : ''}</p>${s.show ? s.show.map(counts).join('') : ''}<div class="row" style="justify-content:flex-end">${btn('Play again', 'again', '', true)}</div>`);
-    else banner = s.turn === 0 ? `Count is ${s.count}: play a card` : 'North is playing…';
-    const bar = (p) => `<div class="peg-track" role="img" aria-label="${p === 0 ? 'Your' : "North's"} score ${s.scores[p]} of 121"><span style="width:${(s.scores[p] / WIN) * 100}%"></span><b>${s.scores[p]}</b></div>`;
+    else if (s.phase === 'gameOver') overlay = panel(s.winner === 0 ? 'You win!' : `${opp} wins`, `<p>${s.scores[0]} – ${s.scores[1]}${s.skunk ? ` · a ${s.skunk}!` : ''}</p>${s.show ? s.show.map(counts).join('') : ''}<div class="row" style="justify-content:flex-end">${btn('Play again', 'again', '', true)}</div>`);
+    else banner = s.turn === 0 ? `Count is ${s.count}: play a card` : `${opp} is playing…`;
+    const bar = (p) => `<div class="peg-track" role="img" aria-label="${whose(p)} score ${s.scores[p]} of 121"><span style="width:${(s.scores[p] / WIN) * 100}%"></span><b>${s.scores[p]}</b></div>`;
     const center = `<div style="display:flex;flex-direction:column;align-items:center;gap:10px">
       <div class="row" style="--card-w:52px;gap:4px;min-height:80px">${s.played[1].map((c) => cardHTML(c)).join('')}</div>
       <div class="row" style="gap:24px;--card-w:70px"><div class="pile">${s.starter ? cardHTML(s.starter) : backHTML()}<span>Starter</span></div>
         <div class="pile"><span class="count-badge">${s.count}</span><span>Count</span></div>
-        <div class="pile">${s.crib.length ? backHTML() : '<span class="empty-slot">Crib</span>'}<span>${s.dealer === 0 ? 'Your' : "North's"} crib</span></div></div>
+        <div class="pile">${s.crib.length ? backHTML() : '<span class="empty-slot">Crib</span>'}<span>${whose(s.dealer)} crib</span></div></div>
       <div class="row" style="--card-w:52px;gap:4px;min-height:80px">${s.played[0].map((c) => cardHTML(c)).join('')}</div></div>`;
     return {
       subtitle: `Hand ${s.handNo} · to 121`,
-      scores: [{ label: 'You', value: s.scores[0], us: true }, { label: 'North', value: s.scores[1] }],
-      seats: [{ seat: 0, pos: 'south', name: s.names[0], mine: true, turn: s.turn === 0, dealer: s.dealer === 0 }, { seat: 1, pos: 'north', name: 'North', count: s.hands[1].length, turn: s.turn === 1, dealer: s.dealer === 1 }],
+      scores: [{ label: 'You', value: s.scores[0], us: true }, { label: opp, value: s.scores[1] }],
+      seats: [{ seat: 0, pos: 'south', name: s.names[0], mine: true, turn: s.turn === 0, dealer: s.dealer === 0 }, { seat: 1, pos: 'north', name: opp, count: s.hands[1].length, turn: s.turn === 1, dealer: s.dealer === 1 }],
       hand: s.phase === 'discard' ? { cards: s.hands[0], legal: s.hands[0].map((c) => c.id), mode: 'select', maxSelect: 2 }
         : { cards: s.hands[0], legal: s.phase === 'peg' && s.turn === 0 ? canPlay(s, 0).map((c) => c.id) : null },
       center, banner, overlay,
-      side: [{ title: 'The board', html: `<div style="display:flex;flex-direction:column;gap:8px"><div>You</div>${bar(0)}<div>North</div>${bar(1)}</div>` }],
+      side: [{ title: 'The board', html: `<div style="display:flex;flex-direction:column;gap:8px"><div>You</div>${bar(0)}<div>${opp}</div>${bar(1)}</div>` }],
     };
   },
 };

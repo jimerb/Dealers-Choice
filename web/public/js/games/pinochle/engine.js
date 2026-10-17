@@ -4,6 +4,8 @@
 // min bid 100 in steps of 10, meld counts only if the team wins a trick, A/10/K = 10 each,
 // last trick = 10, game to 1000.
 
+import { pickOpponents } from '../../core/cast.js';
+
 export const SUITS = ['S', 'H', 'C', 'D'];
 export const RANKS = ['A', '10', 'K', 'Q', 'J', '9']; // high to low
 export const SUIT_NAMES = { S: 'Spades', H: 'Hearts', C: 'Clubs', D: 'Diamonds' };
@@ -120,7 +122,8 @@ export function legalPlays(hand, trick, trump) {
 
 // ---------------------------------------------------------------- game state
 
-export function newGame({ seed = Date.now(), names = ['You', 'West', 'North', 'East'] } = {}) {
+export function newGame({ seed = Date.now(), names = null } = {}) {
+  names ??= ['You', ...pickOpponents(3, { gameId: 'pinochle', rng: makeRng(seed) }).map((c) => c.name)];
   const state = { seed, names, scores: [0, 0], handNo: 0, dealer: 3, history: [], log: [], winner: null };
   return dealHand(state);
 }

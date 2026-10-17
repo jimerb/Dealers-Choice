@@ -1,7 +1,8 @@
-// Shared site header + footer, "Table settings" dialog (name, card style, card back)
+// Shared site header + footer, "Table settings" dialog (name, portrait, card style, card back)
 // and the sound popover (game sounds / music volumes, mute).
 import { SKINS, currentSkin, currentBack, savePref } from './skin.js';
 import { initAudio, volumes, setVolume, setMuted, play } from './core/sound.js';
+import { PLAYER_PORTRAITS, playerPortrait } from './core/cast.js';
 
 export const esc = (s) => String(s).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
@@ -10,6 +11,18 @@ export function playerName() {
 }
 export function hasName() {
   try { return Boolean(localStorage.getItem('dc.name')); } catch { return false; }
+}
+/** The player's chosen portrait id ('player-03') or '' for none. */
+export function playerAvatarId() {
+  try { return playerPortrait(localStorage.getItem('dc.avatar')) ? localStorage.getItem('dc.avatar') : ''; } catch { return ''; }
+}
+/** Path of the player's portrait, or '' to show their initial. */
+export const playerAvatar = () => playerPortrait(playerAvatarId());
+
+/** Round avatar: the portrait when there is one (a broken image is removed, leaving the initial). */
+export function avatarHTML(name, src = '') {
+  const initial = esc(String(name || '?').slice(0, 1).toUpperCase());
+  return `<span class="avatar" aria-hidden="true">${initial}${src ? `<img src="${esc(src)}" alt="" draggable="false">` : ''}</span>`;
 }
 
 const LOGO = `<svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
@@ -45,6 +58,8 @@ export function mountChrome(active) {
       <button class="btn ghost-brass sm" type="button" id="open-settings">Table settings</button>
     </div></div>`;
   paintName();
+  // A portrait that fails to load leaves the initial underneath showing.
+  document.addEventListener('error', (e) => { if (e.target.matches?.('.avatar img')) e.target.remove(); }, true);
 
   // ---- sound popover
   const toggle = header.querySelector('#sound-toggle');
@@ -80,9 +95,15 @@ export function mountChrome(active) {
   const render = () => {
     const skin = currentSkin();
     const nameNow = dlg.querySelector('#set-name')?.value ?? (hasName() ? playerName() : '');
+    const avNow = dlg.querySelector('input[name=avatar]:checked')?.value ?? playerAvatarId();
+    const initial = esc((nameNow || 'Guest').slice(0, 1).toUpperCase());
     dlg.innerHTML = `<form id="settings-form">
       <h2 id="settings-title">Table settings</h2>
       <div class="field"><label for="set-name">Your name</label><input id="set-name" type="text" maxlength="20" autocomplete="nickname" placeholder="Guest" value="${esc(nameNow)}"></div>
+      <fieldset class="field"><legend>Your picture</legend><div class="portrait-pick">
+        <label class="portrait-opt" title="No picture"><input type="radio" name="avatar" value="" ${avNow ? '' : 'checked'}><span class="avatar">${initial}</span><span class="visually-hidden">No picture (show my initial)</span></label>
+        ${PLAYER_PORTRAITS.map((p) => `<label class="portrait-opt" title="${p.label}"><input type="radio" name="avatar" value="${p.id}" ${p.id === avNow ? 'checked' : ''}><span class="avatar"><img src="${p.src}" alt="${p.label}"></span></label>`).join('')}
+      </div></fieldset>
       <fieldset class="field"><legend>Card style</legend>
         ${Object.entries(SKINS).map(([id, s]) => `<label class="choice"><input type="radio" name="skin" value="${id}" ${id === skin ? 'checked' : ''}> ${s.label}</label>`).join('')}
       </fieldset>
@@ -102,6 +123,7 @@ export function mountChrome(active) {
       const name = dlg.querySelector('#set-name').value.trim().slice(0, 20);
       if (name) savePref('dc.name', name); else try { localStorage.removeItem('dc.name'); } catch { /* ignore */ }
       savePref(`dc.back.${currentSkin()}`, dlg.querySelector('#set-back').value);
+      savePref('dc.avatar', dlg.querySelector('input[name=avatar]:checked')?.value ?? '');
       before = null;
       dlg.close();
     });
@@ -121,6 +143,7 @@ export function mountChrome(active) {
 
 function paintName() {
   const n = playerName();
-  document.getElementById('who-avatar').textContent = n.slice(0, 1).toUpperCase();
+  const src = playerAvatar();
+  document.getElementById('who-avatar').innerHTML = esc(n.slice(0, 1).toUpperCase()) + (src ? `<img src="${esc(src)}" alt="" draggable="false">` : '');
   document.getElementById('who-name').textContent = n;
 }

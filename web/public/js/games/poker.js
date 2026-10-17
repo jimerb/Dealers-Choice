@@ -33,9 +33,7 @@ const ANTE = 5, SMALL = 10, BIG = 20, MAX_RAISES = 3, START = 500;
 
 function newGame({ names, seed, opts }) {
   const n = Number(opts.players);
-  const nm = [names[0], 'West', 'Northwest', 'North', 'Northeast', 'East'];
-  const pick = n === 4 ? [0, 1, 3, 5] : n === 5 ? [0, 1, 2, 4, 5] : [0, 1, 2, 3, 4, 5];
-  const s = { v: 1, seed, rngN: 0, n, names: pick.map((i) => nm[i]), opts, chips: Array(n).fill(START), handNo: 0, dealer: n - 1, log: [], fx: [], partners: false };
+  const s = { v: 1, seed, rngN: 0, n, names: names.slice(0, n), opts, chips: Array(n).fill(START), handNo: 0, dealer: n - 1, log: [], fx: [], partners: false };
   s.style = s.names.map((_, i) => (i === 0 ? null : ['tight', 'loose', 'bluffer', 'solid', 'loose'][i % 5]));
   return deal(s);
 }
@@ -239,7 +237,7 @@ export default {
     if (['fold', 'check', 'call', 'bet', 'raise'].includes(a.act)) return bettingAction(s, 0, a.act);
     if (a.act === 'draw') return drawCards(s, 0, a.ids ?? []);
     if (a.act === 'next') return deal(s);
-    if (a.act === 'again') return newGame({ names: [s.names[0]], seed: s.seed + 1, opts: s.opts });
+    if (a.act === 'again') return newGame({ names: s.names, seed: s.seed + 1, opts: s.opts });
     throw new Error('Unknown action');
   },
   aiAct(state) {

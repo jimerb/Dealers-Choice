@@ -267,7 +267,7 @@ const RULES = `<p>Partners sit across. Each player gets 11 cards from two decks 
 <h3>Going out</h3><p>Once your team has a canasta, meld all your cards (you may discard the last one) to end the hand. Card values: joker 50, ace and 2 20, 8–K 10, 4–7 and black 3 5. Cards left in hand count against you. First team to 5,000 wins.</p>`;
 
 export default {
-  id: 'canasta', title: 'Canasta', version: 1, rulesHTML: RULES,
+  id: 'canasta', title: 'Canasta', version: 1, seats: 4, rulesHTML: RULES,
   newGame({ names, seed, opts }) {
     return deal({ v: 1, seed, rngN: 0, names: names.slice(0, 4), opts, scores: [0, 0], handNo: 0, dealer: 3, log: [], fx: [] });
   },
@@ -323,7 +323,7 @@ export default {
     } else if (s.phase === 'handOver' || s.phase === 'gameOver') {
       const r = s.result;
       const row = (label, k) => [label, r.per[0][k], r.per[1][k]];
-      overlay = panel(s.phase === 'gameOver' ? (s.scores[0] >= s.scores[1] ? 'You and North win!' : 'West and East win') : `Hand ${s.handNo}`,
+      overlay = panel(s.phase === 'gameOver' ? (s.scores[0] >= s.scores[1] ? `You and ${s.names[2]} win!` : `${s.names[1]} and ${s.names[3]} win`) : `Hand ${s.handNo}`,
         `${r.outSeat !== null ? `<div class="verdict">${who(s, r.outSeat)} went out</div>` : '<div class="verdict">The stock ran out</div>'}
         ${scoreTable(['Us', 'Them'], [row('Melded cards', 'cards'), row('Canastas', 'canastas'), row('Red 3s', 'red3'), row('Going out', 'out'), row('Cards in hand', 'inHand'), row('This hand', 'total'), ['Score', `<b>${s.scores[0]}</b>`, `<b>${s.scores[1]}</b>`]])}
         <div class="row" style="justify-content:flex-end">${s.phase === 'gameOver' ? btn('Play again', 'again', '', true) : btn('Next hand', 'next', '', true)}</div>`);

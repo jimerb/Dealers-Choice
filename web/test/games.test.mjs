@@ -46,3 +46,32 @@ for (const file of modules) {
     }
   });
 }
+
+// Computer players are named from the seat names passed in, never by compass seat words.
+const SEAT_WORDS = /\b(North|South|West|East|Northwest|Northeast|undefined)\b/;
+for (const file of modules) {
+  test(`${file}: players are called by their names`, async () => {
+    const game = (await import(new URL(file, dir))).default;
+    const names = ['Jo', 'Mabel', 'Dex', 'Rosa', 'Hank', 'Pip'];
+    for (let seed = 1; seed <= 3; seed++) {
+      // Last option of each setting: the most players (and Memory's two-player race).
+      const opts = Object.fromEntries((game.settings ?? []).map((s) => [s.key, s.options.at(-1)[0]]));
+      if (game.id === 'memory') opts.mode = 'two';
+      let s = game.newGame({ names, seed, opts });
+      const ui = { selected: new Set() };
+      for (let steps = 0; game.actor(s) !== null && steps < 40000; steps++) {
+        const vm = game.view(s, ui);
+        const text = JSON.stringify({ ...vm, seats: vm.seats.map(({ pos, ...st }) => st) });
+        assert.ok(!SEAT_WORDS.test(text), `${file}: seat word in view: ${text.match(SEAT_WORDS)?.[0]} (${s.phase})`);
+        s = game.aiAct(s);
+        s.fx = [];
+      }
+      const vm = game.view(s, ui);
+      assert.ok(!SEAT_WORDS.test(JSON.stringify(vm.overlay ?? '')), `${file}: seat word in final overlay`);
+      for (const line of s.log ?? []) assert.ok(!SEAT_WORDS.test(line), `${file}: seat word in log: ${line}`);
+      if (game.seats) assert.deepEqual(s.names, names.slice(0, game.seats));
+      // 'Play again' keeps the same table.
+      if (/data-act="again"/.test(vm.overlay ?? '')) assert.deepEqual(game.act(s, { act: 'again' }).names, s.names);
+    }
+  });
+}

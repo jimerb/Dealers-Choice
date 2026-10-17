@@ -101,7 +101,7 @@ function deal(s) {
   return s;
 }
 
-const name = (s, p) => (p === 0 ? 'You' : 'North');
+const name = (s, p) => (p === 0 ? 'You' : s.names[p]);
 
 function take(s, p) {
   must((s.phase === 'offer' || s.phase === 'draw') && s.turn === p, 'Not your turn to draw.');
@@ -200,13 +200,13 @@ const RULES = `<p>Two players, ten cards each. Form <b>melds</b>: sets (3–4 of
 <p>First to 100 wins, with a 100-point game bonus and 25 per hand won. A shutout doubles it.</p>`;
 
 export default {
-  id: 'gin', title: 'Gin Rummy', version: 1, rulesHTML: RULES,
+  id: 'gin', title: 'Gin Rummy', version: 1, seats: 2, rulesHTML: RULES,
   settings: [
     { key: 'type', label: 'Game type', options: [['gin', 'Gin Rummy'], ['oklahoma', 'Oklahoma Gin']], default: 'gin' },
-    { key: 'skill', label: 'North plays', options: [['intermediate', 'Intermediate (knocks early)'], ['expert', 'Expert (holds for gin)']], default: 'intermediate' },
+    { key: 'skill', label: 'Opponent plays', options: [['intermediate', 'Intermediate (knocks early)'], ['expert', 'Expert (holds for gin)']], default: 'intermediate' },
   ],
   newGame({ names, seed, opts }) {
-    return deal({ v: 1, seed, rngN: 0, names: [names[0], 'North'], opts, scores: [0, 0], handsWon: [0, 0], handNo: 0, dealer: 1, log: [], fx: [], partners: false });
+    return deal({ v: 1, seed, rngN: 0, names: names.slice(0, 2), opts, scores: [0, 0], handsWon: [0, 0], handNo: 0, dealer: 1, log: [], fx: [], partners: false });
   },
   actor(s) {
     if (s.phase === 'gameOver') return null;
@@ -249,12 +249,12 @@ export default {
       const body = r.dead ? '<p>The stock ran down to two cards: no score.</p>' : `<div class="verdict ${r.winner === 0 ? 'good' : 'bad'}">${r.kind}: ${name(s, r.winner)} ${r.winner === 0 ? 'score' : 'scores'} ${r.pts}</div>
         <p style="margin-bottom:4px">${name(s, r.knocker)} (${r.k.deadwood} deadwood):</p>${r.k.melds.map((m) => cardsRow(m, 40)).join('')}${r.k.dead.length ? `<p style="margin:4px 0">Deadwood:</p>${cardsRow(r.k.dead, 40)}` : ''}
         <p style="margin:8px 0 4px">${name(s, 1 - r.knocker)} (${r.d.deadwood} deadwood${r.d.laid.length ? `, laid off ${r.d.laid.length}` : ''}):</p>${r.d.melds.map((m) => cardsRow(m, 40)).join('')}${r.d.dead.length ? cardsRow(r.d.dead, 40) : ''}`;
-      const fin = s.phase === 'gameOver' ? `<div class="verdict ${s.final.winner === 0 ? 'good' : 'bad'}">${s.final.winner === 0 ? 'You win the game' : 'North wins the game'} by ${s.final.total}${s.final.shutout ? ' (shutout!)' : ''}</div>` : '';
+      const fin = s.phase === 'gameOver' ? `<div class="verdict ${s.final.winner === 0 ? 'good' : 'bad'}">${s.final.winner === 0 ? 'You win the game' : `${s.names[1]} wins the game`} by ${s.final.total}${s.final.shutout ? ' (shutout!)' : ''}</div>` : '';
       overlay = panel(s.phase === 'gameOver' ? 'Game over' : `Hand ${s.handNo}`, `<div style="max-height:52vh;overflow:auto">${body}</div>${fin}
-        ${scoreTable(['You', 'North'], [['Score', s.scores[0], s.scores[1]], ['Hands won', s.handsWon[0], s.handsWon[1]]])}
+        ${scoreTable(['You', s.names[1]], [['Score', s.scores[0], s.scores[1]], ['Hands won', s.handsWon[0], s.handsWon[1]]])}
         <div class="row" style="justify-content:flex-end">${s.phase === 'gameOver' ? btn('Play again', 'again', '', true) : btn('Next hand', 'next', '', true)}</div>`, 'max-width:640px');
     }
-    if (!banner) banner = s.phase === 'draw' && my ? 'Draw from the stock or take the discard' : s.phase === 'offer' && my ? '' : my ? '' : s.phase.startsWith('hand') || s.phase === 'gameOver' ? '' : 'North is thinking…';
+    if (!banner) banner = s.phase === 'draw' && my ? 'Draw from the stock or take the discard' : s.phase === 'offer' && my ? '' : my ? '' : s.phase.startsWith('hand') || s.phase === 'gameOver' ? '' : `${s.names[1]} is thinking…`;
     const canDraw = s.phase === 'draw' && my;
     const center = `<div class="row" style="gap:28px;--card-w:84px">
       <div class="pile"><button class="pile-btn" data-act="stock" ${canDraw ? '' : 'disabled'} aria-label="Draw from the stock">${backHTML()}</button><span>Stock · ${s.stock.length}</span></div>
@@ -262,8 +262,8 @@ export default {
       ${actions ? `<div class="hand-actions">${actions}</div>` : ''}`;
     return {
       subtitle: `${s.opts.type === 'oklahoma' ? `Oklahoma · knock ≤ ${s.knockLimit}` : 'Knock with 10 or less'} · game to 100`,
-      scores: [{ label: 'You', value: s.scores[0], us: true }, { label: 'North', value: s.scores[1] }],
-      seats: [{ seat: 0, pos: 'south', name: s.names[0], mine: true, turn: my, dealer: s.dealer === 0 }, { seat: 1, pos: 'north', name: 'North', count: s.hands[1].length, turn: s.turn === 1, dealer: s.dealer === 1 }],
+      scores: [{ label: 'You', value: s.scores[0], us: true }, { label: s.names[1], value: s.scores[1] }],
+      seats: [{ seat: 0, pos: 'south', name: s.names[0], mine: true, turn: my, dealer: s.dealer === 0 }, { seat: 1, pos: 'north', name: s.names[1], count: s.hands[1].length, turn: s.turn === 1, dealer: s.dealer === 1 }],
       hand: s.phase === 'discard' && my ? { cards: s.hands[0], legal: s.hands[0].map((c) => c.id), mode: 'select', maxSelect: 1 } : { cards: s.hands[0], legal: null },
       center, banner, overlay,
       side: [{ title: 'Your hand', html: `<div class="big">${myDw} deadwood</div><div style="font-size:13px;color:var(--ink-3)">${s.hands[0].length > 10 ? (sel ? 'If you discard the selected card' : 'After your best discard') : 'Best arrangement of your cards'}</div>` }],

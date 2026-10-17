@@ -9,7 +9,7 @@ const FACTOR = { 16: 5, 24: 8, 36: 12 };
 const key = (c) => `${c.rank}${isRed(c.suit) ? 'r' : 'b'}`;
 
 function newGame({ names, seed, opts }) {
-  const s = { v: 1, seed, rngN: 0, names: [names[0], 'North'], opts, log: [], fx: [], partners: false };
+  const s = { v: 1, seed, rngN: 0, names: names.slice(0, 2), opts, log: [], fx: [], partners: false };
   const rng = rngOf(s);
   const size = Number(opts.size);
   // Pairs: same rank & color (e.g. 9♥ + 9♦).
@@ -24,7 +24,7 @@ function newGame({ names, seed, opts }) {
   s.turn = 0; s.phase = 'pick';
   s.mem = {}; // AI memory: cell index -> key
   fx(s, 'shuffle');
-  log(s, opts.mode === 'two' ? 'Find more pairs than North.' : 'Find every pair.');
+  log(s, opts.mode === 'two' ? `Find more pairs than ${s.names[1]}.` : 'Find every pair.');
   return s;
 }
 
@@ -41,7 +41,7 @@ function pickCell(s, seat, i) {
       a.state = b.state = 'gone'; s.matched[seat]++; s.flipped = [];
       fx(s, 'match');
       if (seat === 0) { s.streak++; if (s.streak % 3 === 0) { s.bonuses++; log(s, 'Three in a row: bonus!'); } }
-      log(s, `${seat === 0 ? 'You' : 'North'} found a pair of ${a.card.rank}s.`);
+      log(s, `${seat === 0 ? 'You' : s.names[seat]} found a pair of ${a.card.rank}s.`);
       if (s.cells.every((c) => c.state === 'gone')) return finish(s);
     } else {
       s.phase = 'reveal';
@@ -87,14 +87,14 @@ function aiPick(s) {
 
 const RULES = `<p>Cards are dealt face down in a grid. Turn over two cards: if they match (same rank and same color, like 9♥ and 9♦) they're removed; if not, they turn back over.</p>
 <h3>Scoring (solo)</h3><p>Each pair, each run of three pairs in a row, and each miss changes your score. Bigger grids multiply everything.</p>
-<h3>Two players</h3><p>Take turns against North. A match lets you go again; whoever finds the most pairs wins.</p>`;
+<h3>Two players</h3><p>Take turns against a computer opponent. A match lets you go again; whoever finds the most pairs wins.</p>`;
 
 export default {
-  id: 'memory', title: 'Memory Match', version: 1, rulesHTML: RULES,
+  id: 'memory', title: 'Memory Match', version: 1, seats: 2, rulesHTML: RULES,
   settings: [
-    { key: 'mode', label: 'Players', options: [['solo', 'Just me'], ['two', 'Me vs North']], default: 'solo' },
+    { key: 'mode', label: 'Players', options: [['solo', 'Just me'], ['two', 'Me vs an opponent']], default: 'solo' },
     { key: 'size', label: 'Grid', options: [[16, '4 × 4 (8 pairs)'], [24, '4 × 6 (12 pairs)'], [36, '6 × 6 (18 pairs)']], default: 24 },
-    { key: 'skill', label: 'North’s memory', options: [['beginner', 'Beginner'], ['intermediate', 'Intermediate'], ['expert', 'Expert']], default: 'intermediate' },
+    { key: 'skill', label: 'Opponent’s memory', options: [['beginner', 'Beginner'], ['intermediate', 'Intermediate'], ['expert', 'Expert']], default: 'intermediate' },
   ],
   newGame,
   actor(s) {
@@ -106,7 +106,7 @@ export default {
   act(state, a) {
     const s = clone(state);
     if (a.act === 'cell') return pickCell(s, 0, Number(a.i));
-    if (a.act === 'again') return newGame({ names: [s.names[0]], seed: s.seed + 1, opts: s.opts });
+    if (a.act === 'again') return newGame({ names: s.names, seed: s.seed + 1, opts: s.opts });
     throw new Error('Unknown action');
   },
   aiAct(state) {
@@ -115,6 +115,7 @@ export default {
     return pickCell(s, s.turn, aiPick(s));
   },
   view(s) {
+    const opp = s.names[1];
     const [rows, cols] = GRIDS[s.cells.length];
     const myTurn = s.phase === 'pick' && s.turn === 0;
     const grid = `<div class="memory-grid" style="grid-template-columns:repeat(${cols},minmax(0,1fr));--card-w:${s.cells.length > 24 ? 50 : 60}px">${s.cells.map((c, i) =>
@@ -124,17 +125,17 @@ export default {
     let overlay = '';
     if (s.phase === 'gameOver') {
       overlay = s.opts.mode === 'two'
-        ? panel(s.matched[0] > s.matched[1] ? 'You win!' : s.matched[0] === s.matched[1] ? 'A tie!' : 'North wins', `<p>Pairs: you ${s.matched[0]}, North ${s.matched[1]}.</p><div class="row" style="justify-content:flex-end">${btn('Play again', 'again', '', true)}</div>`)
+        ? panel(s.matched[0] > s.matched[1] ? 'You win!' : s.matched[0] === s.matched[1] ? 'A tie!' : `${opp} wins`, `<p>Pairs: you ${s.matched[0]}, ${opp} ${s.matched[1]}.</p><div class="row" style="justify-content:flex-end">${btn('Play again', 'again', '', true)}</div>`)
         : panel('Board cleared!', `${scoreTable(['Count'], [['Pairs', s.matched[0]], ['3-in-a-row bonuses', s.bonuses], ['Misses', s.misses], ['Score', `<b>${s.score}</b>`]])}<div class="row" style="justify-content:flex-end">${btn('Play again', 'again', '', true)}</div>`);
     }
     const two = s.opts.mode === 'two';
     return {
       subtitle: `${rows} × ${cols} grid`,
-      scores: two ? [{ label: 'You', value: `${s.matched[0]} pairs`, us: true }, { label: 'North', value: `${s.matched[1]} pairs` }] : [{ label: 'Pairs', value: s.matched[0], us: true }, { label: 'Misses', value: s.misses }],
-      seats: two ? [{ seat: 0, pos: 'south', name: s.names[0], mine: true, turn: s.turn === 0 }, { seat: 1, pos: 'north', name: 'North', turn: s.turn === 1, tag: `${s.matched[1]} pairs` }] : [{ seat: 0, pos: 'south', name: s.names[0], mine: true }],
+      scores: two ? [{ label: 'You', value: `${s.matched[0]} pairs`, us: true }, { label: opp, value: `${s.matched[1]} pairs` }] : [{ label: 'Pairs', value: s.matched[0], us: true }, { label: 'Misses', value: s.misses }],
+      seats: two ? [{ seat: 0, pos: 'south', name: s.names[0], mine: true, turn: s.turn === 0 }, { seat: 1, pos: 'north', name: opp, turn: s.turn === 1, tag: `${s.matched[1]} pairs` }] : [{ seat: 0, pos: 'south', name: s.names[0], mine: true }],
       hand: null,
       center: grid,
-      banner: s.phase === 'pick' ? (s.turn === 0 ? (s.flipped.length ? 'Find its match' : 'Turn over a card') : 'North is thinking…') : '',
+      banner: s.phase === 'pick' ? (s.turn === 0 ? (s.flipped.length ? 'Find its match' : 'Turn over a card') : `${opp} is thinking…`) : '',
       overlay,
       side: [],
     };

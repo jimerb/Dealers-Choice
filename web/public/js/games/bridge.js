@@ -261,14 +261,14 @@ function aiPlay(s, p) {
   return followPlay(L, s.trick, p, s.trump, { partnerOf: partnerOf(p) }).id;
 }
 
-const RULES = `<p>You (South) and North are partners against West and East.</p>
+const RULES = `<p>You sit South with your partner across the table at North, against the players at West and East.</p>
 <h3>The auction</h3><p>Starting with the dealer, players bid a number of tricks over six (1 to 7) and a trump suit or no-trump (♣ < ♦ < ♥ < ♠ < NT), or pass, double, or redouble. Three passes after a bid end the auction. The last bid is the contract.</p>
-<h3>Play</h3><p>The player left of the declarer leads, then the declarer's partner (dummy) lays their cards face up. When your side declares, you play both your hand and North's. Follow suit if you can.</p>
+<h3>Play</h3><p>The player left of the declarer leads, then the declarer's partner (dummy) lays their cards face up. When your side declares, you play both your hand and your partner's. Follow suit if you can.</p>
 <h3>Scoring (rubber)</h3><p>Tricks bid and made score below the line (♣♦ 20, ♥♠ 30, NT 40 then 30). 100 below the line wins a game, and two games win the rubber (bonus 700, or 500 if the rubber went three games). Overtricks, slams, doubled contracts and penalties score above the line. Vulnerable sides (with a game) score bigger bonuses and penalties.</p>
 <p>The computer bids with a simplified natural system (Standard American style).</p>`;
 
 export default {
-  id: 'bridge', title: 'Bridge', version: 1, rulesHTML: RULES,
+  id: 'bridge', title: 'Bridge', version: 1, seats: 4, rulesHTML: RULES,
   newGame({ names, seed, opts }) {
     return deal({ v: 1, seed, rngN: 0, names: names.slice(0, 4), opts, dealNo: 0, dealer: 3, games: [0, 0], below: [0, 0], above: [0, 0], belowHistory: [], log: [], fx: [] });
   },
@@ -289,7 +289,7 @@ export default {
     if (a.act === 'play') {
       must(s.phase === 'play' && controller(s, s.turn) === 0, 'Wait for your turn.');
       const from = a.from !== undefined ? Number(a.from) : 0;
-      must(from === s.turn, from === 2 ? 'It’s not North’s turn.' : 'It’s not your hand’s turn.');
+      must(from === s.turn, from === 2 ? `It’s not ${s.names[2]}’s turn.` : 'It’s not your hand’s turn.');
       return play(s, from, a.id);
     }
     if (a.act === 'next') return deal(s);
@@ -324,7 +324,7 @@ export default {
         <div class="row" style="justify-content:flex-end">${s.phase === 'gameOver' ? btn('New rubber', 'again', '', true) : btn('Next deal', 'next', '', true)}</div>`);
     } else if (s.phase === 'trickDone') banner = `${who(s, s.winner)} ${s.winner === 0 ? 'win' : 'wins'} the trick`;
     else if (s.phase === 'auction') banner = `${who(s, s.turn)} is bidding…`;
-    else if (controller(s, s.turn) === 0) banner = s.turn === 2 ? 'Play from North (dummy)' : 'Your turn';
+    else if (controller(s, s.turn) === 0) banner = s.turn === 2 ? `Play from ${s.names[2]}’s hand (dummy)` : 'Your turn';
     else banner = `${who(s, s.turn)} to play`;
     const showDummy = s.phase !== 'auction' && s.leadMade && s.dummy !== null;
     const humanTurnOn = (p) => (s.phase === 'play' && s.turn === p && controller(s, p) === 0);
@@ -333,7 +333,7 @@ export default {
       return { faceUp, faceUpWidth: 40, faceUpLabel: i === s.dummy ? 'Dummy' : 'Declarer', playable: faceUp && humanTurnOn(i) ? legal(s, i).map((c) => c.id) : null,
         count: faceUp ? 0 : i ? s.hands[i].length : 0, tag: i === s.declarer ? 'Declarer' : i === s.dummy ? 'Dummy' : '' };
     });
-    const header = ['W', 'N', 'E', 'S'];
+    const header = [s.names[1], s.names[2], s.names[3], 'You'];
     const rows = [];
     let row = Array(4).fill('');
     const colOf = (seat) => [1, 2, 3, 0].indexOf(seat);

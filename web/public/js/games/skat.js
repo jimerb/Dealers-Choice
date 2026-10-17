@@ -301,11 +301,10 @@ const RULES = `<p>Three players; 32 cards (7–A). Each gets ten, and two go fac
 <h3>Winning</h3><p>Card points: A 11, 10 10, K 4, Q 3, J 2 (120 total). The declarer needs 61 including the skat. A win scores the game value; a loss costs double. If the game is worth less than the bid, the declarer loses.</p>`;
 
 export default {
-  id: 'skat', title: 'Skat', version: 1, rulesHTML: RULES,
+  id: 'skat', title: 'Skat', version: 1, seats: 3, rulesHTML: RULES,
   settings: [{ key: 'deals', label: 'Game length', options: [[12, '12 deals'], [24, '24 deals'], [36, '36 deals']], default: 12 }],
-  botNames: ['West', 'East'],
   newGame({ names, seed, opts }) {
-    return deal({ v: 1, seed, rngN: 0, names: [names[0], 'West', 'East'], opts, scores: [0, 0, 0], dealNo: 0, dealer: 2, log: [], fx: [], partners: false });
+    return deal({ v: 1, seed, rngN: 0, names: names.slice(0, 3), opts, scores: [0, 0, 0], dealNo: 0, dealer: 2, log: [], fx: [], partners: false });
   },
   actor(s) {
     if (s.phase === 'gameOver') return null;
