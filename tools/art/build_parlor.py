@@ -3,16 +3,20 @@
     python3 -I tools/art/build_parlor.py            (run from the repo root)
 
 Reads   art/parlor/source/{components,cards,backs,tables,tokens,cast,lobby}
-Writes  art/parlor/masters/{cards,backs}/          750x1050 print-quality masters
-        web/public/assets/skins/parlor/cards/      500x700 faces (AS.png, 10H.png, JK1.png, T21.png, EX.png, CS.png ...)
+Writes  art/parlor/masters/{cards,backs}/          750x1050 print-quality masters (PNG)
+        web/public/assets/skins/parlor/cards/      500x700 faces (AS.webp, 10H.webp, JK1.webp, T21.webp, EX.webp, CS.webp ...)
         web/public/assets/skins/parlor/backs/      500x700 backs
         web/public/assets/skins/parlor/tables/     1024x1024 seamless tiles
         web/public/assets/art/{tokens,pips,cast,lobby,brand}/
-        art/parlor/proof/                          contact sheets of the built output
+        art/parlor/proof/                          contact sheets of the built output (PNG)
+
+Everything served to the browser is WebP (lossy or lossless, whichever is smaller); only the brand
+icons for <link rel="icon"> and apple-touch-icon are also written as PNG.
 
 Route A from the art brief: the 52 faces are assembled here from pips, court half-portraits and the
 ace emblem, so pip counts and positions are exact and every suit symbol is identical.
 """
+import io
 import os
 from PIL import Image, ImageChops, ImageDraw, ImageFont
 
@@ -40,6 +44,23 @@ color_of = lambda s: RED if s in 'HD' else INK
 def out(path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     return path
+
+
+def webp(im, path, quality=88):
+    """Save as WebP: lossy at `quality` or lossless, whichever is smaller (flat art often wins lossless).
+    Alpha is kept exact. `path` is given without an extension."""
+    best = None
+    for kw in (dict(quality=quality, method=6, exact=True), dict(lossless=True, quality=100, method=6, exact=True)):
+        b = io.BytesIO()
+        im.save(b, 'WEBP', **kw)
+        if best is None or len(b.getvalue()) < len(best):
+            best = b.getvalue()
+    with open(out(path + '.webp'), 'wb') as f:
+        f.write(best)
+
+
+def stem(f):
+    return os.path.splitext(f)[0]
 
 
 def src(*p):
@@ -231,7 +252,7 @@ def back(name):
 def save_card(img, folder, name):
     img = img.convert('RGB')
     img.save(out(os.path.join(MASTER, folder, name + '.png')), optimize=True)
-    img.resize(WEB, Image.LANCZOS).save(out(os.path.join(SKIN, folder, name + '.png')), optimize=True)
+    webp(img.resize(WEB, Image.LANCZOS), os.path.join(SKIN, folder, name))
     return img
 
 
@@ -269,7 +290,7 @@ def main():
 
     # tables: already seamless 1024 tiles
     for f in os.listdir(os.path.join(SRC, 'tables')):
-        src('tables', f).convert('RGB').save(out(os.path.join(SKIN, 'tables', f)), optimize=True)
+        webp(src('tables', f).convert('RGB'), os.path.join(SKIN, 'tables', stem(f)), quality=90)
 
     # tokens
     sizes = {'chip': (256, 256), 'dealer-button': (256, 256), 'peg': (128, 128), 'tray': (900, 9999), 'trump-plaque': (480, 9999)}
@@ -278,23 +299,28 @@ def main():
         key = next((k for k in sizes if f.startswith(k)), None)
         if key:
             im = fit(im, *sizes[key])
-        im.save(out(os.path.join(ART, 'tokens', f)), optimize=True)
+        webp(im, os.path.join(ART, 'tokens', stem(f)), quality=90)
 
     # suit pips for the table pieces (the trump plaque): 128x128, centred, transparent
     for s in SUITS:
         im = fit(PIPS[s], 128, 128)
         pad = Image.new('RGBA', (128, 128), (0, 0, 0, 0))
         pad.paste(im, ((128 - im.width) // 2, (128 - im.height) // 2), im)
-        pad.save(out(os.path.join(ART, 'pips', f'pip-{s}.png')), optimize=True)
+        webp(pad, os.path.join(ART, 'pips', f'pip-{s}'), quality=90)
 
+    # portraits: 256 for the Table settings picker, 96 thumbnails for nameplates and the header
     for f in os.listdir(os.path.join(SRC, 'cast')):
-        src('cast', f).convert('RGB').resize((512, 512), Image.LANCZOS).save(out(os.path.join(ART, 'cast', f)), optimize=True)
+        im = src('cast', f).convert('RGB')
+        webp(im.resize((256, 256), Image.LANCZOS), os.path.join(ART, 'cast', stem(f)))
+        webp(im.resize((96, 96), Image.LANCZOS), os.path.join(ART, 'cast', stem(f) + '-96'))
 
     for f in os.listdir(os.path.join(SRC, 'lobby')):
         im = src('lobby', f).convert('RGB')
         if f == 'logo-mark.png':
-            for px in (512, 180, 64, 32):
+            for px in (512, 180, 64, 32):           # PNG: what browsers expect for icons
                 im.resize((px, px), Image.LANCZOS).save(out(os.path.join(ART, 'brand', f'logo-mark-{px}.png')), optimize=True)
+            for px in (180, 64):                    # the header logo
+                webp(im.resize((px, px), Image.LANCZOS), os.path.join(ART, 'brand', f'logo-mark-{px}'))
             continue
         if f == 'solitaire-banner.png':
             im = im.crop((0, 272, 1536, 752)).resize((1536, 480), Image.LANCZOS)
@@ -302,7 +328,7 @@ def main():
             im = im.crop((0, 32, 1536, 992))
             if f.startswith('tile-'):
                 im = im.resize((1200, 750), Image.LANCZOS)
-        im.save(out(os.path.join(ART, 'lobby', f)), optimize=True)
+        webp(im, os.path.join(ART, 'lobby', stem(f)), quality=85)
     print('done')
 
 

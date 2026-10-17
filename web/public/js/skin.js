@@ -2,11 +2,11 @@
 // so our own art drops in by adding a skin (or replacing files under assets/skins/<name>/).
 //
 // A skin is either:
-//   type 'image': cards at   assets/skins/<name>/cards/<RANK><SUIT>.png   (e.g. 10H.png, QS.png)
-//                 backs at   assets/skins/<name>/backs/<back>.png
-//                 tables at  assets/skins/<name>/tables/<table>.png
+//   type 'image': cards at   assets/skins/<name>/cards/<RANK><SUIT>.webp   (e.g. 10H.webp, QS.webp)
+//                 backs at   assets/skins/<name>/backs/<back>.webp
+//                 tables at  assets/skins/<name>/tables/<table>.webp
 //                 specials: true  -> jokers, Tarot trumps/knights and the Excuse are images too
-//                                    (cards/JK1.png, JK2.png, T1..T21.png, EX.png, CS.png ...)
+//                                    (cards/JK1.webp, JK2.webp, T1..T21.webp, EX.webp, CS.webp ...)
 //                 tile: true      -> tables are seamless tiles, repeated instead of stretched
 //   type 'drawn': cards rendered with HTML/CSS (no image files needed).
 
@@ -72,7 +72,7 @@ export function cardHTML(card, extra = '') {
   if (!standard && !(skin.type === 'image' && skin.specials)) return specialHTML(card, extra);
   if (skin.type === 'image') {
     const file = standard ? `${card.rank}${card.suit}` : specialFile(card);
-    return `<span class="card face img ${extra}" data-skin="${name}"><img src="${skin.base}/cards/${file}.png" alt="${cardName(card)}" draggable="false"></span>`;
+    return `<span class="card face img ${extra}" data-skin="${name}"><img src="${skin.base}/cards/${file}.webp" alt="${cardName(card)}" draggable="false"></span>`;
   }
   return `<span class="card face drawn ${red ? 'red' : 'black'} ${extra}" role="img" aria-label="${cardName(card)}">
     <span class="idx">${card.rank}<br>${SYMBOL[card.suit]}</span>
@@ -103,7 +103,7 @@ export function backHTML(extra = '') {
   const skin = SKINS[name];
   const back = currentBack();
   if (skin.type === 'image') {
-    return `<span class="card back img ${extra}"><img src="${skin.base}/backs/${back}.png" alt="" draggable="false"></span>`;
+    return `<span class="card back img ${extra}"><img src="${skin.base}/backs/${back}.webp" alt="" draggable="false"></span>`;
   }
   return `<span class="card back drawn back-${back} ${extra}" aria-hidden="true"></span>`;
 }
@@ -112,7 +112,7 @@ export function backHTML(extra = '') {
 export function tableBackground() {
   const skin = SKINS[currentSkin()];
   if (skin.type !== 'image') return '';
-  const url = `url("${skin.base}/tables/${currentTable()}.png")`;
+  const url = `url("${skin.base}/tables/${currentTable()}.webp")`;
   // 1024px tiles drawn at 512 CSS px stay sharp on high-DPI screens.
   return skin.tile ? `${url} 0 0 / 512px repeat` : `${url} center / cover`;
 }

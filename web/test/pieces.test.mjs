@@ -30,7 +30,7 @@ test('chips HTML uses chip art that exists and is hidden from screen readers', (
   const html = chipsHTML(630, { size: 30, text: 'Pot 630' });
   assert.match(html, /aria-hidden="true"/);
   assert.match(html, /Pot 630/);
-  for (const src of html.match(/\/assets\/[^"]+\.png/g)) assert.ok(existsSync(pub(src)), `missing ${src}`);
+  for (const src of html.match(/\/assets\/[^"]+\.webp/g)) assert.ok(existsSync(pub(src)), `missing ${src}`);
   assert.equal(chipsHTML(0), '<span class="chips" style="--chip:22px"><span class="chip-cols" aria-hidden="true"></span></span>');
 });
 
@@ -67,13 +67,13 @@ test('front peg marks the score and back peg the previous score', () => {
 test('board, tray and plaque HTML carry text equivalents and existing art', () => {
   const board = cribbageBoardHTML([{ name: 'You', score: 12, prev: 7, peg: 'brass' }, { name: 'Mabel', score: 4, prev: 0, peg: 'red' }]);
   assert.match(board, /aria-label="Cribbage board: You 12, Mabel 4 of 121"/);
-  assert.equal((board.match(/peg-brass\.png/g) ?? []).length, 3); // two pegs and the key
+  assert.equal((board.match(/peg-brass\.webp/g) ?? []).length, 3); // two pegs and the key
   const tray = trayHTML('', { label: 'Pass to Mabel' });
   assert.match(tray, /<figcaption>Pass to Mabel<\/figcaption>/);
   assert.match(trumpPlaqueHTML('H'), /Trump: Hearts/);
   assert.match(trumpPlaqueHTML('NT', { caption: 'No trump' }), /No trump/);
   for (const html of [board, tray, trumpPlaqueHTML('S'), trumpPlaqueHTML('D'), trumpPlaqueHTML('C')]) {
-    for (const src of html.match(/\/assets\/[^"]+\.png/g) ?? []) assert.ok(existsSync(pub(src)), `missing ${src}`);
+    for (const src of html.match(/\/assets\/[^"]+\.webp/g) ?? []) assert.ok(existsSync(pub(src)), `missing ${src}`);
     assert.ok(!/<img(?![^>]*alt="")[^>]*>/.test(html), 'images are decorative (alt="")');
   }
 });

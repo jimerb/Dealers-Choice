@@ -2,6 +2,9 @@
 // Pure data and helpers: no DOM, so the picker can be unit-tested.
 
 const ART = '/assets/art/cast';
+// Each portrait comes in two sizes: a 96px thumbnail for nameplates and the header, 256px for the picker.
+const thumb = (id) => `${ART}/${id}-96.webp`;
+const large = (id) => `${ART}/${id}.webp`;
 
 /** The twelve regulars of the card room. `games` lists the tables each one is especially fond of. */
 export const CAST = [
@@ -17,15 +20,15 @@ export const CAST = [
   { id: 'captain', name: 'Captain', bio: 'Keeps the lighthouse and the cribbage board. Never in a hurry.', games: ['cribbage'] },
   { id: 'lou', name: 'Lou', bio: 'Jazz pianist with moods like a minor key. You never know what comes next.', games: ['spades', 'poker'] },
   { id: 'ivy', name: 'Ivy', bio: 'Gardener who plays for the fun of it and cheers everyone\'s good hands.', games: ['crazy8', 'hearts'] },
-].map((c) => ({ ...c, portrait: `${ART}/${c.id}.png` }));
+].map((c) => ({ ...c, portrait: thumb(c.id), portraitLarge: large(c.id) }));
 
 /** Portraits a human player can pick in Table settings ('player-01' … 'player-08'). */
 export const PLAYER_PORTRAITS = Array.from({ length: 8 }, (_, i) => {
   const id = `player-${String(i + 1).padStart(2, '0')}`;
-  return { id, label: `Portrait ${i + 1}`, src: `${ART}/${id}.png` };
+  return { id, label: `Portrait ${i + 1}`, src: thumb(id), large: large(id) };
 });
 
-/** Path of a player portrait id, or '' for none / unknown ids. */
+/** Thumbnail path of a player portrait id, or '' for none / unknown ids. */
 export const playerPortrait = (id) => PLAYER_PORTRAITS.find((p) => p.id === id)?.src ?? '';
 
 // A regular is this many times as likely as anyone else to be picked: a nudge, not a booking.

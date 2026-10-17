@@ -30,7 +30,7 @@ const chipLabel = (v) => (v >= 1000 ? `${v / 1000}K` : String(v));
 export function chipsHTML(amount, { size = 22, stacks = 3, perStack = 5, labels = size >= 24, text = '' } = {}) {
   const cols = chipStacks(amount, { stacks, perStack }).map(({ value, shown }) =>
     `<span class="chip-col" style="--n:${shown}">${Array.from({ length: shown }, (_, i) =>
-      `<img src="${ART}/tokens/chip-${value}.png" alt="" style="--i:${i}">`).join('')}${labels ? `<b>${chipLabel(value)}</b>` : ''}</span>`).join('');
+      `<img src="${ART}/tokens/chip-${value}.webp" alt="" style="--i:${i}">`).join('')}${labels ? `<b>${chipLabel(value)}</b>` : ''}</span>`).join('');
   return `<span class="chips" style="--chip:${size}px"><span class="chip-cols" aria-hidden="true">${cols}</span>${text ? `<span class="chips-text">${text}</span>` : ''}</span>`;
 }
 
@@ -76,17 +76,17 @@ export function cribbageBoardHTML(players) {
     `<circle cx="${h.x}" cy="${h.y}" r="${h.r}"/>`).join('')).join('');
   const pegs = players.map((p, t) => {
     const { front, back } = pegPositions(p.score, p.prev ?? 0, t);
-    const img = (at) => `<image href="${ART}/tokens/peg-${p.peg}.png" x="${at.x - P / 2}" y="${at.y - P / 2}" width="${P}" height="${P}"/>`;
+    const img = (at) => `<image href="${ART}/tokens/peg-${p.peg}.webp" x="${at.x - P / 2}" y="${at.y - P / 2}" width="${P}" height="${P}"/>`;
     return img(back) + img(front);
   }).join('');
   const label = players.map((p) => `${p.name} ${p.score}`).join(', ');
   return `<figure class="crib-board" role="img" aria-label="Cribbage board: ${label} of 121">
     <svg viewBox="0 0 ${BOARD.w} ${BOARD.h}" aria-hidden="true" focusable="false">
-      <image href="${ART}/tokens/cribbage-board.png" width="${BOARD.w}" height="${BOARD.h}"/>
+      <image href="${ART}/tokens/cribbage-board.webp" width="${BOARD.w}" height="${BOARD.h}"/>
       <line class="divider" x1="${START[1] - 20}" x2="${holeX(59) + 20}" y1="215.5" y2="215.5"/>
       <g class="holes">${holes}</g>${pegs}
     </svg>
-    <figcaption>${players.map((p) => `<span class="peg-key"><img src="${ART}/tokens/peg-${p.peg}.png" alt="">${p.name} <b>${p.score}</b></span>`).join('')}</figcaption>
+    <figcaption>${players.map((p) => `<span class="peg-key"><img src="${ART}/tokens/peg-${p.peg}.webp" alt="">${p.name} <b>${p.score}</b></span>`).join('')}</figcaption>
   </figure>`;
 }
 
@@ -99,6 +99,6 @@ export const trayHTML = (inner, { label = '', width = 220 } = {}) =>
 /** The brass trump plaque: suit art centred on it (or short text such as "NT"), caption below. */
 export function trumpPlaqueHTML(suit, { caption } = {}) {
   const name = SUIT_NAME[suit];
-  const face = name ? `<img src="${ART}/pips/pip-${suit}.png" alt="">` : `<span>${suit}</span>`;
+  const face = name ? `<img src="${ART}/pips/pip-${suit}.webp" alt="">` : `<span>${suit}</span>`;
   return `<figure class="trump-plaque"><div class="plaque" aria-hidden="true">${face}</div><figcaption>${caption ?? `Trump: ${name ?? suit}`}</figcaption></figure>`;
 }

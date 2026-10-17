@@ -26,7 +26,7 @@ export function avatarHTML(name, src = '') {
 }
 
 const LOGO_SRC = '/assets/art/brand/logo-mark';
-const LOGO = `<img class="brand-mark" src="${LOGO_SRC}-64.png" srcset="${LOGO_SRC}-64.png 64w, ${LOGO_SRC}-180.png 180w" sizes="40px" width="40" height="40" alt="">`;
+const LOGO = `<img class="brand-mark" src="${LOGO_SRC}-64.webp" srcset="${LOGO_SRC}-64.webp 64w, ${LOGO_SRC}-180.webp 180w" sizes="40px" width="40" height="40" alt="">`;
 const SPEAKER = (muted) => `<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
   <path d="M4 9h4l5-4v14l-5-4H4z"/>${muted ? '<path d="M17 9l5 6M22 9l-5 6"/>' : '<path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>'}</svg>`;
 
@@ -103,7 +103,7 @@ export function mountChrome(active) {
       <div class="field"><label for="set-name">Your name</label><input id="set-name" type="text" maxlength="20" autocomplete="nickname" placeholder="Guest" value="${esc(nameNow)}"></div>
       <fieldset class="field"><legend>Your picture</legend><div class="portrait-pick">
         <label class="portrait-opt" title="No picture"><input type="radio" name="avatar" value="" ${avNow ? '' : 'checked'}><span class="avatar">${initial}</span><span class="visually-hidden">No picture (show my initial)</span></label>
-        ${PLAYER_PORTRAITS.map((p) => `<label class="portrait-opt" title="${p.label}"><input type="radio" name="avatar" value="${p.id}" ${p.id === avNow ? 'checked' : ''}><span class="avatar"><img src="${p.src}" alt="${p.label}"></span></label>`).join('')}
+        ${PLAYER_PORTRAITS.map((p) => `<label class="portrait-opt" title="${p.label}"><input type="radio" name="avatar" value="${p.id}" ${p.id === avNow ? 'checked' : ''}><span class="avatar"><img src="${p.large}" alt="${p.label}"></span></label>`).join('')}
       </div></fieldset>
       <fieldset class="field"><legend>Card style</legend>
         ${Object.entries(SKINS).map(([id, s]) => `<label class="choice"><input type="radio" name="skin" value="${id}" ${id === skin ? 'checked' : ''}> ${s.label}</label>`).join('')}

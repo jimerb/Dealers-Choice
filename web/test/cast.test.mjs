@@ -14,10 +14,10 @@ test('the cast has twelve distinct opponents, each with a portrait on disk and a
   assert.equal(new Set(CAST.map((c) => c.name.toLowerCase())).size, 12);
   for (const c of CAST) {
     assert.ok(c.name && c.bio, `${c.id} needs a name and bio`);
-    assert.ok(existsSync(pub(c.portrait)), `missing ${c.portrait}`);
+    for (const src of [c.portrait, c.portraitLarge]) assert.ok(existsSync(pub(src)), `missing ${src}`);
   }
   assert.equal(PLAYER_PORTRAITS.length, 8);
-  for (const p of PLAYER_PORTRAITS) assert.ok(existsSync(pub(p.src)), `missing ${p.src}`);
+  for (const p of PLAYER_PORTRAITS) for (const src of [p.src, p.large]) assert.ok(existsSync(pub(src)), `missing ${src}`);
 });
 
 test('pickOpponents returns the requested number of distinct opponents', () => {
@@ -60,12 +60,12 @@ test('regulars turn up more often at their game, but not every time', () => {
 test('seat names map to portraits; unknown names fall back to none', () => {
   assert.equal(castByName('Odette').id, 'odette');
   assert.equal(castByName('  colonel ').id, 'colonel');
-  assert.equal(portraitFor('Rosa'), '/assets/art/cast/rosa.png');
+  assert.equal(portraitFor('Rosa'), '/assets/art/cast/rosa-96.webp');
   for (const old of ['West', 'North', 'East', 'Northwest', '', null, undefined]) {
     assert.equal(castByName(old), null);
     assert.equal(portraitFor(old), '');
   }
-  assert.equal(playerPortrait('player-03'), '/assets/art/cast/player-03.png');
+  assert.equal(playerPortrait('player-03'), '/assets/art/cast/player-03-96.webp');
   assert.equal(playerPortrait(''), '');
   assert.equal(playerPortrait('../etc'), '');
 });
