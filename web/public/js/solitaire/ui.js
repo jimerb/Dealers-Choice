@@ -2,7 +2,7 @@
 // custom games. Click a card (or stack) then a destination; double-click sends a card home.
 import { VARIANTS, newGame, grab, move, clickStock, autoTarget, autoPlay, isWon, undo, scoreOf, scoreName } from './engine.js';
 import { CUSTOM } from './custom/index.js';
-import { cardHTML, backHTML, cardName } from '../skin.js';
+import { cardHTML, backHTML, cardName, paintFelt } from '../skin.js';
 import { mountChrome, esc } from '../header.js';
 import { play } from '../core/sound.js';
 import { SOLITAIRE } from '../catalog.js';
@@ -148,7 +148,9 @@ function render() {
   document.querySelector('[data-cmd="auto"]').hidden = custom;
   document.querySelector('[data-cmd="restart"]').hidden = timed;
   const finished = over();
-  document.getElementById('sol-area').innerHTML = body + (finished ? `<div class="overlay sol-win"><div class="card-panel"><h3>${won() ? 'You won!' : 'Game over'}</h3><p>${esc(status)}.</p>
+  const felt = document.getElementById('sol-area');
+  paintFelt(felt);
+  felt.innerHTML = body + (finished ? `<div class="overlay sol-win"><div class="card-panel"><h3>${won() ? 'You won!' : 'Game over'}</h3><p>${esc(status)}.</p>
     <div class="row"><button class="btn primary" data-cmd="new">Deal again</button><button class="btn" data-cmd="menu">Choose another</button></div></div></div>` : '');
 }
 

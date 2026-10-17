@@ -1,7 +1,7 @@
 // Pinochle table: renders engine state, paces the computer players, saves progress locally.
 import * as P from './engine.js';
 import * as AI from './ai.js';
-import { cardHTML, backHTML, cardName, tableBackground } from '../../skin.js';
+import { cardHTML, backHTML, cardName, paintFelt } from '../../skin.js';
 import { mountChrome, esc, playerName } from '../../header.js';
 import { play } from '../../core/sound.js';
 
@@ -180,8 +180,7 @@ function render() {
   document.getElementById('score-them').textContent = s.scores[1];
   document.getElementById('sub').textContent = `Partnership Auction · hand ${s.handNo}`;
   const felt = document.getElementById('felt');
-  const bg = tableBackground();
-  felt.style.background = bg ? `linear-gradient(rgba(10,40,30,.25), rgba(10,40,30,.25)), ${bg}` : '';
+  paintFelt(felt);
   const b = banner();
   const ov = overlay();
   felt.innerHTML = `

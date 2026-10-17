@@ -5,6 +5,9 @@
 //   type 'image': cards at   assets/skins/<name>/cards/<RANK><SUIT>.png   (e.g. 10H.png, QS.png)
 //                 backs at   assets/skins/<name>/backs/<back>.png
 //                 tables at  assets/skins/<name>/tables/<table>.png
+//                 specials: true  -> jokers, Tarot trumps/knights and the Excuse are images too
+//                                    (cards/JK1.png, JK2.png, T1..T21.png, EX.png, CS.png ...)
+//                 tile: true      -> tables are seamless tiles, repeated instead of stretched
 //   type 'drawn': cards rendered with HTML/CSS (no image files needed).
 
 export const SKINS = {
@@ -14,6 +17,8 @@ export const SKINS = {
     base: '/assets/skins/parlor',
     backs: ['parlor-green', 'parlor-oxblood', 'parlor-midnight', 'deco-fan', 'botanical', 'starfield'],
     tables: ['felt-green', 'felt-oxblood', 'felt-midnight', 'walnut', 'linen', 'slate'],
+    specials: true,
+    tile: true,
   },
   house: {
     label: 'Dealers Choice (drawn)',
@@ -45,6 +50,11 @@ export function currentBack() {
   const b = readPref(`dc.back.${currentSkin()}`, skin.backs[0]);
   return skin.backs.includes(b) ? b : skin.backs[0];
 }
+export function currentTable() {
+  const skin = SKINS[currentSkin()];
+  const t = readPref(`dc.table.${currentSkin()}`, skin.tables[0]);
+  return skin.tables.includes(t) ? t : skin.tables[0];
+}
 
 export const cardName = (c) => {
   if (c.rank === 'JK') return 'Joker';
@@ -58,9 +68,11 @@ export function cardHTML(card, extra = '') {
   const name = currentSkin();
   const skin = SKINS[name];
   const red = card.suit === 'H' || card.suit === 'D';
-  if (!isStandard(card)) return specialHTML(card, extra);
+  const standard = isStandard(card);
+  if (!standard && !(skin.type === 'image' && skin.specials)) return specialHTML(card, extra);
   if (skin.type === 'image') {
-    return `<span class="card face ${extra}" data-skin="${name}"><img src="${skin.base}/cards/${card.rank}${card.suit}.png" alt="${cardName(card)}" draggable="false"></span>`;
+    const file = standard ? `${card.rank}${card.suit}` : specialFile(card);
+    return `<span class="card face img ${extra}" data-skin="${name}"><img src="${skin.base}/cards/${file}.png" alt="${cardName(card)}" draggable="false"></span>`;
   }
   return `<span class="card face drawn ${red ? 'red' : 'black'} ${extra}" role="img" aria-label="${cardName(card)}">
     <span class="idx">${card.rank}<br>${SYMBOL[card.suit]}</span>
@@ -68,7 +80,15 @@ export function cardHTML(card, extra = '') {
     <span class="idx flip">${card.rank}<br>${SYMBOL[card.suit]}</span></span>`;
 }
 
-/** Cards outside the standard 52 (jokers, Tarot trumps/knights, the Excuse) are always drawn. */
+/** Image file for a card outside the standard 52. Jokers alternate JK1/JK2 by their id number. */
+function specialFile(card) {
+  if (card.rank === 'JK') return Number(String(card.id).split('.')[1] ?? 0) % 2 ? 'JK2' : 'JK1';
+  if (card.rank === 'EX') return 'EX';
+  if (card.suit === 'T') return `T${card.rank}`;
+  return `${card.rank}${card.suit}`; // knights: CS, CH, CD, CC
+}
+
+/** Drawn versions of the cards outside the standard 52, for skins without `specials`. */
 function specialHTML(card, extra) {
   if (card.rank === 'JK') return `<span class="card face drawn special joker ${extra}" role="img" aria-label="Joker"><span class="idx">J<br>★</span><span class="pip">★</span><span class="word">JOKER</span></span>`;
   if (card.rank === 'EX') return `<span class="card face drawn special trump ${extra}" role="img" aria-label="the Excuse"><span class="idx">★</span><span class="pip">★</span><span class="word">EXCUSE</span></span>`;
@@ -83,14 +103,22 @@ export function backHTML(extra = '') {
   const skin = SKINS[name];
   const back = currentBack();
   if (skin.type === 'image') {
-    return `<span class="card back ${extra}"><img src="${skin.base}/backs/${back}.png" alt="" draggable="false"></span>`;
+    return `<span class="card back img ${extra}"><img src="${skin.base}/backs/${back}.png" alt="" draggable="false"></span>`;
   }
   return `<span class="card back drawn back-${back} ${extra}" aria-hidden="true"></span>`;
 }
 
-/** CSS background for the play surface. */
+/** CSS background for the play surface ('' = the stylesheet's own felt). */
 export function tableBackground() {
   const skin = SKINS[currentSkin()];
-  if (skin.type === 'image') return `url("${skin.base}/tables/${skin.tables[0]}.png") center / cover`;
-  return '';
+  if (skin.type !== 'image') return '';
+  const url = `url("${skin.base}/tables/${currentTable()}.png")`;
+  // 1024px tiles drawn at 512 CSS px stay sharp on high-DPI screens.
+  return skin.tile ? `${url} 0 0 / 512px repeat` : `${url} center / cover`;
+}
+
+/** Paint a felt element with the chosen table, under a light shade so cards stand out. */
+export function paintFelt(el) {
+  const bg = tableBackground();
+  el.style.background = bg ? `linear-gradient(rgba(10,40,30,.25), rgba(10,40,30,.25)), ${bg}` : '';
 }
