@@ -209,3 +209,83 @@ test('crazy8: automatic drawing keeps drawing until you can play', async () => {
   assert.equal(setup('manual').hands[0].length, 2);
   assert.equal(setup(undefined).hands[0].length, 2);
 });
+
+// ------------------------------------------------------------------ Memory Match
+test('memory: every option plays out, solo and against an opponent', async () => {
+  await everyOption('memory');
+  const game = await load('memory');
+  for (const deck of ['easy', 'medium', 'hard']) {
+    playOut(game, { mode: 'two', deck, wild: 'jokers', race: 15, peek: 'yes', size: 16 }, 2);
+    playOut(game, { mode: 'solo', deck, wild: 'jokers', size: 36 }, 2);
+  }
+});
+
+test('memory: deck difficulty changes which cards are dealt and what matches', async () => {
+  const game = await load('memory');
+  const board = (deck) => game.newGame({ names: NAMES, seed: 4, opts: { ...defaults(game), deck } }).cells.map((c) => c.card);
+  const ranks = (cards) => new Set(cards.map((c) => c.rank));
+  assert.equal(ranks(board('easy')).size, 12); // one pair per rank
+  const hard = board('hard');
+  assert.equal(ranks(hard).size, 6); // both colors of six ranks
+  for (const r of ranks(hard)) assert.equal(hard.filter((c) => c.rank === r).length, 4);
+  // An easy deck matches by rank alone: a red and a black card can pair.
+  const s = game.newGame({ names: NAMES, seed: 4, opts: { ...defaults(game), deck: 'easy' } });
+  const r0 = s.cells[0].card.rank;
+  const j = s.cells.findIndex((c, i) => i > 0 && c.card.rank === r0);
+  let t = game.act(s, { act: 'cell', i: '0' });
+  t = game.act(t, { act: 'cell', i: String(j) });
+  assert.equal(t.matched[0], 1);
+  assert.equal(t.cells[0].state, 'gone');
+});
+
+test('memory: harder decks score more for the same play', async () => {
+  const game = await load('memory');
+  const score = (deck) => {
+    const s = game.newGame({ names: NAMES, seed: 7, opts: { ...defaults(game), deck } });
+    const red = (c) => c.suit === 'H' || c.suit === 'D';
+    const first = s.cells[0].card;
+    const last = s.cells.findIndex((c, i) => i > 0 && c.card.rank === first.rank && (deck === 'easy' || red(c.card) === red(first)));
+    s.cells.forEach((c, i) => { if (i !== 0 && i !== last) c.state = 'gone'; });
+    Object.assign(s, { matched: [11, 0], misses: 4, bonuses: 0 });
+    let t = game.act(s, { act: 'cell', i: '0' });
+    t = game.act(t, { act: 'cell', i: String(last) });
+    assert.equal(t.phase, 'gameOver');
+    return t.score;
+  };
+  assert.deepEqual([score('easy'), score('medium'), score('hard')], [60, 80, 112]);
+});
+
+test('memory: a wild joker takes a card and its match', async () => {
+  const game = await load('memory');
+  const s = game.newGame({ names: NAMES, seed: 3, opts: { ...defaults(game), wild: 'jokers' } });
+  assert.equal(s.cells.filter((c) => c.card.rank === 'JK').length, 2);
+  assert.equal(s.cells.length, 24);
+  const jk = s.cells.findIndex((c) => c.card.rank === 'JK');
+  const other = s.cells.findIndex((c) => c.card.rank !== 'JK');
+  let t = game.act(s, { act: 'cell', i: String(jk) });
+  t = game.act(t, { act: 'cell', i: String(other) });
+  assert.equal(t.phase, 'reveal');
+  assert.equal(t.matched[0], 1);
+  assert.equal(t.flipped.length, 3);
+  t = game.aiAct(t);
+  assert.equal(t.cells.filter((c) => c.state === 'gone').length, 3);
+  assert.equal(t.turn, 0); // a match means another turn
+});
+
+test('memory: two players race to a number of pairs over several boards, with a peek', async () => {
+  const game = await load('memory');
+  let s = game.newGame({ names: NAMES, seed: 2, opts: { ...defaults(game), mode: 'two', size: 16, race: 10, peek: 'yes' } });
+  assert.equal(s.phase, 'peek');
+  assert.equal(game.actor(s), 'auto');
+  assert.ok(!game.view(s, ui()).center.includes('data-act="cell"'), 'every card shows during the peek');
+  s = game.aiAct(s);
+  assert.equal(s.phase, 'pick');
+  let boards = 1;
+  while (game.actor(s) !== null) { s = game.aiAct(s); boards = Math.max(boards, s.board); }
+  assert.ok(boards >= 2, 'eight pairs a board: the race needs a second board');
+  assert.equal(Math.max(...s.matched), 10);
+  // Without a race, one board decides it (the default).
+  const [one] = playOut(game, { mode: 'two', size: 16 }, 1);
+  assert.equal(one.matched[0] + one.matched[1], 8);
+  assert.equal(one.board, 1);
+});
