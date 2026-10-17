@@ -45,15 +45,36 @@ export function currentSkin() {
   const name = readPref('dc.skin', 'parlor');
   return SKINS[name] ? name : 'parlor';
 }
-export function currentBack() {
-  const skin = SKINS[currentSkin()];
-  const b = readPref(`dc.back.${currentSkin()}`, skin.backs[0]);
+export function currentBack(name = currentSkin()) {
+  const skin = SKINS[name];
+  const b = readPref(`dc.back.${name}`, skin.backs[0]);
   return skin.backs.includes(b) ? b : skin.backs[0];
 }
-export function currentTable() {
-  const skin = SKINS[currentSkin()];
-  const t = readPref(`dc.table.${currentSkin()}`, skin.tables[0]);
+export function currentTable(name = currentSkin()) {
+  const skin = SKINS[name];
+  const t = readPref(`dc.table.${name}`, skin.tables[0]);
   return skin.tables.includes(t) ? t : skin.tables[0];
+}
+
+const backURL = (skin, back) => `${skin.base}/backs/${back}.webp`;
+const tableURL = (skin, table) => `${skin.base}/tables/${table}.webp`;
+
+// Images already asked for, kept referenced so the fetch isn't dropped.
+const warmed = new Map();
+function warm(url) {
+  if (warmed.has(url)) return;
+  const img = new Image();
+  img.src = url;
+  img.decode?.().catch(() => { /* a failed preload just loads later */ });
+  warmed.set(url, img);
+}
+
+/** Fetch a skin's card back and table ahead of use (defaults: the saved choices). Faces load as dealt. */
+export function preloadSkin(name = currentSkin(), back = currentBack(name), table = currentTable(name)) {
+  const skin = SKINS[name];
+  if (skin?.type !== 'image' || typeof Image === 'undefined') return;
+  warm(backURL(skin, back));
+  warm(tableURL(skin, table));
 }
 
 export const cardName = (c) => {
@@ -103,7 +124,7 @@ export function backHTML(extra = '') {
   const skin = SKINS[name];
   const back = currentBack();
   if (skin.type === 'image') {
-    return `<span class="card back img ${extra}"><img src="${skin.base}/backs/${back}.webp" alt="" draggable="false"></span>`;
+    return `<span class="card back img ${extra}"><img src="${backURL(skin, back)}" alt=""" draggable="false"></span>`;
   }
   return `<span class="card back drawn back-${back} ${extra}" aria-hidden="true"></span>`;
 }
@@ -112,7 +133,7 @@ export function backHTML(extra = '') {
 export function tableBackground() {
   const skin = SKINS[currentSkin()];
   if (skin.type !== 'image') return '';
-  const url = `url("${skin.base}/tables/${currentTable()}.webp")`;
+  const url = `url("${tableURL(skin, currentTable())}")`;
   // 1024px tiles drawn at 512 CSS px stay sharp on high-DPI screens.
   return skin.tile ? `${url} 0 0 / 512px repeat` : `${url} center / cover`;
 }

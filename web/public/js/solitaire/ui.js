@@ -2,12 +2,13 @@
 // custom games. Click a card (or stack) then a destination; double-click sends a card home.
 import { VARIANTS, newGame, grab, move, clickStock, autoTarget, autoPlay, isWon, undo, scoreOf, scoreName } from './engine.js';
 import { CUSTOM } from './custom/index.js';
-import { cardHTML, backHTML, cardName, paintFelt } from '../skin.js';
+import { cardHTML, backHTML, cardName, paintFelt, preloadSkin } from '../skin.js';
 import { mountChrome, esc } from '../header.js';
 import { play } from '../core/sound.js';
 import { SOLITAIRE } from '../catalog.js';
 
 mountChrome('solitaire');
+preloadSkin();
 
 const params = new URLSearchParams(location.search);
 const known = (id) => Boolean(VARIANTS[id] || CUSTOM[id]);

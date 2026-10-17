@@ -15,7 +15,7 @@
 // View model extras: vm.board (HTML for a full-width row above the center, e.g. the cribbage board),
 // vm.trump ({ suit, caption? }: the trump plaque in the felt's corner; see core/pieces.js).
 // Engines may set state.fx = ['card', ...] (sound event names) on transitions.
-import { cardHTML, backHTML, cardName, paintFelt } from '../skin.js';
+import { cardHTML, backHTML, cardName, paintFelt, preloadSkin } from '../skin.js';
 import { mountChrome, esc, playerName, playerAvatar, avatarHTML } from '../header.js';
 import { play } from './sound.js';
 import { pickOpponents, castByName } from './cast.js';
@@ -41,6 +41,7 @@ export const scoreTable = (heads, rows) => `<table class="score"><thead><tr><th>
 
 export function mountTable(game) {
   mountChrome(game.id);
+  preloadSkin();
   document.title = `${game.title} · Dealers Choice`;
   const KEY = `dc.game.${game.id}.v1`;
   const OPTS = `dc.game.${game.id}.opts`;

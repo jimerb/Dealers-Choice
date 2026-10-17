@@ -1,13 +1,14 @@
 // Pinochle table: renders engine state, paces the computer players, saves progress locally.
 import * as P from './engine.js';
 import * as AI from './ai.js';
-import { cardHTML, backHTML, cardName, paintFelt } from '../../skin.js';
+import { cardHTML, backHTML, cardName, paintFelt, preloadSkin } from '../../skin.js';
 import { mountChrome, esc, playerName, playerAvatar, avatarHTML } from '../../header.js';
 import { play } from '../../core/sound.js';
 import { pickOpponents, castByName } from '../../core/cast.js';
 import { trumpPlaqueHTML } from '../../core/pieces.js';
 
 mountChrome('pinochle');
+preloadSkin();
 
 const SAVE_KEY = 'dc.pinochle.v1';
 const SYM = P.SUIT_SYMBOLS;

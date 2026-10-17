@@ -1,6 +1,6 @@
 // Shared site header + footer, "Table settings" dialog (name, portrait, card style, card back, table)
 // and the sound popover (game sounds / music volumes, mute).
-import { SKINS, currentSkin, currentBack, currentTable, savePref } from './skin.js';
+import { SKINS, currentSkin, currentBack, currentTable, savePref, preloadSkin } from './skin.js';
 import { initAudio, volumes, setVolume, setMuted, play } from './core/sound.js';
 import { PLAYER_PORTRAITS, playerPortrait } from './core/cast.js';
 
@@ -117,6 +117,13 @@ export function mountChrome(active) {
       <div class="dialog-actions"><button class="btn" type="button" id="cancel-settings">Cancel</button><button class="btn primary" type="submit">Save</button></div>
     </form>`;
     dlg.querySelectorAll('input[name=skin]').forEach((r) => r.addEventListener('change', () => { savePref('dc.skin', r.value); render(); }));
+    // Fetch the chosen back and table now, so the table doesn't flash blank cards after Save.
+    const backSel = dlg.querySelector('#set-back');
+    const tableSel = dlg.querySelector('#set-table');
+    const warmChoice = () => preloadSkin(skin, backSel.value, tableSel.value);
+    backSel.addEventListener('change', warmChoice);
+    tableSel.addEventListener('change', warmChoice);
+    warmChoice();
     dlg.querySelector('#cancel-settings').addEventListener('click', () => {
       if (before) savePref('dc.skin', before.skin); // undo the live preview
       dlg.close();
