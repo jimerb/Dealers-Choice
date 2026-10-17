@@ -1,6 +1,6 @@
-// Shared site header + footer, "Table settings" dialog (name, card style, card back)
+// Shared site header + footer, "Table settings" dialog (name, card style, card back, table)
 // and the sound popover (game sounds / music volumes, mute).
-import { SKINS, currentSkin, currentBack, savePref } from './skin.js';
+import { SKINS, currentSkin, currentBack, currentTable, savePref } from './skin.js';
 import { initAudio, volumes, setVolume, setMuted, play } from './core/sound.js';
 
 export const esc = (s) => String(s).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
@@ -16,6 +16,9 @@ const LOGO_SRC = '/assets/art/brand/logo-mark';
 const LOGO = `<img class="brand-mark" src="${LOGO_SRC}-64.png" srcset="${LOGO_SRC}-64.png 64w, ${LOGO_SRC}-180.png 180w" sizes="40px" width="40" height="40" alt="">`;
 const SPEAKER = (muted) => `<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
   <path d="M4 9h4l5-4v14l-5-4H4z"/>${muted ? '<path d="M17 9l5 6M22 9l-5 6"/>' : '<path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>'}</svg>`;
+
+const TABLE_LABEL = { 'felt-green': 'Green felt', 'felt-oxblood': 'Oxblood felt', 'felt-midnight': 'Midnight felt', walnut: 'Walnut', linen: 'Linen', slate: 'Slate', felt: 'Green felt' };
+const tableLabel = (t) => TABLE_LABEL[t] ?? t.replace(/-/g, ' ').replace(/^./, (ch) => ch.toUpperCase());
 
 export function mountChrome(active) {
   initAudio();
@@ -87,6 +90,9 @@ export function mountChrome(active) {
       <div class="field"><label for="set-back">Card back</label><select id="set-back">
         ${SKINS[skin].backs.map((b) => `<option value="${b}" ${b === currentBack() ? 'selected' : ''}>${b.replace('-', ' ')}</option>`).join('')}
       </select></div>
+      <div class="field"><label for="set-table">Table</label><select id="set-table">
+        ${SKINS[skin].tables.map((t) => `<option value="${t}" ${t === currentTable() ? 'selected' : ''}>${tableLabel(t)}</option>`).join('')}
+      </select></div>
       <div class="dialog-actions"><button class="btn" type="button" id="cancel-settings">Cancel</button><button class="btn primary" type="submit">Save</button></div>
     </form>`;
     dlg.querySelectorAll('input[name=skin]').forEach((r) => r.addEventListener('change', () => { savePref('dc.skin', r.value); render(); }));
@@ -100,6 +106,7 @@ export function mountChrome(active) {
       const name = dlg.querySelector('#set-name').value.trim().slice(0, 20);
       if (name) savePref('dc.name', name); else try { localStorage.removeItem('dc.name'); } catch { /* ignore */ }
       savePref(`dc.back.${currentSkin()}`, dlg.querySelector('#set-back').value);
+      savePref(`dc.table.${currentSkin()}`, dlg.querySelector('#set-table').value);
       before = null;
       dlg.close();
     });

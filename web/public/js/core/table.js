@@ -12,7 +12,7 @@
 //   view(state, ui) -> view model (see renderTable)
 //   delay?(state) -> ms
 // Engines may set state.fx = ['card', ...] (sound event names) on transitions.
-import { cardHTML, backHTML, cardName, tableBackground } from '../skin.js';
+import { cardHTML, backHTML, cardName, paintFelt } from '../skin.js';
 import { mountChrome, esc, playerName } from '../header.js';
 import { play } from './sound.js';
 
@@ -110,8 +110,7 @@ export function mountTable(game) {
     document.getElementById('scores').innerHTML = (vm.scores ?? []).map((s) =>
       `<span class="score-chip${s.us ? ' us' : ''}"><b>${esc(s.label)}</b>${esc(String(s.value))}</span>`).join('');
     const felt = document.getElementById('felt');
-    const bg = tableBackground();
-    felt.style.background = bg ? `linear-gradient(rgba(10,40,30,.25), rgba(10,40,30,.25)), ${bg}` : '';
+    paintFelt(felt);
     const areas = { top: [], west: [], east: [], south: [] };
     for (const st of vm.seats) { const r = seatHTML(st); areas[r.area].push(r.html); }
     const south = vm.seats.find((s) => s.pos === 'south');
