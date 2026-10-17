@@ -35,76 +35,184 @@ const take = (d, pred) => { const i = d.findIndex(pred); return i >= 0 ? d.splic
 const stockWaste = (d) => [P('stock', 'stock', down(d.splice(0))), P('waste', 'waste')];
 
 // ------------------------------------------------------------------ variants
+// `how` is each layout's How to play text; see ./howto.js for the fields.
+const klondikeHow = (draw) => ({
+  goal: `Move all 52 cards to the four foundations, building each suit up from ace to king.`,
+  deal: `Seven columns of one to seven cards, with only the top card of each face up. The other 24 cards wait in the stock.`,
+  play: [
+    `Build the columns <b>down in alternating colors</b>: a red 6 on a black 7.`,
+    `An ordered run moves as one: pick up its first card.`,
+    `A face-down card turns over by itself once it's uncovered.`,
+    `Only a king, or a run starting with a king, can fill an empty column.`,
+    draw === 1 ? `The stock turns <b>one card</b> at a time onto the waste, and the top waste card is in play.`
+      : `The stock turns <b>three cards</b> at a time onto the waste. Only the top one is in play; play it to free the one beneath.`,
+    `When the stock is empty, turn the waste back over and go again, as often as you like.`,
+    `Start each foundation with its ace, then add the 2, 3 and so on in the same suit. You can take a card back down from a foundation if it helps.`,
+  ],
+  fig: { cards: '7S 6H 5C 4D', caption: 'Down in alternating colors', fan: true },
+  tip: draw === 1 ? `Turn over the face-down cards in the longest columns first.` : `Playing even one card from the waste changes which cards turn up on the next pass.`,
+});
+
 export const VARIANTS = {
   klondike: {
     name: 'Klondike', group: 'One deck', blurb: 'The classic. Build down in alternating colors; draw one at a time.',
     rules: { build: 'down-alt', move: 'seq', empty: 'king', stock: 'waste', draw: 1, redeals: Infinity, foundToTab: true },
     deal(d) { const t = columns(d, [1, 2, 3, 4, 5, 6, 7], [1, 1, 1, 1, 1, 1, 1]); return [...stockWaste(d), ...fours('A'), ...t]; },
-    how: `<p><b>Goal:</b> move all 52 cards to the four foundations, building each suit up from ace to king.</p>
-      <p><b>Tableau:</b> seven columns; only the top card of each starts face up. Build down in alternating colors (red 6 on black 7). You can move a whole ordered run. Turn over face-down cards as they're uncovered. Only a king (or a run starting with a king) may fill an empty column.</p>
-      <p><b>Stock:</b> click it to turn one card onto the waste; the top waste card can be played. When the stock is empty, click it to turn the waste back over (unlimited passes).</p>`,
+    how: klondikeHow(1),
   },
   klondike3: {
     name: 'Klondike (draw 3)', group: 'One deck', blurb: 'Klondike turning three cards at a time.',
     rules: { build: 'down-alt', move: 'seq', empty: 'king', stock: 'waste', draw: 3, redeals: Infinity, foundToTab: true },
     deal(d) { return VARIANTS.klondike.deal(d); },
-    how: `<p>Played exactly like Klondike, except the stock turns <b>three cards at a time</b> and only the top one of the three is playable. Unlimited passes through the stock.</p>`,
+    how: klondikeHow(3),
   },
   yukon: {
     name: 'Yukon', group: 'One deck', blurb: 'Like Klondike with no stock: move any face-up group.',
     rules: { build: 'down-alt', move: 'any', empty: 'king', foundToTab: true },
     deal(d) { return [...fours('A'), ...columns(d, [1, 6, 7, 8, 9, 10, 11], [1, 5, 5, 5, 5, 5, 5])]; },
-    how: `<p><b>Goal:</b> build all four suits up from ace to king on the foundations.</p>
-      <p>All 52 cards are dealt to seven columns. Build down in alternating colors. Unlike Klondike, you can move <b>any face-up card together with everything on top of it</b>, even if those cards aren't in order. Only kings fill empty columns. There is no stock.</p>`,
+    how: {
+      goal: `Move all 52 cards to the four foundations, building each suit up from ace to king.`,
+      deal: `All 52 cards go into seven columns. The first column is a single card; the others have one to six face-down cards under five face-up ones. There is no stock.`,
+      play: [
+        `Build the columns <b>down in alternating colors</b>: a red 6 on a black 7.`,
+        `You can move <b>any face-up card</b> together with every card on top of it, even if they aren't in order.`,
+        `A face-down card turns over by itself once it's uncovered.`,
+        `Only a king (with whatever sits on it) can fill an empty column.`,
+        `Build the foundations up in suit from ace to king. You can take a card back down from a foundation if it helps.`,
+      ],
+      tip: `Since any face-up group can move, dig toward the face-down cards and the aces first.`,
+    },
   },
   spider: {
     name: 'Spider', group: 'Two decks', decks: 2, blurb: 'Build full suits from King to Ace; complete runs fly off.',
     rules: { build: 'down-any', moveBuild: 'down-suit', move: 'seq', empty: 'any', noFoundationDrops: true, stock: 'deal-all', spider: true },
     deal(d) { const t = columns(d, [6, 6, 6, 6, 5, 5, 5, 5, 5, 5], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]); return [P('stock', 'stock', down(d)), ...Array.from({ length: 8 }, (_, i) => F(`f${i}`, 'K')), ...t]; },
-    how: `<p><b>Goal:</b> assemble eight complete suits, each running king down to ace. A finished run leaves the table by itself.</p>
-      <p>Build down regardless of suit, but only runs of the <b>same suit</b> move together. Any card or run may fill an empty column. Click the stock to deal one card onto every column (all columns must have at least one card).</p>`,
+    how: {
+      goal: `Build eight complete suits, king down to ace, inside the columns. Each finished run clears itself off the table.`,
+      deal: `Two decks. Ten columns (four of six cards, six of five) with only the top card of each face up. The other 50 cards are the stock.`,
+      play: [
+        `Build <b>down by one in any suit</b>: any 8 can go on any 9.`,
+        `Only a run of the <b>same suit</b> moves as a group; a mixed run has to be taken apart.`,
+        `Any card or same-suit run can fill an empty column.`,
+        `The stock deals <b>one card onto every column</b> at once, five times in all. Every column needs at least one card before you deal.`,
+        `A full king-to-ace run in one suit leaves the table by itself.`,
+      ],
+      fig: { cards: 'KS QS JS 10S 9S', caption: 'A same-suit run moves together', fan: true },
+      tip: `Build in suit whenever you have the choice: mixed-suit stacks are hard to move later.`,
+    },
   },
   spiderette: {
     name: 'Spiderette', group: 'One deck', blurb: 'One-deck Spider on a Klondike layout.',
     rules: { build: 'down-any', moveBuild: 'down-suit', move: 'seq', empty: 'any', noFoundationDrops: true, stock: 'deal-all', spider: true },
     deal(d) { const t = columns(d, [1, 2, 3, 4, 5, 6, 7], [1, 1, 1, 1, 1, 1, 1]); return [P('stock', 'stock', down(d)), ...fours('K'), ...t]; },
-    how: `<p>One-deck Spider. Seven columns are dealt Klondike style. Build down regardless of suit; only same-suit runs move as a unit. Complete king-to-ace suits are removed automatically. Click the stock to deal a card to each column. Win by clearing all four suits.</p>`,
+    how: {
+      goal: `Build all four suits, king down to ace, inside the columns. Each finished run clears itself off the table.`,
+      deal: `One deck. Seven columns of one to seven cards with the top cards face up, as in Klondike. The other 24 cards are the stock.`,
+      play: [
+        `Build <b>down by one in any suit</b>.`,
+        `Only a run of the <b>same suit</b> moves as a group.`,
+        `Any card or same-suit run can fill an empty column.`,
+        `The stock deals one card onto every column (the last deal covers only the first three). Fill any empty column before you deal.`,
+        `A full king-to-ace run in one suit leaves the table by itself.`,
+      ],
+      tip: `Empty columns are precious: use them to sort your runs by suit.`,
+    },
   },
   fourfree: {
     name: 'Four Free', group: 'One deck', blurb: 'FreeCell-style: four free cells, build down in alternating colors.',
     rules: { build: 'down-alt', move: 'seq', supermove: true, empty: 'any' },
     deal(d) { return [...Array.from({ length: 4 }, (_, i) => P(`c${i}`, 'cell')), ...fours('A'), ...columns(d, [7, 7, 7, 7, 6, 6, 6, 6])]; },
-    how: `<p>All cards are dealt face up into eight columns. Four <b>free cells</b> each hold one card. Build columns down in alternating colors and foundations up in suit from ace. Runs can be moved as long as there are enough free cells and empty columns to move them one card at a time. Any card fills an empty column.</p>`,
+    how: {
+      goal: `Move all 52 cards to the four foundations, building each suit up from ace to king.`,
+      deal: `Every card is dealt face up into eight columns (four of seven, four of six). Four free cells and the four foundations start empty.`,
+      play: [
+        `Build the columns <b>down in alternating colors</b>.`,
+        `Each <b>free cell</b> holds any one card until you need it.`,
+        `Runs move too, as long as there are enough empty cells and columns to shift them one card at a time.`,
+        `Any card or run can fill an empty column.`,
+      ],
+      tip: `Keep a free cell open whenever you can; with every cell full you run out of moves fast.`,
+    },
   },
   eightoff: {
     name: 'Eight Off', group: 'One deck', blurb: 'Eight free cells (four start filled); build down in suit.',
     rules: { build: 'down-suit', move: 'seq', supermove: true, empty: 'king' },
     deal(d) { const t = columns(d, Array(8).fill(6)); return [...Array.from({ length: 8 }, (_, i) => P(`c${i}`, 'cell', i < 4 ? up(d.splice(0, 1)) : [])), ...fours('A'), ...t]; },
-    how: `<p>Eight columns of six face-up cards and eight free cells, four of which start with a card. Build columns down <b>in suit</b>; foundations up in suit from ace. Runs move if there's enough free space. Only kings fill empty columns.</p>`,
+    how: {
+      goal: `Move all 52 cards to the four foundations, building each suit up from ace to king.`,
+      deal: `Eight columns of six face-up cards. Eight free cells sit beside them, and four of the cells start with a card.`,
+      play: [
+        `Build the columns <b>down in the same suit</b>: 7♥ on 8♥.`,
+        `Each free cell holds one card.`,
+        `Runs move too, as long as there are enough empty cells and columns to shift them one card at a time.`,
+        `Only a king, or a run starting with a king, can fill an empty column.`,
+      ],
+      tip: `With eight cells it's easy to fill them all without noticing; clear them as you go.`,
+    },
   },
   seahaven: {
     name: 'Seahaven Towers', group: 'One deck', blurb: 'Ten columns, four cells; build down in suit, kings to empty columns.',
     rules: { build: 'down-suit', move: 'seq', supermove: true, empty: 'king' },
     deal(d) { const t = columns(d, Array(10).fill(5)); return [...Array.from({ length: 4 }, (_, i) => P(`c${i}`, 'cell', i === 1 || i === 2 ? up(d.splice(0, 1)) : [])), ...fours('A'), ...t]; },
-    how: `<p>Ten columns of five face-up cards, plus four free cells (two start occupied). Build down in suit, foundations up in suit from ace. Runs move given enough free cells. Only kings fill empty columns.</p>`,
+    how: {
+      goal: `Move all 52 cards to the four foundations, building each suit up from ace to king.`,
+      deal: `Ten columns of five face-up cards, plus four free cells. Two of the cells start with a card.`,
+      play: [
+        `Build the columns <b>down in the same suit</b>.`,
+        `Each free cell holds one card.`,
+        `Runs move too, as long as there are enough empty cells and columns to shift them one card at a time.`,
+        `Only a king, or a run starting with a king, can fill an empty column.`,
+      ],
+      tip: `Kings buried deep in a column are trouble; plan early how to free them.`,
+    },
   },
   bakers: {
     name: "Baker's Dozen", group: 'One deck', blurb: 'Thirteen columns of four; build down regardless of suit. Kings start at the bottom.',
     rules: { build: 'down-any', move: 'single', empty: 'none' },
     deal(d) { const t = columns(d, Array(13).fill(4)); for (const c of t) c.cards.sort((a, b) => (b.rank === 'K') - (a.rank === 'K')); return [...fours('A'), ...t]; },
-    how: `<p>Thirteen columns of four face-up cards; kings are moved to the bottom of their columns at the start. Move one card at a time, building down regardless of suit. Empty columns can't be filled. Build the foundations up in suit from ace to king.</p>`,
+    how: {
+      goal: `Move all 52 cards to the four foundations, building each suit up from ace to king.`,
+      deal: `Thirteen columns of four face-up cards. Any king is moved to the bottom of its column before play starts.`,
+      play: [
+        `Build the columns down by one <b>in any suit</b>.`,
+        `Only the top card of a column moves, one card at a time.`,
+        `An emptied column stays empty for good.`,
+        `Build the foundations up in suit from ace to king.`,
+      ],
+      tip: `Find the buried aces and twos first, then plan the moves that free them.`,
+    },
   },
   castle: {
     name: 'Beleaguered Castle', group: 'One deck', blurb: 'Aces start on the foundations; build down regardless of suit, one card at a time.',
     rules: { build: 'down-any', move: 'single', empty: 'any' },
     deal(d) { const f = fours('A'); f.forEach((x, i) => { x.cards = up([take(d, (c) => c.rank === 'A' && c.suit === 'SHCD'[i])]); }); return [...f, ...columns(d, Array(8).fill(6))]; },
-    how: `<p>The four aces start on the foundations; the rest are dealt into eight rows. Move one card at a time, building down regardless of suit. Any card can fill an empty row. Build foundations up in suit to the kings.</p>`,
+    how: {
+      goal: `Move all 52 cards to the four foundations, building each suit up to the king.`,
+      deal: `The four aces start on the foundations. The other 48 cards are dealt face up into eight columns of six.`,
+      play: [
+        `Build the columns down by one <b>in any suit</b>.`,
+        `Only the top card of a column moves, one card at a time.`,
+        `Any card can fill an empty column.`,
+        `Build the foundations up <b>in suit</b>, from the aces to the kings.`,
+      ],
+      tip: `An empty column is your best tool; think twice before filling it.`,
+    },
   },
   forty: {
     name: 'Forty Thieves', group: 'Two decks', decks: 2, blurb: 'Ten columns of four; build down in suit, one card at a time. One pass through the stock.',
     rules: { build: 'down-suit', move: 'single', empty: 'any', stock: 'waste', draw: 1, redeals: 0 },
     deal(d) { const t = columns(d, Array(10).fill(4)); return [...stockWaste(d), ...Array.from({ length: 8 }, (_, i) => F(`f${i}`, 'A')), ...t]; },
-    how: `<p>Two decks. Ten columns of four face-up cards. Build down in suit, moving one card at a time; any card fills an empty column. Turn the stock one card at a time, with <b>no redeal</b>. Build all eight foundations up in suit from ace.</p>`,
+    how: {
+      goal: `Move all 104 cards to the eight foundations, building each one up in suit from ace to king.`,
+      deal: `Two decks. Ten columns of four face-up cards. The other 64 cards are the stock.`,
+      play: [
+        `Build the columns down <b>in the same suit</b>.`,
+        `Only the top card of a column moves, one card at a time.`,
+        `Any card can fill an empty column.`,
+        `The stock turns one card at a time onto the waste, and there is <b>only one pass</b>.`,
+      ],
+      tip: `An empty column gives you room to rearrange; try to clear one early.`,
+    },
   },
   canfield: {
     name: 'Canfield', group: 'One deck', blurb: 'Foundations start from a random rank and wrap around; build down in alternating colors.',
@@ -116,21 +224,51 @@ export const VARIANTS = {
       const t = columns(d, [1, 1, 1, 1]);
       return [...stockWaste(d), P('reserve', 'reserve', [...down(reserve.slice(0, 12)), ...up(reserve.slice(12))]), ...f, ...t];
     },
-    how: `<p>A 13-card <b>reserve</b>, four tableau piles and a foundation card that sets the starting rank for all foundations (they build up in suit and wrap from king to ace).</p>
-      <p>Build tableau piles down in alternating colors, wrapping from ace to king; move runs freely. Empty piles fill automatically from the reserve; when it's empty, fill them with any card. The stock turns three at a time with unlimited passes.</p>`,
+    how: {
+      goal: `Move all 52 cards to the four foundations, building each suit up from the starting rank.`,
+      deal: `One card goes to the first foundation and sets the <b>starting rank</b> for all four. Beside it are a 13-card reserve (only its top card face up) and four columns of one card. The other 34 cards are the stock.`,
+      play: [
+        `Foundations build up in suit from the starting rank and wrap from king to ace: one that starts on 9 goes 9, 10, J, Q, K, A, 2…`,
+        `Columns build <b>down in alternating colors</b>, also wrapping (a black king can go on a red ace). Ordered runs move together.`,
+        `An empty column is filled from the reserve automatically. Once the reserve is empty, any card can fill it.`,
+        `The top reserve card can go to a foundation or a column.`,
+        `The stock turns <b>three cards</b> at a time; only the top waste card is in play. Go through it as often as you like.`,
+      ],
+      tip: `The reserve is the hard part: get its cards into play as fast as you can.`,
+    },
   },
   scorpion: {
     name: 'Scorpion', group: 'One deck', blurb: 'Build down in suit; move any face-up group. Three extra cards wait in the stock.',
     rules: { build: 'down-suit', move: 'any', empty: 'king', noFoundationDrops: true, stock: 'deal-first3', spider: true },
     deal(d) { const t = columns(d, Array(7).fill(7), [4, 4, 4, 4, 7, 7, 7]); return [P('stock', 'stock', down(d)), ...fours('K'), ...t]; },
-    how: `<p><b>Goal:</b> build four complete suits, king down to ace, within the columns; finished suits leave the table.</p>
-      <p>Seven columns of seven (three cards face down in each of the first four). Build down in suit, and move any face-up card with everything above it. Only kings fill empty columns. The three stock cards are dealt to the first three columns when you click the stock.</p>`,
+    how: {
+      goal: `Build four complete suits, king down to ace, inside the columns. Each finished run leaves the table.`,
+      deal: `Seven columns of seven cards. The first four columns have three face-down cards at the bottom; everything else is face up. Three cards are left in the stock.`,
+      play: [
+        `Build down <b>in the same suit</b>.`,
+        `You can move <b>any face-up card</b> together with everything on top of it, in order or not.`,
+        `Only a king (with the cards on it) can fill an empty column.`,
+        `The stock deals its three cards onto the first three columns.`,
+        `A full king-to-ace run in one suit leaves the table by itself.`,
+      ],
+      tip: `Free the face-down cards in the first four columns early; you can't win while they stay hidden.`,
+    },
   },
   flower: {
     name: 'Flower Garden', group: 'One deck', blurb: 'Six beds of six; the 16-card bouquet is all available. Build down regardless of suit.',
     rules: { build: 'down-any', move: 'single', empty: 'any' },
     deal(d) { const t = columns(d, Array(6).fill(6)); return [P('bouquet', 'bouquet', up(d)), ...fours('A'), ...t]; },
-    how: `<p>Six "flower beds" of six face-up cards and a <b>bouquet</b> of 16 cards, every one of which can be played. Build the beds down regardless of suit, one card at a time; any card fills an empty bed. Build foundations up in suit from ace.</p>`,
+    how: {
+      goal: `Move all 52 cards to the four foundations, building each suit up from ace to king.`,
+      deal: `Six columns ("flower beds") of six face-up cards. The other 16 cards form the <b>bouquet</b>, and every one of them is in play.`,
+      play: [
+        `Build the beds down by one <b>in any suit</b>, one card at a time.`,
+        `Any bouquet card can go to a bed or a foundation at any time.`,
+        `Any card can fill an empty bed.`,
+        `Build the foundations up in suit from ace to king.`,
+      ],
+      tip: `Bouquet cards never get buried, so leave them there until you need them.`,
+    },
   },
   golf: {
     name: 'Golf', group: 'One deck', blurb: 'Clear the seven columns onto the pile, one rank up or down. Fewer cards left is a better score.',
@@ -138,7 +276,19 @@ export const VARIANTS = {
     deal(d) { const t = columns(d, Array(7).fill(5)); const first = d.shift(); return [P('stock', 'stock', down(d)), F('pile', 'any', { dir: 'updown', suit: 'any', golf: true, cards: up([first]) }), ...t]; },
     won: (s) => tabs(s).every((p) => !p.cards.length),
     score: (s) => tabs(s).reduce((t, p) => t + p.cards.length, 0), scoreName: 'Cards left',
-    how: `<p>Seven columns of five face-up cards. Move the top card of any column onto the pile if it is <b>one rank higher or lower</b> than the pile's top card (suits don't matter, no wrapping). When stuck, click the stock to turn a new card onto the pile. Clear every column to win; otherwise your score is the number of cards left (lower is better).</p>`,
+    how: {
+      goal: `Clear all seven columns onto the pile. As in real golf, the fewer cards left over, the better.`,
+      deal: `Seven columns of five face-up cards. One card from the stock starts the pile, and 16 cards stay in the stock.`,
+      play: [
+        `Move the top card of any column onto the pile if it is <b>one rank higher or lower</b> than the pile's top card. Suits don't matter.`,
+        `Kings and aces don't connect: only a queen can go on a king, and only a 2 on an ace.`,
+        `Cards never move between columns.`,
+        `When you're stuck, turn the next stock card onto the pile.`,
+      ],
+      fig: { cards: '6S 7H 8C 7D', caption: 'Up or down by one, in any suit', fan: true },
+      score: `Clear every column to win. Otherwise your score is the number of cards left in the columns: lower is better.`,
+      tip: `Before taking an easy single card, look for the longest chain you could make instead.`,
+    },
   },
   acesup: {
     name: 'Aces Up', group: 'One deck', blurb: 'Discard any card when a higher card of its suit shows on another column. Leave only the four aces.',
@@ -146,7 +296,18 @@ export const VARIANTS = {
     deal(d) { const t = columns(d, [1, 1, 1, 1]); return [P('stock', 'stock', down(d)), F('discard', 'any', { acesup: true }), ...t]; },
     won: (s) => tabs(s).every((p) => p.cards.length === 1 && p.cards[0].rank === 'A') && !pile(s, 'stock').cards.length,
     score: (s) => pile(s, 'discard').cards.length, scoreName: 'Discarded',
-    how: `<p>Four columns. Move a card to the discard pile when <b>another column shows a higher card of the same suit</b> (aces are high). Any top card can fill an empty column. Click the stock to deal a card onto each column. Win by ending with only the four aces on the table.</p>`,
+    how: {
+      goal: `Discard every card except the four aces.`,
+      deal: `Four columns with one face-up card each. The other 48 cards are the stock.`,
+      play: [
+        `Discard the top card of a column when <b>another column shows a higher card of the same suit</b>. Aces are high.`,
+        `An empty column can take the top card of any other column.`,
+        `When you're stuck, deal one card onto each column from the stock.`,
+      ],
+      fig: { cards: '5H · KH', caption: 'The 5♥ can go, because a higher heart shows on another column' },
+      score: `You win when the stock is empty and only the four aces are left, one in each column. The score counts the cards you discarded.`,
+      tip: `Use an empty column to dig out a buried ace.`,
+    },
   },
 
   // ---------------------------------------------------------------- one deck, added

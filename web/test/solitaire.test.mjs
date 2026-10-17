@@ -1,7 +1,7 @@
 // Solitaire: every catalog entry exists with rules; random legal play never loses or duplicates a card.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { VARIANTS, CUSTOM, SOLITAIRE, newGame, grab, canDrop, move, clickStock, autoPlay, undo, isWon, makeRng } from './_sol.mjs';
+import { VARIANTS, CUSTOM, SOLITAIRE, howtoHTML, controlsFor, newGame, grab, canDrop, move, clickStock, autoPlay, undo, isWon, makeRng } from './_sol.mjs';
 
 test('every parlor entry is playable and has How to play text', () => {
   const ids = SOLITAIRE.flatMap((g) => g.games.map(([, id]) => id));
@@ -9,7 +9,18 @@ test('every parlor entry is playable and has How to play text', () => {
   for (const id of ids) {
     const v = VARIANTS[id] ?? CUSTOM[id];
     assert.ok(v, `missing layout ${id}`);
-    assert.ok(v.how && v.how.length > 120, `${id} needs How to play text`);
+    if (typeof v.how === 'string') continue; // LEGACY
+    const h = v.how;
+    assert.ok(h && typeof h === 'object', `${id} needs How to play content`);
+    for (const key of ['goal', 'deal']) assert.ok(typeof h[key] === 'string' && h[key].length >= 20, `${id}: How to play needs a ${key}`);
+    assert.ok(Array.isArray(h.play) && h.play.length >= 2 && h.play.every((t) => typeof t === 'string' && t.length > 10), `${id}: How to play needs move bullets`);
+    const c = controlsFor(v);
+    assert.match(c.mouse, /\bClick\b/, `${id}: mouse controls`);
+    assert.match(c.touch, /\bTap\b/, `${id}: touch controls`);
+    assert.doesNotMatch(c.touch, /click/i, `${id}: touch controls mention clicking`);
+    const html = howtoHTML(v);
+    for (const title of ['Goal', 'The deal', 'How to play', 'Controls', 'With a mouse', 'On a touch screen']) assert.ok(html.includes(`>${title}<`), `${id}: missing "${title}"`);
+    assert.doesNotMatch(html, /[{}]|undefined/, `${id}: unfilled text`);
   }
 });
 
