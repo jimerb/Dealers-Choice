@@ -46,8 +46,17 @@ function gridHTML(s, size, ls, extraRight = '') {
 
 const pokersquare = {
   id: 'pokersquare', name: 'Poker Square', group: 'One deck', blurb: 'Place 25 cards in a 5×5 grid to make the best poker hands in every row and column.',
-  how: `<p>Cards are turned up one at a time; place each one in any empty square of a 5 × 5 grid. Once placed, a card can't move. When the grid is full, every row and column is scored as a poker hand:</p>
-    <p>Royal flush 100 · straight flush 75 · four of a kind 50 · full house 25 · flush 20 · straight 15 · three of a kind 10 · two pair 5 · one pair 2.</p><p>Score <b>70 or more</b> to win.</p>`,
+  how: {
+    goal: `Score 70 or more by making poker hands in the five rows and five columns of a grid.`,
+    deal: `An empty 5 × 5 grid. Cards come off the deck one at a time.`,
+    play: [
+      `Put each card in any empty square. Once placed, a card stays put.`,
+      `When all 25 squares are full, every row and every column is scored as a poker hand.`,
+    ],
+    score: `Royal flush 100 · straight flush 75 · four of a kind 50 · full house 25 · flush 20 · straight 15 · three of a kind 10 · two pair 5 · one pair 2. Reach <b>70</b> to win.`,
+    controls: `{Click} an empty square to place the next card.`,
+    tip: `Save the rows for flushes and the columns for pairs and full houses.`,
+  },
   newGame(seed) { const d = freshDeck(seed); return { variant: 'pokersquare', moves: 0, grid: Array(25).fill(null), next: up(d.slice(0, 25)) }; },
   render(s) {
     const ls = lines(s.grid, 5, pokerHand);
@@ -76,8 +85,17 @@ const cribLine = (starter) => (cards) => {
 };
 const cribsquare = {
   id: 'cribsquare', name: 'Cribbage Square', group: 'One deck', blurb: 'Fill a 4×4 grid with cribbage hands; the starter counts in every one.',
-  how: `<p>Cards turn up one at a time. Put each one in an empty square of a 4 × 4 grid or on the <b>waste</b> (it holds at most four cards). When the grid is full, the next card is the <b>starter</b>.</p>
-    <p>Each row and each column is scored as a cribbage hand together with the starter: fifteens 2 each, pairs 2, runs 1 per card, flushes 4 (5 with the starter), the jack of the starter's suit 1. A jack starter adds 2 once ("his heels"). Score <b>75 or more</b> to win.</p>`,
+  how: {
+    goal: `Score 75 or more with cribbage hands in the four rows and four columns of a grid.`,
+    deal: `An empty 4 × 4 grid and an empty waste. Cards come off the deck one at a time.`,
+    play: [
+      `Put each card in an empty square, or on the waste (it holds up to four cards). Placed cards stay put.`,
+      `When the grid is full, the next card becomes the <b>starter</b>, which counts in all eight hands.`,
+    ],
+    score: `Each row and column is scored with the starter, like a cribbage hand: 2 for each fifteen and each pair, 1 per card in a run, 4 for a flush (5 if the starter matches) and 1 for a jack of the starter's suit. A jack as the starter adds 2 once. Reach <b>75</b> to win.`,
+    controls: `{Click} an empty square to place the card, or {click} the waste to throw it away.`,
+    tip: `Fives and ten-cards make fifteens, so spread them across the rows and columns.`,
+  },
   newGame(seed) { const d = freshDeck(seed); return { variant: 'cribsquare', moves: 0, grid: Array(16).fill(null), next: up(d), waste: [], starter: null }; },
   render(s) {
     const ls = lines(s.grid, 4, cribLine(s.starter));
@@ -136,9 +154,17 @@ function gapOK(grid, card, r, c) {
 }
 const gaps = {
   id: 'gaps', name: 'Gaps', group: 'One deck', blurb: 'Slide cards into the gaps to sort four rows from 2 to king.',
-  how: `<p><b>Goal:</b> arrange four rows, one suit each, from 2 up to king.</p>
-    <p>All cards are dealt in four rows of 13 with the twos at the left; the aces are removed, leaving four gaps. Move a card into a gap if it is the <b>next higher card of the same suit</b> as the card to the gap's left, or the <b>next lower card of the same suit</b> as the card to its right. A gap at the start of a row takes any 2. Click a card, then click the gap.</p>
-    <p>When you're stuck, click <b>Redeal</b>: cards already in order at the left of each row stay; everything else is shuffled and dealt again. Two redeals.</p>`,
+  how: {
+    goal: `Sort four rows, one suit each, from 2 up to king.`,
+    deal: `All cards are dealt face up in four rows of 13, with a 2 at the start of each row. The aces are taken out, leaving four gaps.`,
+    play: [
+      `A gap can take the <b>next higher card of the same suit</b> as the card on its left, or the <b>next lower card of the same suit</b> as the card on its right.`,
+      `A gap at the far left of a row takes a 2.`,
+      `When you're stuck, <b>Redeal</b>: cards already in order from the left of each row stay, and the rest are shuffled and dealt again, leaving new gaps. You get two redeals.`,
+    ],
+    controls: `{Click} a card, then {click} the gap it should move into. {Click} Redeal when you're stuck.`,
+    tip: `Each move opens a new gap; check what can fill it before you move.`,
+  },
   newGame(seed) {
     const d = freshDeck(seed);
     const twos = SUITS.map((su) => d.find((c) => c.rank === '2' && c.suit === su));
@@ -189,8 +215,20 @@ const gaps = {
 // ------------------------------------------------------------------ Slide
 const slide = {
   id: 'slide', name: 'Slide', group: 'One deck', blurb: 'Slide rows left and right to line up three of a kind in a column.',
-  how: `<p>Twenty-four cards sit in four rows of six. Use the arrows to <b>slide a row</b> left or right: the next stock card enters at one end and the card at the other end drops off (it goes to the waste, unless the row now has two cards of the same rank, in which case it goes back under the stock).</p>
-    <p>Whenever three cards of the same rank line up in one column, they're removed. The first set scores 1 × its rank, the second 2 × its rank, and so on (A=1, J=11, Q=12, K=13). Click an empty space to drop the next stock card straight into it. Score <b>300 or more</b> to win.</p>`,
+  how: {
+    goal: `Score 300 or more by lining up three cards of the same rank in a column.`,
+    deal: `Twenty-four cards in four rows of six. The other 28 are the stock, with its next card showing.`,
+    play: [
+      `<b>Slide</b> a row left or right: the next stock card comes in at one end and the card at the other end drops off.`,
+      `A card that drops off goes to the waste, unless the row now holds two cards of the same rank; then it goes back under the stock to come round again.`,
+      `Three cards of the same rank in one column are removed at once.`,
+      `You can also drop the next stock card straight into an empty space.`,
+      `The game ends when the stock runs out.`,
+    ],
+    score: `Each set scores its rank times its place in line: the first set 1 × rank, the second 2 × rank, and so on (A = 1, J = 11, Q = 12, K = 13). Reach <b>300</b> to win.`,
+    controls: `{Click} the ◀ or ▶ arrow beside a row to slide it. {Click} an empty space to drop the next card there.`,
+    tip: `Later sets are worth more, so high ranks pay off best late in the game.`,
+  },
   newGame(seed) { const d = up(freshDeck(seed)); return { variant: 'slide', moves: 0, grid: [0, 1, 2, 3].map((r) => d.slice(r * 6, r * 6 + 6)), stock: d.slice(24), waste: [], sets: 0, score: 0 }; },
   render(s) {
     const rows = s.grid.map((row, r) => `<div class="slide-row"><button class="btn sm" data-c="slide" data-r="${r}" data-dir="left" aria-label="Slide row ${r + 1} left" ${s.stock.length ? '' : 'disabled'}>◀</button>

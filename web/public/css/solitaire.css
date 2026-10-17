@@ -1,5 +1,6 @@
 /* Solitaire parlor */
-.sol-felt { display: block; min-height: 560px; padding: 18px; position: relative; }
+.sol-felt { display: block; min-height: 560px; padding: 18px; position: relative; touch-action: manipulation; } /* no double-tap zoom: a second tap sends a card home */
+.sol-intro { margin: 12px 0 0; max-width: 760px; color: var(--ink-2); font-size: 15px; }
 .sol-board { --card-w: clamp(52px, 6.6vw, 84px); display: flex; flex-direction: column; gap: 18px; }
 .sol-board.wide { --card-w: clamp(44px, 5.4vw, 72px); }
 .sol-top { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }

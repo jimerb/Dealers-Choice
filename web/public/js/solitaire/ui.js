@@ -1,11 +1,13 @@
 // Solitaire parlor UI: layout picker + board for both the rules-driven "build" engine and the
-// custom games. Click a card (or stack) then a destination; double-click sends a card home.
+// custom games. Click a card (or stack) then a destination; double-click, or a second tap on the
+// selected card, sends it home (double-click alone is unreliable on touch screens).
 import { VARIANTS, newGame, grab, move, clickStock, autoTarget, autoPlay, isWon, undo, scoreOf, scoreName } from './engine.js';
 import { CUSTOM } from './custom/index.js';
 import { cardHTML, backHTML, cardName, paintFelt, preloadSkin } from '../skin.js';
 import { mountChrome, esc } from '../header.js';
 import { play } from '../core/sound.js';
 import { SOLITAIRE } from '../catalog.js';
+import { howtoHTML, controlsFor } from './howto.js';
 
 mountChrome('solitaire');
 preloadSkin();
@@ -16,6 +18,7 @@ let variant = known(params.get('v')) ? params.get('v') : null;
 let state = null, sel = null, customHistory = [], timer = null;
 const KEY = (v) => `dc.sol.${v}.v2`;
 const STATS = 'dc.sol.stats';
+const SEEN = 'dc.sol.howto.seen', AUTO = 'dc.sol.howto.auto'; // layouts whose How to play was shown; '0' = don't auto-show
 const isCustom = () => Boolean(CUSTOM[variant]);
 const mod = () => CUSTOM[variant];
 const info = (id) => VARIANTS[id] ?? CUSTOM[id];
@@ -23,6 +26,9 @@ const info = (id) => VARIANTS[id] ?? CUSTOM[id];
 const readStats = () => { try { return JSON.parse(localStorage.getItem(STATS) || '{}'); } catch { return {}; } };
 function bumpStat(v, field) { const st = readStats(); st[v] = st[v] ?? { played: 0, won: 0 }; st[v][field]++; try { localStorage.setItem(STATS, JSON.stringify(st)); } catch { /* ignore */ } }
 function save() { try { localStorage.setItem(KEY(variant), JSON.stringify(isCustom() ? state : { ...state, history: state.history.slice(-30) })); } catch { /* ignore */ } }
+const readSeen = () => { try { return JSON.parse(localStorage.getItem(SEEN) || '[]'); } catch { return []; } };
+function markSeen(v) { const seen = readSeen(); if (!seen.includes(v)) try { localStorage.setItem(SEEN, JSON.stringify([...seen, v])); } catch { /* ignore */ } }
+const autoShow = () => { try { return localStorage.getItem(AUTO) !== '0'; } catch { return true; } };
 function load(v) { try { const s = JSON.parse(localStorage.getItem(KEY(v))); return s?.variant === v ? s : null; } catch { return null; } }
 
 const won = () => (isCustom() ? mod().isWon(state) : isWon(state));
@@ -37,6 +43,7 @@ function start(v, fresh = false) {
   state.wonCounted = state.wonCounted ?? false;
   play('shuffle');
   save(); render(); startTimer();
+  if (autoShow() && !readSeen().includes(v)) showRules(); // first visit to this layout
 }
 
 function startTimer() {
@@ -74,6 +81,7 @@ function renderChooser() {
   const stats = readStats();
   chooser.innerHTML = `<div class="section-head" style="margin-top:8px"><h2>Solitaire parlor</h2><span style="color:var(--ink-3)">${SOLITAIRE.reduce((t, g) => t + g.games.length, 0)} layouts</span></div>
     <img class="sol-banner" src="assets/art/lobby/solitaire-banner.webp" width="1536" height="480" alt="" decoding="async">
+    <p class="sol-intro">Pick a layout to deal. On the table, click or tap a card, then the spot where it should go; double-click it, or tap it a second time, to send it home. Every layout has a <b>How to play</b> guide with its rules.</p>
     ${SOLITAIRE.map((g) => `<div class="group"><div class="group-head"><h3>${g.title}</h3></div><div class="tiles">${g.games.map(([name, id]) => {
       const v = info(id);
       return `<a class="tile ready sol-tile" href="solitaire.html?v=${id}" data-v="${id}"><div class="tile-body"><b>${esc(name)}</b><span>${esc(v.blurb)}</span>
@@ -141,6 +149,8 @@ function render() {
   document.getElementById('sol-title').textContent = v.name;
   document.title = `${v.name} · Dealers Choice`;
   document.getElementById('sol-sub').textContent = v.blurb;
+  const c = controlsFor(v);
+  document.getElementById('sol-hint').textContent = `${matchMedia('(pointer: coarse)').matches ? c.touch : c.mouse} Stuck? Open How to play.`;
   const custom = isCustom();
   const body = custom ? mod().render(state) : renderStandard();
   const status = custom ? mod().status(state) : `${scoreName(state)}: ${scoreOf(state)}`;
@@ -178,7 +188,9 @@ area.addEventListener('click', (e) => {
   if (sel) {
     const to = cardEl?.dataset.pile ?? dropEl?.dataset.drop;
     if (to && to !== sel.pile) { const n = move(state, sel.pile, sel.i, to); if (n) return set(n); play('error'); }
-    if (cardEl && cardEl.dataset.pile === sel.pile && Number(cardEl.dataset.i) === sel.i) { sel = null; return render(); }
+    // A second click or tap on the selected card sends it to its best spot (this is also how double-click works).
+    if (cardEl && cardEl.dataset.pile === sel.pile && Number(cardEl.dataset.i) === sel.i) return sendHome(sel.pile, sel.i);
+    if (!to) { sel = null; return render(); } // the bare felt lets go
   }
   if (cardEl) {
     const pile = state.piles.find((p) => p.id === cardEl.dataset.pile);
@@ -188,13 +200,12 @@ area.addEventListener('click', (e) => {
     render();
   }
 });
-area.addEventListener('dblclick', (e) => {
-  if (!variant || isCustom()) return;
-  const cardEl = e.target.closest('[data-pile]');
-  if (!cardEl) return;
-  const to = autoTarget(state, cardEl.dataset.pile, Number(cardEl.dataset.i));
-  if (to) set(move(state, cardEl.dataset.pile, Number(cardEl.dataset.i), to));
-});
+function sendHome(pile, i) {
+  const to = autoTarget(state, pile, i);
+  sel = null;
+  if (to) return set(move(state, pile, i, to));
+  render();
+}
 
 function command(c) {
   if (c === 'new') return start(variant, true);
@@ -209,14 +220,20 @@ function command(c) {
     sel = null; save(); render(); return play('flip');
   }
   if (c === 'auto') { const n = autoPlay(state); if (n === state) return play('error'); return set(n, 'trick'); }
-  if (c === 'rules') {
-    const d = document.getElementById('sol-rules');
-    d.querySelector('#sol-rules-title').textContent = `How to play ${info(variant).name}`;
-    d.querySelector('#sol-rules-body').innerHTML = info(variant).how;
-    return d.showModal();
-  }
+  if (c === 'rules') return showRules();
   if (c === 'menu') { clearInterval(timer); variant = null; history.replaceState(null, '', 'solitaire.html'); return render(); }
 }
+function showRules() {
+  const d = document.getElementById('sol-rules');
+  d.querySelector('#sol-rules-title').textContent = `How to play ${info(variant).name}`;
+  const body = d.querySelector('#sol-rules-body');
+  body.innerHTML = howtoHTML(info(variant));
+  d.querySelector('#sol-howto-auto').checked = autoShow();
+  markSeen(variant);
+  if (!d.open) d.showModal();
+  body.scrollTop = 0;
+}
+document.getElementById('sol-howto-auto').addEventListener('change', (e) => { try { localStorage.setItem(AUTO, e.target.checked ? '1' : '0'); } catch { /* ignore */ } });
 board.addEventListener('click', (e) => { const b = e.target.closest('[data-cmd]'); if (b) command(b.dataset.cmd); });
 chooser.addEventListener('click', (e) => { const t = e.target.closest('[data-v]'); if (t) { e.preventDefault(); start(t.dataset.v); } });
 window.addEventListener('dc:settings', () => (variant ? render() : renderChooser()));

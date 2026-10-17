@@ -36,8 +36,19 @@ function pickWith(s, key, { complete, max }) {
 
 const baroness = {
   id: 'baroness', name: 'Baroness', group: 'One deck', blurb: 'Remove pairs that add up to 13; kings go alone.',
-  how: `<p><b>Goal:</b> remove every card.</p><p>Click two exposed cards (the top card of each of the five columns) that <b>add up to 13</b> to remove them: A+Q, 2+J, 3+10, 4+9, 5+8, 6+7. A king (13) is removed by itself. Cards never move between columns.</p>
-    <p>When you're stuck, click the stock to deal a new row of five cards, one on each column. The last two cards are dealt onto the first two columns.</p>`,
+  how: {
+    goal: `Remove all 52 cards.`,
+    deal: `Five columns with one card each. The other 47 cards are the stock.`,
+    play: [
+      `Remove two top cards that <b>add up to 13</b>: A+Q, 2+J, 3+10, 4+9, 5+8 or 6+7. Aces count 1, jacks 11 and queens 12.`,
+      `A king (13) is removed on its own.`,
+      `Cards never move between columns.`,
+      `When you're stuck, deal a new row of five cards, one on each column. The last two cards land on the first two columns.`,
+    ],
+    fig: { cards: 'AS + QH · 6C + 7D · KS', caption: 'Pairs that make 13; a king goes alone' },
+    controls: `{Click} two top cards that make 13 and they disappear. A king goes with a single {click}. {Click} a selected card again to let go of it. {Click} the stock to deal a new row.`,
+    tip: `Before you deal, check every pair: the new row covers all five columns.`,
+  },
   newGame(seed) { const d = freshDeck(seed); return { variant: 'baroness', moves: 0, cols: [0, 1, 2, 3, 4].map((i) => up([d[i]])), stock: d.slice(5), found: [], sel: [] }; },
   render(s) {
     return `<div class="sol-board"><div class="sol-top"><div class="sol-pile">${s.stock.length ? `<button class="sol-flat" data-c="stock" aria-label="Deal">${backHTML()}</button>` : emptySlot('Empty')}<span class="sol-label">${s.stock.length}</span></div>
@@ -62,7 +73,17 @@ const baroness = {
 
 const nestor = {
   id: 'nestor', name: 'Nestor', group: 'One deck', blurb: 'Pair up cards of the same rank from the columns and the reserve.',
-  how: `<p><b>Goal:</b> remove every card in pairs.</p><p>Six columns of seven cards plus ten single reserve cards. Click two available cards <b>of the same rank</b> (two 5s, two jacks…) to remove them. Available cards are the top card of each column and every reserve card. There's no stock.</p>`,
+  how: {
+    goal: `Remove all 52 cards in pairs.`,
+    deal: `Six columns of seven face-up cards and a row of ten reserve cards. There is no stock.`,
+    play: [
+      `Remove two available cards <b>of the same rank</b>: two 5s, two jacks.`,
+      `The available cards are the top card of each column and every card in the reserve row.`,
+      `Cards never move between columns.`,
+    ],
+    controls: `{Click} two available cards of the same rank to remove them. {Click} a selected card again to let go of it.`,
+    tip: `When you have a choice of pairs, take the one that uncovers the most useful card.`,
+  },
   newGame(seed) { const d = freshDeck(seed); return { variant: 'nestor', moves: 0, cols: [0, 1, 2, 3, 4, 5].map((i) => up(d.slice(i * 7, i * 7 + 7))), reserve: up(d.slice(42)), found: [], sel: [] }; },
   render(s) { return `<div class="sol-board">${colsRender(s, { reserve: true })}</div>`; },
   click(s, d) { return pickWith(s, d.k, { max: 2, complete: (cs) => (cs.length === 2 ? (cs[0].rank === cs[1].rank ? 'remove' : 'bad') : 'wait') }); },
@@ -84,7 +105,19 @@ export function isTriplet(cs) {
 }
 const triplets = {
   id: 'triplets', name: 'Triplets', group: 'One deck', blurb: 'Remove three cards in sequence at a time; end with one card left.',
-  how: `<p><b>Goal:</b> remove every card but one.</p><p>Sixteen rows of three and two rows of two, all face up. Click the top cards of three rows that form a <b>run of three ranks</b>, regardless of suit (7-8-9, Q-K-A and K-A-2 all count) to remove them. Cards never move between rows. If the last card left is a king, your score triples.</p>`,
+  how: {
+    goal: `Remove every card but one.`,
+    deal: `All 52 cards are dealt face up: sixteen columns of three and two of two.`,
+    play: [
+      `Remove the top cards of three columns that make a <b>run of three ranks</b>, in any suit: 7-8-9 or J-Q-K.`,
+      `Runs can go round the corner: Q-K-A and K-A-2 count too.`,
+      `Cards never move between columns.`,
+    ],
+    fig: { cards: 'QH KS AD', caption: 'A run can go round the corner' },
+    score: `You win when only one card is left. If that last card is a king, the result counts triple.`,
+    controls: `{Click} three top cards that form a run; they disappear together. {Click} a selected card again to let go of it.`,
+    tip: `Look at the card under each top card before choosing which run to take.`,
+  },
   newGame(seed) { const d = freshDeck(seed); const counts = [...Array(16).fill(3), 2, 2]; let k = 0; return { variant: 'triplets', moves: 0, cols: counts.map((n) => { const c = up(d.slice(k, k + n)); k += n; return c; }), found: [], sel: [] }; },
   render(s) { return `<div class="sol-board wide">${colsRender(s)}</div>`; },
   click(s, d) { return pickWith(s, d.k, { max: 3, complete: (cs) => (cs.length === 3 ? (isTriplet(cs) ? 'remove' : 'bad') : 'wait') }); },
@@ -106,8 +139,19 @@ export function pyrExposed(s, i) {
 }
 const pyramid = {
   id: 'pyramid', name: 'Pyramid', group: 'One deck', blurb: 'Remove exposed pairs that total 13 (kings go alone). J=11, Q=12, K=13.',
-  how: `<p><b>Goal:</b> clear the 28-card pyramid.</p><p>A card is <b>exposed</b> when no cards overlap it. Click two exposed cards that add up to 13 (A=1, J=11, Q=12) to remove them: A+Q, 2+J, 3+10, 4+9, 5+8, 6+7. Kings are removed alone.</p>
-    <p>Click the stock to turn a card onto the waste; the top waste card can be paired with a pyramid card. One pass through the stock.</p>`,
+  how: {
+    goal: `Clear all 28 cards from the pyramid.`,
+    deal: `Twenty-eight face-up cards form a pyramid of seven rows. The other 24 cards are the stock.`,
+    play: [
+      `A card is <b>uncovered</b> when no cards overlap it. Covered cards are dimmed.`,
+      `Remove two uncovered cards that <b>add up to 13</b>: A+Q, 2+J, 3+10, 4+9, 5+8 or 6+7. Kings go on their own.`,
+      `Turn the stock one card at a time onto the waste. The top waste card can pair with an uncovered pyramid card.`,
+      `There is <b>one pass</b> through the stock.`,
+    ],
+    fig: { cards: 'AS + QH · 2C + JD · 3H + 10S', caption: 'Pairs that make 13' },
+    controls: `{Click} two uncovered cards that add up to 13; a king goes with a single {click}. {Click} a selected card again to let go of it. {Click} the stock to turn a card.`,
+    tip: `Work on both sides of the pyramid evenly so the top cards open up.`,
+  },
   newGame(seed) { const d = freshDeck(seed); return { variant: 'pyramid', moves: 0, pyr: d.slice(0, 28).map((c) => ({ ...c, up: true, gone: false })), stock: up(d.slice(28)), waste: [], found: 0, sel: null }; },
   render(s) {
     const rows = [];

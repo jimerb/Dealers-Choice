@@ -87,6 +87,53 @@ fieldset.field { border: 0; padding: 0; margin: 0 0 16px; }
 .choice { display: flex; align-items: center; gap: 10px; min-height: 40px; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
 
+/* ---------- How to play ----------
+   One layout for every game's rules: <dialog class="howto"> holding .howto-head (title + .howto-close),
+   a scrolling .howto-body of .howto-section blocks (h3 + text), and a .howto-foot.
+   Controls go in <dl class="howto-controls"> (mouse / touch rows); .howto-fig shows a few small cards.
+   Desktop: a centred card ~640px wide. Phones and small tablets: a full-screen sheet. */
+dialog.howto { width: min(640px, calc(100vw - 32px)); max-width: none; max-height: min(88vh, 880px); padding: 0; overflow: hidden; box-shadow: 0 24px 60px rgba(0,0,0,.5); }
+dialog.howto[open] { display: flex; flex-direction: column; }
+.howto-head { display: flex; align-items: center; gap: 12px; padding: 16px 16px 14px 24px; border-bottom: 1px solid var(--line); background: var(--panel); flex: none; }
+.howto-head h2 { margin: 0; flex: 1 1 auto; min-width: 0; font-size: 24px; line-height: 1.2; }
+.howto-head form { margin: 0; flex: none; }
+.howto-close { width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--line-2); background: transparent; color: var(--ink); font-size: 26px; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.howto-close:hover { border-color: var(--brass); }
+.howto-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 6px 24px 18px; font-size: 16px; line-height: 1.55; color: var(--ink-2); }
+.howto-body:focus-visible { outline-offset: -3px; }
+.howto-section { padding-top: 14px; }
+.howto-section h3 { margin: 0 0 6px; font-size: 14px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--brass-2); }
+.howto-section p, .howto-section ul { margin: 0; }
+.howto-section ul { padding-left: 1.25em; display: flex; flex-direction: column; gap: 5px; }
+.howto-section li::marker { color: var(--brass); }
+.howto-section b { color: var(--ink); }
+.howto-mono { display: block; margin-top: 4px; font-variant-numeric: tabular-nums; color: var(--ink); }
+.howto-controls { margin: 0; display: grid; gap: 8px; }
+.howto-controls > div { padding: 10px 14px; border-radius: 12px; background: var(--ground); border: 1px solid var(--line); }
+.howto-controls dt { font-weight: 700; color: var(--ink); font-size: 15px; }
+.howto-controls dd { margin: 2px 0 0; }
+.howto-fig { margin: 12px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; --card-w: 44px; }
+.howto-cards { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 4px; }
+.howto-cards.fan { flex-wrap: nowrap; }
+.howto-cards.fan .card + .card { margin-left: calc(var(--card-w) * -.5); }
+.howto-op { padding: 0 2px; color: var(--ink-3); font-weight: 700; }
+.howto-op.gap { padding: 0 8px; }
+.howto-fig figcaption { font-size: 14px; color: var(--ink-3); }
+.howto-tip { margin: 16px 0 0; padding: 10px 14px; border-left: 3px solid var(--brass); background: rgba(201,162,74,.1); border-radius: 0 10px 10px 0; color: var(--ink-2); }
+.howto-tip b { color: var(--brass-2); }
+.howto-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 12px 24px 16px; border-top: 1px solid var(--line); flex: none; margin: 0; }
+.howto-foot .choice { min-height: 44px; font-size: 15px; color: var(--ink-2); cursor: pointer; }
+.howto-foot .choice input { width: 20px; height: 20px; accent-color: var(--brass); }
+@media (max-width: 600px) {
+  dialog.howto { width: 100%; height: 100%; max-height: none; margin: 0; inset: 0; border: 0; border-radius: 0; }
+  .howto-head { position: sticky; top: 0; padding: calc(10px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right)) 10px calc(16px + env(safe-area-inset-left)); }
+  .howto-head h2 { font-size: 21px; }
+  .howto-close { width: 48px; height: 48px; font-size: 30px; }
+  .howto-body { padding: 4px calc(16px + env(safe-area-inset-right)) 18px calc(16px + env(safe-area-inset-left)); }
+  .howto-foot { padding: 10px calc(16px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left)); }
+  .howto-foot .btn { flex: 1 1 100%; }
+}
+
 /* ---------- cards ---------- */
 .card { position: relative; display: inline-block; width: var(--card-w); aspect-ratio: 5 / 7; border-radius: calc(var(--card-w) * .06); flex: none; user-select: none; }
 .card img { width: 100%; height: 100%; display: block; border-radius: inherit; image-rendering: auto; }
