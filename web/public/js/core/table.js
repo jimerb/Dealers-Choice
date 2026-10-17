@@ -3,8 +3,9 @@
 //
 // Game module contract (default export):
 //   id, title, rulesHTML, settings?: [{key,label,options:[[value,label]],default}]
-//   seats?: fixed player count (newGame gets that many names; saved games are trimmed to it)
-//   botNames?: computer seat names, in seat order after the human
+//   seats?: fixed player count (newGame gets that many names; saved games are trimmed to it).
+//           Without it newGame gets MAX_SEATS names and seats as many as its settings ask for.
+//           Computer seats are filled from the cast (core/cast.js); 'again' should keep s.names.
 //   newGame({names, seed, opts}) -> state      (state must be JSON-serializable)
 //   actor(state) -> seat number | 'auto' | null   (0 = the human; 'auto' = timed step; null = over)
 //   act(state, action) -> state                  (human action; throw Error('...') if illegal)
@@ -13,9 +14,11 @@
 //   delay?(state) -> ms
 // Engines may set state.fx = ['card', ...] (sound event names) on transitions.
 import { cardHTML, backHTML, cardName, paintFelt } from '../skin.js';
-import { mountChrome, esc, playerName } from '../header.js';
+import { mountChrome, esc, playerName, playerAvatar, avatarHTML } from '../header.js';
 import { play } from './sound.js';
+import { pickOpponents, castByName } from './cast.js';
 
+const MAX_SEATS = 6;
 const pace = () => { try { return localStorage.getItem('dc.speed') === 'fast' ? 0.45 : 1; } catch { return 1; } };
 
 export function cardButton(card, { act = 'play', legal = false, selected = false, from = null, dim = false } = {}) {
@@ -42,7 +45,8 @@ export function mountTable(game) {
     const d = Object.fromEntries((game.settings ?? []).map((s) => [s.key, s.default]));
     try { return { ...d, ...JSON.parse(localStorage.getItem(OPTS) || '{}') }; } catch { return d; }
   };
-  const names = () => [playerName(), ...(game.botNames ?? ['West', 'North', 'East'])].slice(0, game.seats);
+  // A new game seats you plus fresh picks from the cast; saved games keep whoever was sitting in.
+  const names = () => [playerName(), ...pickOpponents((game.seats ?? MAX_SEATS) - 1, { gameId: game.id }).map((c) => c.name)];
   const fresh = () => game.newGame({ names: names(), seed: Math.floor(Math.random() * 2 ** 31), opts: readOpts() });
   const load = () => {
     try {
@@ -55,7 +59,8 @@ export function mountTable(game) {
   };
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { /* ignore */ } };
 
-  let state = load() ?? fresh();
+  let state = load();
+  if (!state) { state = fresh(); save(); } // save at once so a reload keeps the same opponents
   const ui = { selected: new Set() };
   let timer = null;
 
@@ -79,7 +84,10 @@ export function mountTable(game) {
   const POS_AREA = { south: 'south', west: 'west', east: 'east', north: 'top', nw: 'top', ne: 'top' };
   function seatHTML(st) {
     const cls = ['plate', st.mine ? 'me' : '', st.partner ? 'partner' : '', st.turn ? 'turn' : ''].join(' ');
-    const plate = `<span class="${cls}"><span class="avatar" aria-hidden="true">${esc((st.name || '?').slice(0, 1).toUpperCase())}</span>${esc(st.name)}${st.mine ? ' (you)' : ''}
+    // Portraits come from the seat's saved name (plate names may carry extras, e.g. chip counts).
+    const who = state.names?.[st.seat] ?? st.name;
+    const guest = st.mine ? null : castByName(who);
+    const plate = `<span class="${cls}"${guest ? ` title="${esc(guest.bio)}"` : ''}>${avatarHTML(st.name, st.mine ? playerAvatar() : guest?.portrait)}${esc(st.name)}${st.mine ? ' (you)' : ''}${st.partner ? ' · partner' : ''}
       ${st.dealer ? '<span class="dealer" title="Dealer">D</span>' : ''}${st.tag ? `<span class="bubble${st.tagMuted ? ' pass' : ''}">${esc(st.tag)}</span>` : ''}</span>`;
     let cards = '';
     if (st.faceUp?.length) {

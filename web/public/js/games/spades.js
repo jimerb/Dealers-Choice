@@ -1,4 +1,4 @@
-// Spades: partners (you + North vs West + East). Spades are always trump. Bid tricks, nil or blind nil.
+// Spades: partners (you + the seat across vs the two beside you). Spades are always trump. Bid tricks, nil or blind nil.
 import { deck, shuffle, sortCards, hi, rngOf } from '../core/cards.js';
 import { clone, log, fx, who, trickWinner, followSuit, followPlay, seatsVM, trickPlays, must, POS4 } from './lib/common.js';
 import { trickHTML, panel, btn, scoreTable } from '../core/table.js';
@@ -155,7 +155,7 @@ function aiPlay(s, seat) {
   return followPlay(L, t, seat, 'S', { partnerOf: partnerNil ? null : p }).id;
 }
 
-const RULES = `<p>Partners sit across: you and North against West and East. Spades are always trump. Each player bids how many tricks they'll take; a team must take at least its combined bid.</p>
+const RULES = `<p>Partners sit across: you and your partner against the two players beside you. Spades are always trump. Each player bids how many tricks they'll take; a team must take at least its combined bid.</p>
 <h3>Play</h3><p>Follow suit if you can, otherwise trump or discard. Spades can't be led until one has been played.</p>
 <h3>Scoring</h3><ul><li>Made bid: 10 per trick bid, plus 1 per extra trick (a "bag").</li><li>Set: −10 per trick bid.</li><li>Nil (take no tricks): ±100. Blind nil (bid before seeing your cards): ±200.</li><li>Every 10 bags costs 100 points.</li></ul>`;
 
@@ -199,11 +199,11 @@ export default {
         <div class="row">${btn('Blind nil', 'bid', 'data-v="0" data-blind="1"')}${btn('Show my hand', 'show', '', true)}</div>`);
     } else if (myBidTurn) {
       const pb = s.bids[2];
-      overlay = panel('Your bid', `<p>${pb === null ? 'North hasn’t bid yet.' : `North bid ${pb === 0 ? 'nil' : pb}.`} How many tricks will you take?</p>
+      overlay = panel('Your bid', `<p>${pb === null ? `${s.names[2]} hasn’t bid yet.` : `${s.names[2]} bid ${pb === 0 ? 'nil' : pb}.`} How many tricks will you take?</p>
         <div class="row" style="max-width:420px">${btn('Nil', 'bid', 'data-v="0"')}${Array.from({ length: 13 }, (_, i) => btn(String(i + 1), 'bid', `data-v="${i + 1}"`, i + 1 === Math.max(1, Math.round(estimate(s.hands[0]))))).join('')}</div>`);
     } else if (s.phase === 'handOver' || s.phase === 'gameOver') {
       const r = s.result;
-      const title = s.phase === 'gameOver' ? (s.winnerTeam === 0 ? 'You and North win!' : 'West and East win') : `Hand ${s.handNo}`;
+      const title = s.phase === 'gameOver' ? (s.winnerTeam === 0 ? `You and ${s.names[2]} win!` : `${s.names[1]} and ${s.names[3]} win`) : `Hand ${s.handNo}`;
       overlay = panel(title, `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;font-size:14px">
         <div><b>Us</b><br>${r[0].notes.join('<br>')}</div><div><b>Them</b><br>${r[1].notes.join('<br>')}</div></div>
         ${scoreTable(['Us', 'Them'], [['This hand', r[0].pts, r[1].pts], ['Bags', s.bags[0], s.bags[1]], ['Score', `<b>${s.scores[0]}</b>`, `<b>${s.scores[1]}</b>`]])}

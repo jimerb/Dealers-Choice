@@ -114,7 +114,7 @@ const RULES = `<p>Collect <b>books</b>: all four cards of a rank. On your turn, 
 <ul><li>If they have any, they hand them all over and you go again.</li><li>If not: <b>Go fish!</b> Draw one card. If it's the rank you asked for, go again.</li><li>Run out of cards? Draw five more.</li></ul><p>When all 13 books are made, the most books wins.</p>`;
 
 export default {
-  id: 'gofish', title: 'Go Fish', version: 1, rulesHTML: RULES,
+  id: 'gofish', title: 'Go Fish', version: 1, seats: 4, rulesHTML: RULES,
   settings: [{ key: 'skill', label: 'Computer players', options: [['beginner', 'Beginner (forgetful)'], ['intermediate', 'Intermediate'], ['expert', 'Expert (remembers asks)']], default: 'intermediate' }],
   newGame,
   actor: (s) => (s.phase === 'gameOver' ? null : s.turn),

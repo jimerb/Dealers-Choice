@@ -79,7 +79,7 @@ const RULES = `<p>One queen has been taken out of the deck, so one queen can nev
 <p>Pairs (two cards of the same rank) are set aside automatically. On your turn, draw a face-down card from the player on your right. Players drop out when their hands are empty. Whoever is left holding the Old Maid loses.</p>`;
 
 export default {
-  id: 'oldmaid', title: 'Old Maid', version: 1, rulesHTML: RULES,
+  id: 'oldmaid', title: 'Old Maid', version: 1, seats: 4, rulesHTML: RULES,
   newGame,
   actor: (s) => (s.phase === 'gameOver' ? null : s.turn),
   delay: () => 1000,

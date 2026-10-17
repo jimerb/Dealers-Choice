@@ -240,7 +240,7 @@ const RULES = `<p>Four players; one <b>taker</b> plays against the other three. 
 <h3>Scoring</h3><p>Bouts (trump 1, trump 21, the Excuse) and kings are worth 4½, queens 3½, knights 2½, jacks 1½, everything else ½. The points the taker needs depend on bouts won: 0 bouts 56, 1 bout 51, 2 bouts 41, 3 bouts 36. The score is (25 + the margin) × the multiplier, paid by or to each defender. Winning the last trick with the trump 1 (<i>petit au bout</i>) is worth 10 × the multiplier.</p>`;
 
 export default {
-  id: 'tarot', title: 'Tarot', version: 1, rulesHTML: RULES,
+  id: 'tarot', title: 'Tarot', version: 1, seats: 4, rulesHTML: RULES,
   settings: [{ key: 'target', label: 'Game ends when a player reaches', options: [[500, '500 points'], [1000, '1,000 points']], default: 500 }],
   newGame({ names, seed, opts }) {
     return deal({ v: 1, seed, rngN: 0, names: names.slice(0, 4), opts, scores: [0, 0, 0, 0], dealNo: 0, dealer: 3, log: [], fx: [], partners: false });

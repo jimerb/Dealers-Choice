@@ -145,11 +145,9 @@ export default {
     { key: 'target', label: 'Play to', options: [[0, 'Single hand'], [100, '100 points'], [200, '200 points'], [300, '300 points'], [400, '400 points']], default: 100 },
     { key: 'reshuffle', label: 'When the stock runs out', options: [['yes', 'Reshuffle the discards'], ['no', 'Game ends when blocked']], default: 'yes' },
   ],
-  botNames: ['West', 'North', 'East'],
   newGame({ names, seed, opts }) {
     const n = Number(opts.players);
-    const nm = n === 2 ? [names[0], 'North'] : n === 3 ? [names[0], 'West', 'East'] : names.slice(0, 4);
-    return deal({ v: 1, seed, rngN: 0, names: nm, n, opts, scores: Array(n).fill(0), handNo: 0, dealer: n - 1, log: [], fx: [], partners: false });
+    return deal({ v: 1, seed, rngN: 0, names: names.slice(0, n), n, opts, scores: Array(n).fill(0), handNo: 0, dealer: n - 1, log: [], fx: [], partners: false });
   },
   actor(s) {
     if (s.phase === 'gameOver') return null;

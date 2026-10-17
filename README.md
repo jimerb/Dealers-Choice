@@ -22,14 +22,15 @@ timed arcade rounds.
 
 ## What makes it feel like a card room
 
-- **Computer partners and opponents** that bid, meld and play by each game's real rules.
+- **A cast of twelve computer partners and opponents**, each with a portrait and a personality, who
+  bid, meld and play by each game's real rules.
 - **The Parlor deck**: a mid-century card design in cream, ink, brass and deep green, with six card
   backs. A simpler drawn deck is available too, under **Table settings**.
 - **Music that follows you**: six original lounge-jazz tracks play in a shuffled order that carries on
   seamlessly as you move between the lobby and the tables, with no song repeated back to back.
 - **Sound effects** for dealing, shuffling, tricks, chips and wins, with separate volume controls for
   music and game sounds.
-- **Remembers you**: your name, card style, card back and volumes are saved in your browser.
+- **Remembers you**: your name, portrait, card style, card back and volumes are saved in your browser.
 
 ## Play it locally
 

@@ -2,8 +2,9 @@
 import * as P from './engine.js';
 import * as AI from './ai.js';
 import { cardHTML, backHTML, cardName, paintFelt } from '../../skin.js';
-import { mountChrome, esc, playerName } from '../../header.js';
+import { mountChrome, esc, playerName, playerAvatar, avatarHTML } from '../../header.js';
 import { play } from '../../core/sound.js';
+import { pickOpponents, castByName } from '../../core/cast.js';
 
 mountChrome('pinochle');
 
@@ -12,11 +13,14 @@ const SYM = P.SUIT_SYMBOLS;
 const suitSpan = (s) => `<span class="trump-sym${s === 'H' || s === 'D' ? ' red-suit' : ''}">${SYM[s]}</span>`;
 const pace = () => { try { return localStorage.getItem('dc.speed') === 'fast' ? 0.45 : 1; } catch { return 1; } };
 
-let state = load() ?? fresh();
+let state = load();
+if (!state) { state = fresh(); save(); } // save at once so a reload keeps the same opponents
 let timer = null;
 
-function fresh() {
-  return P.newGame({ seed: Math.floor(Math.random() * 2 ** 31), names: [playerName(), 'West', 'North', 'East'] });
+/** A new game: fresh opponents from the cast, or the same ones when playing again (`keep`). */
+function fresh(keep = null) {
+  const others = keep ? keep.slice(1) : pickOpponents(3, { gameId: 'pinochle' }).map((c) => c.name);
+  return P.newGame({ seed: Math.floor(Math.random() * 2 ** 31), names: [playerName(), ...others] });
 }
 function load() {
   try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); return s && Array.isArray(s.hands) ? s : null; } catch { return null; }
@@ -58,8 +62,9 @@ function plate(seat) {
   let bubble = '';
   if (s.phase === 'bidding' && s.bids[seat] !== null) bubble = s.bids[seat] === 'pass' ? '<span class="bubble pass">Pass</span>' : `<span class="bubble">${s.bids[seat]}</span>`;
   else if (s.highBidder === seat && s.phase !== 'bidding') bubble = `<span class="bubble">Bid ${s.highBid}</span>`;
-  const label = seat === 0 ? `${esc(s.names[0])} (you)` : seat === 2 ? 'North · partner' : esc(s.names[seat]);
-  return `<span class="${cls.join(' ')}"><span class="avatar" aria-hidden="true">${esc(s.names[seat].slice(0, 1).toUpperCase())}</span>${label}
+  const label = seat === 0 ? `${esc(s.names[0])} (you)` : seat === 2 ? `${esc(s.names[2])} · partner` : esc(s.names[seat]);
+  const guest = seat === 0 ? null : castByName(s.names[seat]);
+  return `<span class="${cls.join(' ')}"${guest ? ` title="${esc(guest.bio)}"` : ''}>${avatarHTML(s.names[seat], seat === 0 ? playerAvatar() : guest?.portrait)}${label}
     ${s.dealer === seat ? '<span class="dealer" title="Dealer">D</span>' : ''}${bubble}</span>`;
 }
 
@@ -133,14 +138,14 @@ function overlay() {
   }
   if (s.phase === 'handOver' || s.phase === 'gameOver') {
     const r = s.result;
-    const bidders = r.bidTeam === 0 ? 'Your team' : 'West & East';
+    const bidders = r.bidTeam === 0 ? 'Your team' : `${esc(s.names[1])} & ${esc(s.names[3])}`;
     const verdict = r.made ? `${bidders} made the bid of ${r.bid}.` : `${bidders} went set on ${r.bid}.`;
     const good = (r.bidTeam === 0) === r.made;
     const row = (label, f) => `<tr><td>${label}</td><td>${f(0)}</td><td>${f(1)}</td></tr>`;
     let foot = `<button class="btn primary" data-act="next-hand">Deal next hand</button>`;
     let title = `Hand ${s.handNo} results`;
     if (s.phase === 'gameOver') {
-      title = s.winner === 0 ? 'You and North win the game!' : 'West and East win the game';
+      title = s.winner === 0 ? `You and ${esc(s.names[2])} win the game!` : `${esc(s.names[1])} and ${esc(s.names[3])} win the game`;
       foot = `<button class="btn primary" data-act="new-game">Play again</button>`;
     }
     return `<div class="card-panel" style="min-width:min(440px,100%)"><h3>${title}</h3>
@@ -205,7 +210,7 @@ document.getElementById('felt').addEventListener('click', (e) => {
       case 'start-play': set(P.startPlay(s)); break;
       case 'play': set(P.playCard(s, 0, el.dataset.id)); break;
       case 'next-hand': set(P.nextHand(s)); break;
-      case 'new-game': set(fresh()); break;
+      case 'new-game': set(fresh(s.names)); break; // "Play again": same table
     }
   } catch (err) {
     console.warn(err); // stale click (e.g. double-click during an AI turn): ignore
