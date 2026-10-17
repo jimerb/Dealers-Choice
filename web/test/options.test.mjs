@@ -480,3 +480,6 @@ test('poker: two- and three-player tables play out', async () => {
     for (const end of playOut(game, { players, hands: 0 }, 2)) assert.equal(end.chips.filter((c) => c > 0).length === 1 || end.chips[0] <= 0, true);
   }
 });
+
+// ------------------------------------------------------------------ The games whose options were already in place
+for (const id of ['hearts', 'spades', 'pitch', 'poker', 'gofish', 'war']) test(`${id}: every option plays out`, () => everyOption(id, 1));
