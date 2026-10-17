@@ -10,7 +10,7 @@ function music() {
   return localMusic;
 }
 
-export const SOUND_PACK = '/assets/sounds/parlor';
+export const SOUND_PACK = 'assets/sounds/parlor';
 export const SFX = {
   deal: 'deal',       // short card snap while dealing
   card: 'card',       // card played to the table

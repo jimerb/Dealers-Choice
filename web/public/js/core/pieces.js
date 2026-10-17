@@ -1,7 +1,7 @@
 // Table pieces drawn from the token art: chip stacks, the cribbage board and its pegs, the card tray
 // and the trump plaque. Small pure helpers (numbers and HTML strings) for the games' view models.
 
-const ART = '/assets/art';
+const ART = 'assets/art';
 const SUIT_NAME = { S: 'Spades', H: 'Hearts', D: 'Diamonds', C: 'Clubs' };
 
 // ---------------------------------------------------------------- chips

@@ -30,7 +30,7 @@ const over = () => (isCustom() ? mod().isOver(state) : isWon(state));
 
 function start(v, fresh = false) {
   variant = v; sel = null; customHistory = [];
-  history.replaceState(null, '', `/solitaire.html?v=${v}`);
+  history.replaceState(null, '', `solitaire.html?v=${v}`);
   const saved = !fresh && load(v);
   state = saved || (isCustom() ? mod().newGame(Math.floor(Math.random() * 2 ** 31)) : newGame(v));
   if (!saved) bumpStat(v, 'played');
@@ -73,10 +73,10 @@ const board = document.getElementById('board');
 function renderChooser() {
   const stats = readStats();
   chooser.innerHTML = `<div class="section-head" style="margin-top:8px"><h2>Solitaire parlor</h2><span style="color:var(--ink-3)">${SOLITAIRE.reduce((t, g) => t + g.games.length, 0)} layouts</span></div>
-    <img class="sol-banner" src="/assets/art/lobby/solitaire-banner.webp" width="1536" height="480" alt="" decoding="async">
+    <img class="sol-banner" src="assets/art/lobby/solitaire-banner.webp" width="1536" height="480" alt="" decoding="async">
     ${SOLITAIRE.map((g) => `<div class="group"><div class="group-head"><h3>${g.title}</h3></div><div class="tiles">${g.games.map(([name, id]) => {
       const v = info(id);
-      return `<a class="tile ready sol-tile" href="/solitaire.html?v=${id}" data-v="${id}"><div class="tile-body"><b>${esc(name)}</b><span>${esc(v.blurb)}</span>
+      return `<a class="tile ready sol-tile" href="solitaire.html?v=${id}" data-v="${id}"><div class="tile-body"><b>${esc(name)}</b><span>${esc(v.blurb)}</span>
         ${stats[id] ? `<span style="color:var(--brass-2)">Won ${stats[id].won} of ${stats[id].played}</span>` : ''}</div></a>`;
     }).join('')}</div></div>`).join('')}`;
 }
@@ -215,7 +215,7 @@ function command(c) {
     d.querySelector('#sol-rules-body').innerHTML = info(variant).how;
     return d.showModal();
   }
-  if (c === 'menu') { clearInterval(timer); variant = null; history.replaceState(null, '', '/solitaire.html'); return render(); }
+  if (c === 'menu') { clearInterval(timer); variant = null; history.replaceState(null, '', 'solitaire.html'); return render(); }
 }
 board.addEventListener('click', (e) => { const b = e.target.closest('[data-cmd]'); if (b) command(b.dataset.cmd); });
 chooser.addEventListener('click', (e) => { const t = e.target.closest('[data-v]'); if (t) { e.preventDefault(); start(t.dataset.v); } });

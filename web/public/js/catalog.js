@@ -11,12 +11,12 @@ export const CATEGORIES = [
 const g = (id, name, category, players, tagline, felt, extra = {}) => ({ id, name, category, players, tagline, felt, status: 'soon', ...extra });
 /** Games playable on the generic table (play.html?g=<id>) list their module here. */
 export const READY = new Set(['bridge', 'spades', 'hearts', 'euchre', 'pitch', 'skat', 'tarot', 'gin', 'canasta', 'cribbage', 'crazy8', 'poker', 'gofish', 'oldmaid', 'war', 'memory']);
-const ready = (x) => (READY.has(x.id) ? { ...x, status: 'ready', module: x.id, href: `/play.html?g=${x.id}` } : x);
+const ready = (x) => (READY.has(x.id) ? { ...x, status: 'ready', module: x.id, href: `play.html?g=${x.id}` } : x);
 
 export const GAMES = [
   // pinochle has its own page
   g('pinochle', 'Pinochle', 'trick', '4 players · partners', 'Partnership Auction: bid, meld, run the tricks', '#1E6B52',
-    { status: 'ready', href: '/pinochle.html', featured: true, variants: ['Partnership Auction', 'Two-Handed', 'Double-Pack', 'Partnership', 'Cutthroat'] }),
+    { status: 'ready', href: 'pinochle.html', featured: true, variants: ['Partnership Auction', 'Two-Handed', 'Double-Pack', 'Partnership', 'Cutthroat'] }),
   g('bridge', 'Bridge', 'trick', '4 players · partners', 'Rubber or Chicago scoring', '#24506B'),
   g('spades', 'Spades', 'trick', '4 players · partners', 'Nil, double nil and bags', '#3B3F6B'),
   g('hearts', 'Hearts', 'trick', '4 players', 'Dodge the queen or shoot the moon', '#6B2E3A'),

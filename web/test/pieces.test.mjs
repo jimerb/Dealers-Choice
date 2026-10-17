@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { chipBreakdown, chipStacks, chipsHTML, holeX, pegHole, pegPositions, trackHoles, cribbageBoardHTML, trayHTML, trumpPlaqueHTML, BOARD } from '../public/js/core/pieces.js';
 
-const pub = (path) => new URL(`../public${path}`, import.meta.url);
+const pub = (path) => new URL(`../public/${path.replace(/^\//, "")}`, import.meta.url);
 const total = (b) => b.reduce((t, x) => t + x.value * x.count, 0);
 
 test('chip breakdown is greedy, largest first, and adds up', () => {
@@ -30,7 +30,7 @@ test('chips HTML uses chip art that exists and is hidden from screen readers', (
   const html = chipsHTML(630, { size: 30, text: 'Pot 630' });
   assert.match(html, /aria-hidden="true"/);
   assert.match(html, /Pot 630/);
-  for (const src of html.match(/\/assets\/[^"]+\.webp/g)) assert.ok(existsSync(pub(src)), `missing ${src}`);
+  for (const src of html.match(/assets\/[^"')]+\.webp/g)) assert.ok(existsSync(pub(src)), `missing ${src}`);
   assert.equal(chipsHTML(0), '<span class="chips" style="--chip:22px"><span class="chip-cols" aria-hidden="true"></span></span>');
 });
 
@@ -73,7 +73,7 @@ test('board, tray and plaque HTML carry text equivalents and existing art', () =
   assert.match(trumpPlaqueHTML('H'), /Trump: Hearts/);
   assert.match(trumpPlaqueHTML('NT', { caption: 'No trump' }), /No trump/);
   for (const html of [board, tray, trumpPlaqueHTML('S'), trumpPlaqueHTML('D'), trumpPlaqueHTML('C')]) {
-    for (const src of html.match(/\/assets\/[^"]+\.webp/g) ?? []) assert.ok(existsSync(pub(src)), `missing ${src}`);
+    for (const src of html.match(/assets\/[^"')]+\.webp/g) ?? []) assert.ok(existsSync(pub(src)), `missing ${src}`);
     assert.ok(!/<img(?![^>]*alt="")[^>]*>/.test(html), 'images are decorative (alt="")');
   }
 });

@@ -2,15 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<script src="/js/frame.js"></script>
+<script src="js/frame.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sound board · Dealers Choice</title>
-<link rel="icon" type="image/png" sizes="32x32" href="/assets/art/brand/logo-mark-32.png">
-<link rel="icon" type="image/png" sizes="64x64" href="/assets/art/brand/logo-mark-64.png">
-<link rel="icon" type="image/png" sizes="512x512" href="/assets/art/brand/logo-mark-512.png">
-<link rel="apple-touch-icon" href="/assets/art/brand/logo-mark-180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/art/brand/logo-mark-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="assets/art/brand/logo-mark-64.png">
+<link rel="icon" type="image/png" sizes="512x512" href="assets/art/brand/logo-mark-512.png">
+<link rel="apple-touch-icon" href="assets/art/brand/logo-mark-180.png">
 <link href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/site.css">
+<link rel="stylesheet" href="css/site.css">
 </head>
 <body>
 <header id="site-header"></header>
@@ -22,8 +22,8 @@
 </main>
 <footer id="site-footer"></footer>
 <script type="module">
-  import { mountChrome } from '/js/header.js';
-  import { SFX, SOUND_PACK, play } from '/js/core/sound.js';
+  import { mountChrome } from './js/header.js';
+  import { SFX, SOUND_PACK, play } from './js/core/sound.js';
   mountChrome('');
   document.getElementById('events').innerHTML = Object.entries(SFX).map(([name, file]) =>
     `<button class="btn" data-id="${file}" style="justify-content:space-between"><span>${name}</span><span style="color:var(--ink-3)">${file}.wav</span></button>`).join('');

@@ -15,7 +15,7 @@ export const SKINS = {
   parlor: {
     label: 'Parlor',
     type: 'image',
-    base: '/assets/skins/parlor',
+    base: 'assets/skins/parlor',
     backs: ['parlor-green', 'parlor-oxblood', 'parlor-midnight', 'deco-fan', 'botanical', 'starfield'],
     tables: ['felt-green', 'felt-oxblood', 'felt-midnight', 'walnut', 'linen', 'slate'],
     specials: true,

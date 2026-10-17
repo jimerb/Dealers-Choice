@@ -1,7 +1,7 @@
 // The computer opponents who sit in at the tables, plus the portraits a human player can choose.
 // Pure data and helpers: no DOM, so the picker can be unit-tested.
 
-const ART = '/assets/art/cast';
+const ART = 'assets/art/cast';
 // Each portrait comes in two sizes: a 96px thumbnail for nameplates and the header, 256px for the picker.
 const thumb = (id) => `${ART}/${id}-96.webp`;
 const large = (id) => `${ART}/${id}.webp`;

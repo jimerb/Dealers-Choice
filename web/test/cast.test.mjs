@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { CAST, PLAYER_PORTRAITS, pickOpponents, castByName, portraitFor, playerPortrait, renamePlaceholders } from '../public/js/core/cast.js';
 
-const pub = (path) => new URL(`../public${path}`, import.meta.url);
+const pub = (path) => new URL(`../public/${path.replace(/^\//, "")}`, import.meta.url);
 // Small seeded generator so picks are reproducible.
 const seeded = (seed) => () => { seed = (seed * 1103515245 + 12345) % 2 ** 31; return seed / 2 ** 31; };
 
@@ -60,12 +60,12 @@ test('regulars turn up more often at their game, but not every time', () => {
 test('seat names map to portraits; unknown names fall back to none', () => {
   assert.equal(castByName('Odette').id, 'odette');
   assert.equal(castByName('  colonel ').id, 'colonel');
-  assert.equal(portraitFor('Rosa'), '/assets/art/cast/rosa-96.webp');
+  assert.equal(portraitFor('Rosa'), 'assets/art/cast/rosa-96.webp');
   for (const old of ['West', 'North', 'East', 'Northwest', '', null, undefined]) {
     assert.equal(castByName(old), null);
     assert.equal(portraitFor(old), '');
   }
-  assert.equal(playerPortrait('player-03'), '/assets/art/cast/player-03-96.webp');
+  assert.equal(playerPortrait('player-03'), 'assets/art/cast/player-03-96.webp');
   assert.equal(playerPortrait(''), '');
   assert.equal(playerPortrait('../etc'), '');
 });

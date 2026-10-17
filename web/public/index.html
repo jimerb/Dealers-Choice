@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dealers Choice</title>
 <meta name="description" content="Dealers Choice: classic card games in your browser.">
-<link rel="icon" type="image/png" sizes="32x32" href="/assets/art/brand/logo-mark-32.png">
-<link rel="icon" type="image/png" sizes="64x64" href="/assets/art/brand/logo-mark-64.png">
-<link rel="icon" type="image/png" sizes="512x512" href="/assets/art/brand/logo-mark-512.png">
-<link rel="apple-touch-icon" href="/assets/art/brand/logo-mark-180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/art/brand/logo-mark-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="assets/art/brand/logo-mark-64.png">
+<link rel="icon" type="image/png" sizes="512x512" href="assets/art/brand/logo-mark-512.png">
+<link rel="apple-touch-icon" href="assets/art/brand/logo-mark-180.png">
 <!-- Site shell: owns the background music and shows every screen in a full-window frame, so the
      music plays straight through moving between the lobby and the games. Screens are ordinary
      pages (lobby.html, play.html, ...); js/frame.js sends any screen opened on its own back here. -->
@@ -18,22 +18,22 @@
 </style>
 <script>
   // A link to "/" followed inside the frame would nest a second shell: show the lobby instead.
-  if (window.top !== window) location.replace('/lobby.html' + location.hash);
+  if (window.top !== window) location.replace('lobby.html' + location.hash);
 </script>
 </head>
 <body>
 <iframe id="screen" title="Dealers Choice"></iframe>
 <script type="module">
-  import { startMusic, stopMusic, setMusicVolume, nowPlaying, musicStatus } from '/js/core/music.js';
+  import { startMusic, stopMusic, setMusicVolume, nowPlaying, musicStatus } from './js/core/music.js';
 
   // Screens call these through window.top (see js/core/sound.js), so one player serves every page.
   window.dcMusic = { startMusic, stopMusic, setMusicVolume, nowPlaying, musicStatus };
 
-  // Only same-site paths may be loaded into the frame.
-  const SAFE = /^\/(?!\/)[A-Za-z0-9._~\-\/]*(\?[^#\s]*)?(#\S*)?$/;
-  const asked = new URLSearchParams(location.search).get('p');
-  const here = location.pathname !== '/' && location.pathname !== '/index.html' ? location.pathname + location.search + location.hash : null;
-  const start = [asked, here].find((p) => p && SAFE.test(p)) ?? '/lobby.html' + location.hash;
+  // Only pages inside the site's own folder may be loaded into the frame (paths are relative,
+  // so the site works at / or under a subfolder).
+  const SAFE = /^(?!.*\.\.)[A-Za-z0-9._~\-\/]+(\?[^#\s]*)?(#\S*)?$/;
+  const asked = (new URLSearchParams(location.search).get('p') ?? '').replace(/^\/+/, '');
+  const start = SAFE.test(asked) ? asked : 'lobby.html' + location.hash;
 
   const frame = document.getElementById('screen');
   frame.addEventListener('load', () => {

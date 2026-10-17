@@ -25,7 +25,7 @@ export function avatarHTML(name, src = '') {
   return `<span class="avatar" aria-hidden="true">${initial}${src ? `<img src="${esc(src)}" alt="" draggable="false">` : ''}</span>`;
 }
 
-const LOGO_SRC = '/assets/art/brand/logo-mark';
+const LOGO_SRC = 'assets/art/brand/logo-mark';
 const LOGO = `<img class="brand-mark" src="${LOGO_SRC}-64.webp" srcset="${LOGO_SRC}-64.webp 64w, ${LOGO_SRC}-180.webp 180w" sizes="40px" width="40" height="40" alt="">`;
 const SPEAKER = (muted) => `<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
   <path d="M4 9h4l5-4v14l-5-4H4z"/>${muted ? '<path d="M17 9l5 6M22 9l-5 6"/>' : '<path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>'}</svg>`;
@@ -35,11 +35,11 @@ const tableLabel = (t) => TABLE_LABEL[t] ?? t.replace(/-/g, ' ').replace(/^./, (
 
 export function mountChrome(active) {
   initAudio();
-  const nav = [['lobby', '/lobby.html', 'Lobby'], ['games', '/lobby.html#games', 'Card games'], ['solitaire', '/solitaire.html', 'Solitaire'], ['pinochle', '/pinochle.html', 'Pinochle']];
+  const nav = [['lobby', 'lobby.html', 'Lobby'], ['games', 'lobby.html#games', 'Card games'], ['solitaire', 'solitaire.html', 'Solitaire'], ['pinochle', 'pinochle.html', 'Pinochle']];
   const header = document.getElementById('site-header');
   header.className = 'site-header';
   header.innerHTML = `<div class="bar">
-    <a class="brand" href="/lobby.html">${LOGO}<span class="brand-word">Dealers Choice</span></a>
+    <a class="brand" href="lobby.html">${LOGO}<span class="brand-word">Dealers Choice</span></a>
     <nav class="site-nav" aria-label="Main">${nav.map(([id, href, label]) =>
       `<a href="${href}"${id === active ? ' aria-current="page"' : ''}>${label}</a>`).join('')}</nav>
     <div class="who">
@@ -51,7 +51,7 @@ export function mountChrome(active) {
           <label for="vol-music">Music</label>
           <input id="vol-music" type="range" min="0" max="1" step="0.05" value="${volumes.music}">
           <label class="choice"><input id="vol-mute" type="checkbox" ${volumes.muted ? 'checked' : ''}> Mute everything</label>
-          <a href="/sounds.html" class="sound-board-link">Sound board</a>
+          <a href="sounds.html" class="sound-board-link">Sound board</a>
         </div>
       </div>
       <span class="avatar" aria-hidden="true" id="who-avatar"></span>

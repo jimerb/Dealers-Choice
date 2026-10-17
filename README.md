@@ -7,6 +7,8 @@ on your own.
 Dealer's Choice has its own look and sound throughout: the **Parlor** card deck and table felts, a
 relaxed lounge-jazz soundtrack and original sound effects, all created for this game.
 
+**Play it now:** https://jimerb.github.io/Dealers-Choice/
+
 ## The tables
 
 **Trick-taking:** Pinochle, Bridge, Spades, Hearts, Euchre, Pitch, Skat, Tarot

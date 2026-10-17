@@ -12,7 +12,7 @@ export const TRACKS = [
   { file: '5-gentle-groove.mp3', title: 'Gentle Groove' },
   { file: '6-delicate-piano-motif2.mp3', title: 'Delicate Piano Motif II' },
 ];
-const BASE = '/assets/music/parlor/';
+const BASE = 'assets/music/parlor/';
 const KEY = 'dc.music.session';
 const GAP_MS = 1500;    // silence between songs
 const FADE_MS = 1500;   // fade in on start, fade out on stop
