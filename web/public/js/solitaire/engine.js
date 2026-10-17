@@ -315,8 +315,17 @@ export const VARIANTS = {
     name: 'Bristol', group: 'One deck', blurb: 'Build down regardless of suit; the stock feeds three reserve piles.',
     rules: { build: 'down-any', move: 'single', empty: 'none', maxCol: 15, stock: 'to-reserves', reserves: 3 },
     deal(d) { const t = columns(d, Array(8).fill(3)); return [P('stock', 'stock', down(d)), ...[0, 1, 2].map((i) => P(`r${i}`, 'reserve')), ...fours('A', { suit: 'any' }), ...t]; },
-    how: `<p><b>Goal:</b> build four foundations up from ace to king, <b>regardless of suit</b>.</p>
-      <p>Eight columns of three. Build down regardless of suit, one card at a time (a column holds at most 15 cards). Empty columns can't be filled. Click the stock to deal three cards, one onto each of three reserve piles; the top card of each reserve can be played. No redeals.</p>`,
+    how: {
+      goal: `Move all 52 cards to the four foundations, building up from ace to king <b>in any suit</b>.`,
+      deal: `Eight columns of three face-up cards. Three reserve piles start empty, and the other 28 cards are the stock.`,
+      play: [
+        `Build the columns down by one in any suit, one card at a time. A column holds at most 15 cards.`,
+        `An emptied column stays empty.`,
+        `The stock deals three cards at a time, one onto each reserve pile. The top card of each reserve can go to a column or a foundation.`,
+        `There is only one pass through the stock.`,
+      ],
+      tip: `Play off the reserve piles before you deal again, or the new cards bury them.`,
+    },
   },
   calculation: {
     name: 'Calculation', group: 'One deck', blurb: 'Four foundations count by ones, twos, threes and fours; park cards on five piles.',
@@ -327,9 +336,17 @@ export const VARIANTS = {
         ...[0, 1, 2, 3, 4].map((i) => P(`t${i}`, 'tableau'))];
     },
     won: (s) => foundationCount(s) === 48,
-    how: `<p>Four foundations count up <b>regardless of suit</b> by different steps; the A-2-3-4 guide cards show the step:</p>
-      <ul><li>by 1: 2 3 4 5 6 7 8 9 10 J Q K</li><li>by 2: 4 6 8 10 Q A 3 5 7 9 J K</li><li>by 3: 6 9 Q 2 5 8 J A 4 7 10 K</li><li>by 4: 8 Q 3 7 J 2 6 10 A 5 9 K</li></ul>
-      <p>Turn the stock one card at a time. Each card must go onto a foundation or one of five waste piles before you turn the next. Only the top card of a waste pile can be played (to a foundation). No redeals: plan your piles!</p>`,
+    how: {
+      goal: `Build all four foundations up to the kings, each one counting by its own step.`,
+      deal: `Guide cards A, 2, 3 and 4 sit beside four empty foundations, which start with any 2, 4, 6 and 8. Five waste piles start empty, and the other 48 cards are the stock.`,
+      play: [
+        `The foundations build up <b>in any suit</b> by 1, 2, 3 and 4 (the guide card shows the step), wrapping past the king, until each ends on a king:<span class="howto-mono">by 1: 2 3 4 5 6 7 8 9 10 J Q K<br>by 2: 4 6 8 10 Q A 3 5 7 9 J K<br>by 3: 6 9 Q 2 5 8 J A 4 7 10 K<br>by 4: 8 Q 3 7 J 2 6 10 A 5 9 K</span>`,
+        `Turn the stock one card at a time. Each card must go to a foundation or onto one of the <b>five waste piles</b> before you can turn the next.`,
+        `Only the top card of a waste pile can be played, and only to a foundation. Cards never move from one waste pile to another.`,
+        `There is no second pass through the stock.`,
+      ],
+      tip: `Keep one waste pile for kings, which every foundation needs last.`,
+    },
   },
   betsyross: {
     name: 'Betsy Ross', group: 'One deck', blurb: 'Like Calculation, but with the foundations started and three passes through the stock.',
@@ -341,9 +358,16 @@ export const VARIANTS = {
       return [...stockWaste(d), ...f];
     },
     won: (s) => foundationCount(s) === 48,
-    how: `<p>Four foundations start with a 2, 4, 6 and 8, and build up <b>regardless of suit</b> by 1, 2, 3 and 4 (wrapping past king) until each ends with a king:</p>
-      <ul><li>2 3 4 5 6 7 8 9 10 J Q K</li><li>4 6 8 10 Q A 3 5 7 9 J K</li><li>6 9 Q 2 5 8 J A 4 7 10 K</li><li>8 Q 3 7 J 2 6 10 A 5 9 K</li></ul>
-      <p>Turn the stock one card at a time and play to the foundations. Two redeals are allowed.</p>`,
+    how: {
+      goal: `Build all four foundations up to the kings, each one counting by its own step.`,
+      deal: `The foundations start with a 2, 4, 6 and 8, with guide cards A, 2, 3 and 4 beside them. The other 44 cards are the stock.`,
+      play: [
+        `The foundations build up <b>in any suit</b> by 1, 2, 3 and 4, wrapping past the king, until each ends on a king:<span class="howto-mono">2 3 4 5 6 7 8 9 10 J Q K<br>4 6 8 10 Q A 3 5 7 9 J K<br>6 9 Q 2 5 8 J A 4 7 10 K<br>8 Q 3 7 J 2 6 10 A 5 9 K</span>`,
+        `Turn the stock one card at a time onto the waste, and play the top waste card to a foundation when it fits.`,
+        `When the stock is empty, turn the waste over and go again: <b>three passes</b> in all.`,
+      ],
+      tip: `Several foundations can want the same rank at once; think about which one it helps most.`,
+    },
   },
   eaglewing: {
     name: 'Eagle Wing', group: 'One deck', blurb: 'A random starting rank; columns of at most three fed from a 14-card reserve.',
@@ -355,8 +379,18 @@ export const VARIANTS = {
       const t = columns(d, Array(8).fill(1));
       return [...stockWaste(d), P('reserve', 'reserve', [...down(reserve.slice(0, 13)), ...up(reserve.slice(13))]), ...f, ...t];
     },
-    how: `<p>The first foundation card sets the starting rank; build all four foundations up in suit, wrapping from king to ace.</p>
-      <p>Eight columns build down in suit (wrapping) and hold <b>at most three cards</b>. Single cards and whole ordered columns can move. Empty columns fill automatically from the 14-card reserve; once it's empty, fill them with any card. The stock turns one card at a time with one redeal.</p>`,
+    how: {
+      goal: `Move all 52 cards to the four foundations, building each suit up from the starting rank.`,
+      deal: `One card starts the first foundation and sets the <b>starting rank</b> for all four. Eight columns get one card each, a 14-card reserve shows its top card, and the other 29 cards are the stock.`,
+      play: [
+        `Foundations build up in suit from the starting rank, wrapping from king to ace.`,
+        `Columns build <b>down in the same suit</b>, also wrapping, and hold <b>at most three cards</b>. Single cards and ordered runs can move.`,
+        `An empty column is filled from the reserve automatically. Once the reserve is empty, fill it with any card.`,
+        `The top reserve card can go to a foundation or a column.`,
+        `The stock turns one card at a time, with <b>one redeal</b>.`,
+      ],
+      tip: `Emptying a column is the only way to bring out reserve cards, so do it often.`,
+    },
   },
   eliminator: {
     name: 'Eliminator', group: 'One deck', blurb: 'Clear four columns onto eight foundations built up or down from any card.',
@@ -364,28 +398,65 @@ export const VARIANTS = {
     deal(d) { return [...Array.from({ length: 8 }, (_, i) => F(`f${i}`, 'any', { dir: 'updown', suit: 'any', wrap: true })), ...columns(d, Array(4).fill(13))]; },
     won: (s) => tabs(s).every((p) => !p.cards.length),
     score: (s) => foundationsOf(s).filter((f) => !f.cards.length).length * 10 + foundationCount(s), scoreName: 'Score',
-    how: `<p>All 52 cards are dealt face up into four columns. Move top cards onto eight foundations. Each foundation can <b>start with any card</b> and then builds up or down by one, regardless of suit (wrapping between king and ace). Cards can't move between columns.</p>
-      <p>Clear every column to win. For a challenge, use as few foundations as possible: each unused foundation is worth 10 bonus points.</p>`,
+    how: {
+      goal: `Clear all four columns onto the foundations.`,
+      deal: `All 52 cards are dealt face up into four columns of 13. Eight empty foundations sit above them.`,
+      play: [
+        `Move the top card of a column onto a foundation.`,
+        `An empty foundation can start with <b>any card</b>. After that it builds <b>up or down by one</b>, in any suit, wrapping between king and ace.`,
+        `Cards never move between columns.`,
+      ],
+      score: `Clear every column to win. Your score counts the cards on the foundations plus 10 for every foundation you never used, so the fewer you use, the better.`,
+      tip: `Long up-and-down chains on one foundation keep the others free.`,
+    },
   },
   fortress: {
     name: 'Fortress', group: 'One deck', blurb: 'You choose the foundation rank; rows build up or down regardless of suit.',
     rules: { build: 'updown-any', move: 'single', empty: 'any', maxCol: 13, wrap: true },
     deal(d) { return [...fours('global', { wrap: true }), ...columns(d, [6, 6, 5, 5, 5, 5, 5, 5, 5, 5])]; },
-    how: `<p>All cards are dealt face up into ten rows. First, move the top card of any row to a foundation: its rank becomes the <b>starting rank for all four foundations</b>, which build up in suit and wrap from king to ace.</p>
-      <p>Rows build up <i>or</i> down by one regardless of suit (wrapping), one card at a time, at most 13 cards per row. Any card fills an empty row.</p>`,
+    how: {
+      goal: `Move all 52 cards to the four foundations, building each suit up from a starting rank you choose.`,
+      deal: `All 52 cards are dealt face up into ten columns (two of six, eight of five). The foundations start empty.`,
+      play: [
+        `Your first foundation move picks the <b>starting rank</b>: any top card can go, and the other three foundations must start with the same rank.`,
+        `Foundations build up in suit, wrapping from king to ace.`,
+        `Columns build <b>up or down</b> by one in any suit, wrapping, one card at a time, with at most 13 cards each.`,
+        `Any card can fill an empty column.`,
+      ],
+      tip: `Pick a starting rank whose other three cards are near the tops of their columns.`,
+    },
   },
   fourseasons: {
     name: 'Four Seasons', group: 'One deck', blurb: 'Five piles in a cross, foundations in the corners from a random rank.',
     rules: { build: 'down-any', move: 'single', empty: 'any', stock: 'waste', draw: 1, redeals: 0, wrap: true },
     deal(d) { const baseCard = d.shift(); const f = fours(baseCard.rank, { wrap: true }); f[0].cards = up([baseCard]); const t = columns(d, Array(5).fill(1)); return [...stockWaste(d), ...f, ...t]; },
-    how: `<p>The first foundation card sets the starting rank; build the four corner foundations up in suit, wrapping from king to ace. Five piles form a cross: build them <b>down regardless of suit</b> (wrapping), one card at a time. Fill empty piles with the top card of the waste or another pile. The stock turns one card at a time, with no redeal.</p>`,
+    how: {
+      goal: `Move all 52 cards to the four foundations, building each suit up from the starting rank.`,
+      deal: `One card starts a foundation and sets the <b>starting rank</b> for all four. Five columns get one card each, and the other 46 cards are the stock.`,
+      play: [
+        `Foundations build up in suit from the starting rank, wrapping from king to ace.`,
+        `Columns build <b>down in any suit</b>, also wrapping, one card at a time.`,
+        `Any card from the waste or another column can fill an empty column.`,
+        `The stock turns one card at a time, with <b>no redeal</b>.`,
+      ],
+      tip: `Don't rush to fill an empty column; wait for a card that really needs the space.`,
+    },
   },
   labellelucie: {
     name: 'La Belle Lucie', group: 'One deck', blurb: 'Sixteen fans of three; build down in suit. Three reshuffles.',
     rules: { build: 'down-suit', move: 'single', empty: 'none', maxCol: 7, stock: 'reshuffle', redeals: 3 },
     deal(d) { const f = fours('A'); f.forEach((x, i) => { x.cards = up([take(d, (c) => c.rank === 'A' && c.suit === 'SHCD'[i])]); }); return [P('stock', 'stock', [], { reshuffle: true }), ...f, ...columns(d, Array(16).fill(3))]; },
-    how: `<p>The aces start on the foundations; the other cards are fanned out in sixteen groups of three. Build fans down <b>in suit</b>, moving one card at a time (at most seven cards per fan). Empty fans can't be refilled. Build the foundations up in suit.</p>
-      <p>When you're stuck, click <b>Reshuffle</b> to gather the fans, shuffle and deal them out again in threes. You get three reshuffles.</p>`,
+    how: {
+      goal: `Move all 52 cards to the four foundations, building each suit up to the king.`,
+      deal: `The four aces start on the foundations. The other 48 cards are dealt face up in sixteen fans of three.`,
+      play: [
+        `Build the fans down <b>in the same suit</b>, one card at a time. A fan holds at most seven cards.`,
+        `An emptied fan is never refilled.`,
+        `Build the foundations up in suit, from the aces to the kings.`,
+        `When you're stuck, <b>Reshuffle</b>: all the fan cards are gathered, shuffled and dealt again in threes. You get three reshuffles.`,
+      ],
+      tip: `A high card sitting on lower cards of its own suit blocks them; free those first.`,
+    },
   },
   penguin: {
     name: 'Penguin', group: 'One deck', blurb: 'The "beak" card sets the rank; seven columns, seven single-card cells.',
@@ -397,15 +468,33 @@ export const VARIANTS = {
       others.forEach((c, i) => { f[i].cards = up([c]); d.splice(d.indexOf(c), 1); });
       return [...Array.from({ length: 7 }, (_, i) => P(`c${i}`, 'cell')), ...f, ...columns(d, Array(7).fill(7))];
     },
-    how: `<p>One card (the "beak") sets the starting rank; the other three cards of that rank start three foundations, and the beak is somewhere in the columns. Build foundations up in suit, wrapping from king to ace.</p>
-      <p>Seven columns of seven, all face up. Build down in suit (wrapping); move single cards or ordered runs. Seven <b>cells</b> each hold one card. Any card or run fills an empty column.</p>`,
+    how: {
+      goal: `Move all 52 cards to the four foundations, building each suit up from the beak's rank.`,
+      deal: `The first card dealt to the first column (under all the others) is the <b>beak</b>; the other three cards of its rank start three foundations. The rest are dealt face up into seven columns of seven, and seven empty cells wait above.`,
+      play: [
+        `Foundations build up in suit from the beak's rank, wrapping from king to ace.`,
+        `Columns build <b>down in the same suit</b>, also wrapping. Single cards and ordered runs move.`,
+        `Each of the seven <b>cells</b> holds one card.`,
+        `Any card or run can fill an empty column.`,
+      ],
+      tip: `Dig the beak out early so the fourth foundation can start.`,
+    },
   },
   shamrocks: {
     name: 'Shamrocks', group: 'One deck', blurb: 'Eighteen little rows of three; choose the foundation rank.',
     rules: { build: 'updown-any', move: 'single', empty: 'none', maxCol: 3, wrap: true },
     deal(d) { return [...fours('global', { wrap: true }), ...columns(d, [...Array(17).fill(3), 1])]; },
-    how: `<p>Cards are dealt face up into 17 rows of three and one single card. First move the top card of any row to a foundation: its rank starts <b>all four foundations</b>, which build up in suit (wrapping from king to ace).</p>
-      <p>Rows build up or down by one regardless of suit (wrapping), one card at a time, and may never hold more than three cards. Empty rows stay empty.</p>`,
+    how: {
+      goal: `Move all 52 cards to the four foundations, building each suit up from a starting rank you choose.`,
+      deal: `Cards are dealt face up into seventeen little piles of three and one single card. The foundations start empty.`,
+      play: [
+        `Your first foundation move picks the <b>starting rank</b> for all four foundations.`,
+        `Foundations build up in suit, wrapping from king to ace.`,
+        `Piles build <b>up or down</b> by one in any suit, wrapping, one card at a time, and never hold more than three cards.`,
+        `An emptied pile stays empty.`,
+      ],
+      tip: `Choose a starting rank whose cards sit on top of their piles.`,
+    },
   },
   strategy: {
     name: 'Strategy', group: 'One deck', blurb: 'Deal the whole stock onto eight columns, then play off in one go.',
@@ -416,8 +505,17 @@ export const VARIANTS = {
       if (to.type === 'foundation') return stockLeft ? false : from.type === 'tableau';
       return undefined;
     },
-    how: `<p>The aces start on the foundations. Turn the stock one card at a time and place each card on <b>any of eight columns</b> (up to 13 cards each); you can't play to the foundations yet.</p>
-      <p>Once the stock is used up, play top cards from the columns to the foundations, building up in suit to the kings. Cards never move between columns. Tip: never bury a card under a lower card of the same suit.</p>`,
+    how: {
+      goal: `Move all 52 cards to the four foundations, building each suit up to the king.`,
+      deal: `The four aces start on the foundations. Eight columns start empty, and the other 48 cards are the stock.`,
+      play: [
+        `Turn the stock one card at a time and place each card on <b>any of the eight columns</b> (up to 13 cards each), in any order.`,
+        `Nothing can go to the foundations while the stock lasts.`,
+        `Once the stock is used up, play top cards from the columns to the foundations, building up in suit to the kings.`,
+        `Cards never move between columns.`,
+      ],
+      tip: `Never put a card on top of a lower card of the same suit; it will be stuck there.`,
+    },
   },
 
   // ---------------------------------------------------------------- two decks, added
@@ -430,8 +528,18 @@ export const VARIANTS = {
       return [...stockWaste(d), P('r0', 'reserve', up(r1)), P('r1', 'reserve', up(r2)), ...fours('A', { suit: 'any' }), ...fours('K', { suit: 'any', dir: 'down' }, 'k'), ...t];
     },
     canDrop(s, from, to) { if (from.type === 'waste' && to.type === 'tableau') return pile(s, 'stock').cards.length === 0 && !to.cards.length; return undefined; },
-    how: `<p>Two decks. Four foundations build <b>up from ace</b> and four build <b>down from king</b>, regardless of suit, all to completion.</p>
-      <p>Play the top cards of the two 13-card reserves, the four tableau piles and the waste to the foundations. Empty tableau piles refill from the stock automatically; once the stock is gone, any available card may fill them. You may move a top card from one foundation to another. One pass through the stock.</p>`,
+    how: {
+      goal: `Move all 104 cards to the eight foundations: four build up from ace to king and four build down from king to ace, all <b>in any suit</b>.`,
+      deal: `Two decks. Two reserves of 13 face-up cards, four columns of one card, and the 74-card stock.`,
+      play: [
+        `Play the top card of either reserve, any column or the waste to a foundation.`,
+        `Ace foundations count up A, 2, 3 … K; king foundations count down K, Q, J … A. Suits don't matter.`,
+        `An empty column is refilled from the stock automatically. Once the stock is gone, any available card can fill it.`,
+        `You may move the top card of one foundation onto another.`,
+        `The stock turns one card at a time, with <b>no redeal</b>.`,
+      ],
+      tip: `When a reserve and a column both offer the card you need, take it from the reserve.`,
+    },
   },
   alhambra: {
     name: 'Alhambra', group: 'Two decks', decks: 2, blurb: 'Eight reserves; build on the waste up or down in suit.',
@@ -448,22 +556,49 @@ export const VARIANTS = {
       if (to.type === 'waste') { const t = to.cards.at(-1); return from.type === 'reserve' && Boolean(t) && t.suit === cards[0].suit && (mod13(rk(t) - rk(cards[0])) === 1 || mod13(rk(cards[0]) - rk(t)) === 1); }
       return undefined;
     },
-    how: `<p>Two decks. One ace and one king of each suit start the foundations: aces build <b>up</b> in suit, kings build <b>down</b> in suit.</p>
-      <p>Eight reserve piles of four: their top cards can go to the foundations, or onto the <b>waste</b> if they're one rank above or below the waste's top card in the same suit (wrapping). Turn the stock one card at a time; two redeals.</p>`,
+    how: {
+      goal: `Move all 104 cards to the eight foundations.`,
+      deal: `Two decks. One ace and one king of each suit start the foundations. Eight reserve piles of four face-up cards and the 64-card stock make up the rest.`,
+      play: [
+        `Ace foundations build <b>up</b> in suit; king foundations build <b>down</b> in suit.`,
+        `The top card of a reserve pile can go to a foundation, or onto the <b>waste</b> if it is one rank above or below the waste card in the same suit (king and ace connect).`,
+        `The stock turns one card at a time onto the waste; the top waste card can go to a foundation.`,
+        `You get <b>two redeals</b>, so three passes in all.`,
+      ],
+      tip: `Building on the waste is how you dig into the reserves; use it.`,
+    },
   },
   batsford: {
     name: 'Batsford', group: 'Two decks', decks: 2, blurb: 'Two-deck Klondike with a three-king reserve.',
     rules: { build: 'down-alt', move: 'seq', empty: 'king', stock: 'waste', draw: 1, redeals: 0, kingsReserve: 3 },
     deal(d) { const t = columns(d, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], Array(10).fill(1)); return [...stockWaste(d), P('kings', 'reserve', [], { kings: true }), ...Array.from({ length: 8 }, (_, i) => F(`f${i}`, 'A')), ...t]; },
-    how: `<p>Two decks dealt Klondike style into ten columns. Build columns down in alternating colors; move single cards or ordered runs; only kings (or runs starting with a king) fill empty columns. Foundations build up in suit from ace.</p>
-      <p>A special reserve can hold <b>up to three kings</b> parked from anywhere; its top king can later go to an empty column or a foundation. The stock turns one card at a time, with no redeal.</p>`,
+    how: {
+      goal: `Move all 104 cards to the eight foundations, building each one up in suit from ace to king.`,
+      deal: `Two decks. Ten columns of one to ten cards, with only the top cards face up. A special reserve holds up to three kings, and the other 49 cards are the stock.`,
+      play: [
+        `Build the columns <b>down in alternating colors</b>; ordered runs move together.`,
+        `Only a king, or a run starting with a king, can fill an empty column.`,
+        `Park <b>up to three kings</b> in the king reserve from anywhere. Its top king can later go to an empty column or a foundation.`,
+        `The stock turns one card at a time, with <b>no redeal</b>.`,
+      ],
+      tip: `Park a king when it is sitting on top of cards you need.`,
+    },
   },
   colorado: {
     name: 'Colorado', group: 'Two decks', decks: 2, blurb: 'Twenty piles; every stock card must be played somewhere.',
     rules: { build: 'any', move: 'single', empty: 'none', autoFill: 'stock', tabFrom: ['waste'], stock: 'waste-forced' },
     deal(d) { const t = columns(d, Array(20).fill(1)); return [P('stock', 'stock', down(d)), P('waste', 'waste'), ...fours('A', { unique: 'up' }), ...fours('K', { dir: 'down', unique: 'down' }, 'k'), ...t]; },
-    how: `<p>Two decks. Four foundations build <b>up</b> in suit from ace and four build <b>down</b> in suit from king, one of each suit in each direction.</p>
-      <p>Twenty piles start with one card each. Only their top cards can be played, and only to the foundations. Empty piles refill from the stock. Turn the stock one card at a time: each card <b>must</b> be played to a foundation or placed on top of any pile before you turn the next. No redeal.</p>`,
+    how: {
+      goal: `Move all 104 cards to the eight foundations.`,
+      deal: `Two decks. Twenty piles start with one face-up card each, and the other 84 cards are the stock.`,
+      play: [
+        `Four foundations build <b>up</b> in suit from ace to king and four build <b>down</b> in suit from king to ace, one of each suit in each direction.`,
+        `Only the top card of a pile can be played, and only to a foundation.`,
+        `Turn the stock one card at a time. Each card <b>must</b> go to a foundation or onto any pile before you turn the next.`,
+        `An empty pile is refilled from the stock automatically. There is no redeal.`,
+      ],
+      tip: `Stack cards on piles of their own suit so they come off in a useful order.`,
+    },
   },
   mountolympus: {
     name: 'Mount Olympus', group: 'Two decks', decks: 2, blurb: 'Foundations climb by twos: odds from aces, evens from twos.',
@@ -475,14 +610,33 @@ export const VARIANTS = {
       const t = columns(d, Array(9).fill(1));
       return [P('stock', 'stock', down(d)), ...fa, ...f2, ...t];
     },
-    how: `<p>Two decks. The eight aces and eight twos start sixteen foundations that build up <b>by twos</b> in suit: A 3 5 7 9 J K on the aces, 2 4 6 8 10 Q on the twos.</p>
-      <p>Nine columns build <b>down by twos</b> in suit (9 on J, 6 on 8…); single cards and ordered runs move. Empty columns refill from the stock automatically; once it's gone, use any card or run. Click the stock to deal a card onto every column.</p>`,
+    how: {
+      goal: `Move all 104 cards to the sixteen foundations.`,
+      deal: `Two decks. All eight aces and eight twos start the foundations. Nine columns get one card each, and the other 79 cards are the stock.`,
+      play: [
+        `Foundations build up <b>by twos</b> in suit: A 3 5 7 9 J K on the aces, and 2 4 6 8 10 Q on the twos.`,
+        `Columns build <b>down by twos</b> in suit (9♠ on J♠). Single cards and ordered runs move.`,
+        `An empty column is refilled from the stock automatically. Once the stock is gone, any card or run can fill it.`,
+        `The stock deals one card onto every column.`,
+      ],
+      tip: `Odd and even cards never mix in a column, so think of them as two separate games.`,
+    },
   },
   redandblack: {
     name: 'Red and Black', group: 'Two decks', decks: 2, blurb: 'Foundations and columns both alternate colors.',
     rules: { build: 'down-alt', move: 'single', empty: 'any', autoFill: 'waste-or-stock', stock: 'waste', draw: 1, redeals: 1 },
     deal(d) { const f = Array.from({ length: 8 }, (_, i) => F(`f${i}`, 'A', { suit: 'alt' })); f.forEach((x) => { x.cards = up([take(d, (c) => c.rank === 'A')]); }); const t = columns(d, Array(8).fill(1)); return [...stockWaste(d), ...f, ...t]; },
-    how: `<p>Two decks. The eight aces start the foundations, which build up in <b>alternating colors</b> regardless of suit (black 2 on a red ace…). Eight columns build down in alternating colors, one card at a time. Empty columns fill automatically from the waste (or the stock). One redeal.</p>`,
+    how: {
+      goal: `Move all 104 cards to the eight foundations.`,
+      deal: `Two decks. The eight aces start the foundations. Eight columns get one card each, and the other 88 cards are the stock.`,
+      play: [
+        `Foundations build up in <b>alternating colors</b>, in any suit: a black 2 on a red ace.`,
+        `Columns build down in alternating colors, one card at a time.`,
+        `An empty column fills itself from the waste, or from the stock if the waste is empty.`,
+        `The stock turns one card at a time, with <b>one redeal</b>.`,
+      ],
+      tip: `An empty column grabs the waste card at once, so clear one when the waste shows a card you want.`,
+    },
   },
   sultan: {
     name: 'Sultan', group: 'Two decks', decks: 2, blurb: 'Surround the Sultan: seven kings build A–Q, the heart ace builds to the queen.',
@@ -497,8 +651,17 @@ export const VARIANTS = {
       return [...stockWaste(d), P('sultan', 'guide', up([sultan])), fa, ...fk, ...cells];
     },
     won: (s) => foundationCount(s) === 103,
-    how: `<p>Two decks. The king of hearts sits in the middle as the Sultan. Seven other kings start foundations that build up in suit <b>wrapping from king to ace and on to queen</b>; an ace of hearts starts a foundation that builds up to the queen.</p>
-      <p>Eight side spaces each hold one card; refill empty spaces from the waste. Turn the stock one card at a time; two redeals. Complete every foundation to win.</p>`,
+    how: {
+      goal: `Complete all eight foundations around the Sultan.`,
+      deal: `Two decks. The king of hearts (the Sultan) sits apart. Seven more kings and an ace of hearts start the foundations. Eight side spaces get one card each, and the rest are the stock.`,
+      play: [
+        `The king foundations build up <b>in suit</b> and go round the corner: K, A, 2, 3 … Q.`,
+        `The ace of hearts builds up in hearts from ace to queen.`,
+        `Each side space holds one card. Fill an empty space from the waste.`,
+        `The stock turns one card at a time onto the waste, with <b>two redeals</b>.`,
+      ],
+      tip: `Keep a side space empty for a card you will need soon.`,
+    },
   },
   terrace: {
     name: 'Terrace', group: 'Two decks', decks: 2, blurb: 'Pick the starting rank from three cards; alternate colors everywhere.',
@@ -513,8 +676,18 @@ export const VARIANTS = {
       if (from.type === 'reserve' && to.type !== 'foundation') return false;
       return undefined;
     },
-    how: `<p>Two decks. Begin by moving one of the three cards in the first tableau columns to a foundation: its rank becomes the <b>starting rank for all eight foundations</b>, which build up in alternating colors and wrap from king to ace. Then the other columns are dealt.</p>
-      <p>Columns build down in alternating colors (wrapping), one card at a time, at most 15 cards. Empty columns refill from the waste or stock. The top card of the 11-card reserve can only go to the foundations. One pass through the stock.</p>`,
+    how: {
+      goal: `Move all 104 cards to the eight foundations, building up from a starting rank you choose.`,
+      deal: `Two decks. An 11-card reserve lies face up, the first three of nine columns get one card each, and the rest are the stock.`,
+      play: [
+        `Start by moving one of the three column cards to a foundation: its rank becomes the <b>starting rank</b> for all eight. The other columns are then dealt a card each.`,
+        `Foundations build up in <b>alternating colors</b>, in any suit, wrapping from king to ace.`,
+        `Columns build down in alternating colors, also wrapping, one card at a time (up to 15 cards).`,
+        `The top reserve card can only go to a foundation.`,
+        `An empty column fills itself from the waste or the stock. There is one pass through the stock.`,
+      ],
+      tip: `Look through the reserve before choosing: a rank buried deep in it makes a poor start.`,
+    },
   },
 };
 
