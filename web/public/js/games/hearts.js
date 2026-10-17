@@ -2,6 +2,8 @@
 import { deck, shuffle, sortCards, hi, rngOf, SYM } from '../core/cards.js';
 import { clone, log, fx, who, trickWinner, followSuit, seatsVM, trickPlays, must } from './lib/common.js';
 import { trickHTML, panel, btn, scoreTable } from '../core/table.js';
+import { trayHTML } from '../core/pieces.js';
+import { cardHTML } from '../skin.js';
 
 const PASS_DIRS = [1, 3, 2, 0]; // left, right, across, hold
 const DIR_NAME = { 1: 'left', 3: 'right', 2: 'across', 0: 'none' };
@@ -187,7 +189,10 @@ export default {
     let overlay = '', banner = '';
     if (s.phase === 'pass') {
       const n = ui.selected.size;
-      overlay = panel(`Pass three cards ${DIR_NAME[s.passDir]}`, `<p>Pick the three cards to give ${s.names[(0 + s.passDir) % 4]}. (${n}/3 chosen)</p>
+      // The chosen cards wait in the tray (in hand order); empty slots for the rest.
+      const chosen = s.hands[0].filter((c) => ui.selected.has(c.id));
+      const tray = trayHTML(chosen.map((c) => cardHTML(c)).join('') + '<span class="empty-slot"></span>'.repeat(3 - chosen.length), { label: `Pass to ${s.names[s.passDir]}`, width: 230 });
+      overlay = panel(`Pass three cards ${DIR_NAME[s.passDir]}`, `<p>Pick three cards from your hand. (${n}/3 chosen)</p>${tray}
         <div class="row">${btn('Pass cards', 'pass', `data-with-sel ${n === 3 ? '' : 'disabled'}`, true)}</div>`);
     } else if (s.phase === 'handOver' || s.phase === 'gameOver') {
       const r = s.result;

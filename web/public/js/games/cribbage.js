@@ -3,6 +3,7 @@ import { deck, shuffle, sortCards, rngOf, lo, pipValue, SYM } from '../core/card
 import { clone, log, fx, must } from './lib/common.js';
 import { panel, btn, cardsRow } from '../core/table.js';
 import { cardHTML, backHTML } from '../skin.js';
+import { cribbageBoardHTML, trayHTML } from '../core/pieces.js';
 
 const sortHand = (h) => sortCards(h, { rankFn: lo, bySuit: false, desc: false });
 const label = (c) => `${c.rank}${SYM[c.suit]}`;
@@ -61,6 +62,7 @@ function pegPoints(pile, count) {
 
 function addPoints(s, p, pts, why) {
   if (!pts || s.phase === 'gameOver') return s;
+  s.prev = [...(s.prev ?? [0, 0])]; s.prev[p] = s.scores[p]; // the back peg (display only)
   s.scores[p] = Math.min(WIN, s.scores[p] + pts);
   log(s, `${p === 0 ? 'You peg' : `${s.names[p]} pegs`} ${pts} (${why}).`);
   fx(s, 'score');
@@ -192,7 +194,7 @@ export default {
   id: 'cribbage', title: 'Cribbage', version: 1, seats: 2, rulesHTML: RULES,
   settings: [{ key: 'first', label: 'First dealer', options: [['me', 'Me'], ['north', 'Opponent'], ['random', 'Random']], default: 'random' }],
   newGame({ names, seed, opts }) {
-    const s = { v: 1, seed, rngN: 0, names: names.slice(0, 2), opts, scores: [0, 0], handNo: 0, log: [], fx: [], partners: false };
+    const s = { v: 1, seed, rngN: 0, names: names.slice(0, 2), opts, scores: [0, 0], prev: [0, 0], handNo: 0, log: [], fx: [], partners: false };
     s.dealer = opts.first === 'me' ? 0 : opts.first === 'north' ? 1 : (rngOf(s)() < 0.5 ? 0 : 1);
     return deal(s);
   },
@@ -220,26 +222,27 @@ export default {
     let overlay = '', banner = '';
     const opp = s.names[1];
     const whose = (p) => (p === 0 ? 'Your' : `${opp}'s`);
-    const counts = (x) => `<div style="margin-bottom:10px"><b>${whose(x.who)} ${x.kind}</b> · ${x.total} pts${cardsRow([...x.cards, s.starter], 40)}<div style="font-size:13px;color:var(--ink-2)">${x.items.map(([n, p]) => `${n} ${p}`).join(' · ') || 'Nineteen (nothing)'}</div></div>`;
+    const counts = (x) => `<div style="margin-bottom:10px"><b>${whose(x.who)} ${x.kind}</b> · ${x.total} pts${x.kind === 'crib'
+      ? `<div class="row" style="gap:10px">${trayHTML(x.cards.map((c) => cardHTML(c)).join(''), { width: 210 })}<div style="--card-w:40px">${cardHTML(s.starter)}</div></div>` : cardsRow([...x.cards, s.starter], 40)}<div style="font-size:13px;color:var(--ink-2)">${x.items.map(([n, p]) => `${n} ${p}`).join(' · ') || 'Nineteen (nothing)'}</div></div>`;
     if (s.phase === 'discard') overlay = panel(`${whose(s.dealer)} crib`, `<p>Choose two cards to lay away (${ui.selected.size}/2).</p><div class="row">${btn('Send to crib', 'crib', `data-with-sel ${ui.selected.size === 2 ? '' : 'disabled'}`, true)}</div>`);
     else if (s.phase === 'show') overlay = panel(`Hand ${s.handNo}: the count`, `<div style="max-height:50vh;overflow:auto">${s.show.map(counts).join('')}</div><div class="row" style="justify-content:flex-end">${btn('Next hand', 'next', '', true)}</div>`, 'max-width:520px');
     else if (s.phase === 'gameOver') overlay = panel(s.winner === 0 ? 'You win!' : `${opp} wins`, `<p>${s.scores[0]} – ${s.scores[1]}${s.skunk ? ` · a ${s.skunk}!` : ''}</p>${s.show ? s.show.map(counts).join('') : ''}<div class="row" style="justify-content:flex-end">${btn('Play again', 'again', '', true)}</div>`);
     else banner = s.turn === 0 ? `Count is ${s.count}: play a card` : `${opp} is playing…`;
-    const bar = (p) => `<div class="peg-track" role="img" aria-label="${whose(p)} score ${s.scores[p]} of 121"><span style="width:${(s.scores[p] / WIN) * 100}%"></span><b>${s.scores[p]}</b></div>`;
-    const center = `<div style="display:flex;flex-direction:column;align-items:center;gap:10px">
-      <div class="row" style="--card-w:52px;gap:4px;min-height:80px">${s.played[1].map((c) => cardHTML(c)).join('')}</div>
-      <div class="row" style="gap:24px;--card-w:70px"><div class="pile">${s.starter ? cardHTML(s.starter) : backHTML()}<span>Starter</span></div>
-        <div class="pile"><span class="count-badge">${s.count}</span><span>Count</span></div>
-        <div class="pile">${s.crib.length ? backHTML() : '<span class="empty-slot">Crib</span>'}<span>${whose(s.dealer)} crib</span></div></div>
-      <div class="row" style="--card-w:52px;gap:4px;min-height:80px">${s.played[0].map((c) => cardHTML(c)).join('')}</div></div>`;
+    const board = cribbageBoardHTML([{ name: 'You', score: s.scores[0], prev: s.prev?.[0] ?? 0, peg: 'brass' }, { name: opp, score: s.scores[1], prev: s.prev?.[1] ?? 0, peg: 'red' }]);
+    const crib = trayHTML(s.crib.length ? s.crib.map(() => backHTML()).join('') : '', { label: `${whose(s.dealer)} crib`, width: 170 });
+    const center = `<div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+      <div class="row" style="--card-w:48px;gap:4px;min-height:68px">${s.played[1].map((c) => cardHTML(c)).join('')}</div>
+      <div class="row" style="gap:18px;--card-w:54px;justify-content:center;align-items:flex-end"><div class="pile">${s.starter ? cardHTML(s.starter) : backHTML()}<span>Starter</span></div>
+        <div class="pile"><span class="count-badge" style="width:54px;font-size:24px">${s.count}</span><span>Count</span></div>
+        <div class="pile">${crib}</div></div>
+      <div class="row" style="--card-w:48px;gap:4px;min-height:68px">${s.played[0].map((c) => cardHTML(c)).join('')}</div></div>`;
     return {
       subtitle: `Hand ${s.handNo} · to 121`,
       scores: [{ label: 'You', value: s.scores[0], us: true }, { label: opp, value: s.scores[1] }],
       seats: [{ seat: 0, pos: 'south', name: s.names[0], mine: true, turn: s.turn === 0, dealer: s.dealer === 0 }, { seat: 1, pos: 'north', name: opp, count: s.hands[1].length, turn: s.turn === 1, dealer: s.dealer === 1 }],
       hand: s.phase === 'discard' ? { cards: s.hands[0], legal: s.hands[0].map((c) => c.id), mode: 'select', maxSelect: 2 }
         : { cards: s.hands[0], legal: s.phase === 'peg' && s.turn === 0 ? canPlay(s, 0).map((c) => c.id) : null },
-      center, banner, overlay,
-      side: [{ title: 'The board', html: `<div style="display:flex;flex-direction:column;gap:8px"><div>You</div>${bar(0)}<div>${opp}</div>${bar(1)}</div>` }],
+      center: overlay ? '' : center, banner, overlay, board, // a panel takes the center's place below the board
     };
   },
 };

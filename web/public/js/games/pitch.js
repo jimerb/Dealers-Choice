@@ -1,6 +1,6 @@
 // Pitch (cutthroat, 4 players): bid 2/3/4/Smudge; points for High, Low, Jack and Game.
 import { deck, shuffle, sortCards, hi, rngOf, SUIT_TITLE } from '../core/cards.js';
-import { clone, log, fx, who, trickWinner, seatsVM, must, POS4, suitSpan } from './lib/common.js';
+import { clone, log, fx, who, trickWinner, seatsVM, must, POS4 } from './lib/common.js';
 import { trickHTML, panel, btn, scoreTable } from '../core/table.js';
 
 const GAMEPTS = { 10: 10, A: 4, K: 3, Q: 2, J: 1 };
@@ -203,7 +203,8 @@ export default {
       hand: { cards: s.hands[0], legal: s.phase === 'play' && s.turn === 0 ? legal(s, 0).map((c) => c.id) : null },
       center: trickHTML(s.trick.map((p) => ({ pos: POS4[p.seat], card: p.card })), s.phase === 'trickDone' ? POS4[s.winner] : null),
       banner, overlay,
-      side: [{ title: 'Trump', html: s.trump ? `<div class="big">${suitSpan(s.trump)} ${SUIT_TITLE[s.trump]}</div>` : '<div>Set by the first card played</div>' }],
+      trump: s.trump ? { suit: s.trump } : null,
+      side: s.trump ? [] : [{ title: 'Trump', html: '<div>Set by the first card played</div>' }],
     };
   },
 };

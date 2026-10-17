@@ -273,7 +273,8 @@ export default {
         ? { cards: s.hands[0], legal: s.hands[0].map((c) => c.id), mode: 'select', maxSelect: 1 }
         : { cards: s.hands[0], legal: myTurn ? legal(s, 0).map((c) => c.id) : null },
       center, banner, overlay,
-      side: [{ title: 'Trump', html: s.trump ? `<div class="big">${suitSpan(s.trump)} ${SUIT_TITLE[s.trump]}</div><div>Maker: ${who(s, s.maker)}${s.alone ? ' (alone)' : ''}</div>` : `<div>Up card: ${s.up.rank}${'♠♥♣♦'['SHCD'.indexOf(s.up.suit)]}</div>` },
+      trump: s.trump ? { suit: s.trump } : null,
+      side: [s.trump ? { title: 'Maker', html: `<div>${who(s, s.maker)}${s.alone ? ' (alone)' : ''}</div>` } : { title: 'Trump', html: `<div>Up card: ${s.up.rank}${'♠♥♣♦'['SHCD'.indexOf(s.up.suit)]}</div>` },
         { title: 'Tricks', html: scoreTable(['Us', 'Them'], [['Taken', s.tricks[0] + s.tricks[2], s.tricks[1] + s.tricks[3]]]) }],
     };
   },

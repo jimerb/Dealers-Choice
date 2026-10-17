@@ -382,6 +382,8 @@ export default {
         : { cards: s.hands[0], legal: s.phase === 'play' && my ? legal(s, 0).map((c) => c.id) : null },
       center: trickHTML(s.trick.map((x) => ({ pos: POS3[x.seat], card: x.card })), s.phase === 'trickDone' ? POS3[s.winner] : null),
       banner, overlay,
+      // Suit games show their suit (the jacks rank above it); in a grand only the jacks are trump; null has none.
+      trump: 'CSHD'.includes(s.game ?? 'x') ? { suit: s.game } : s.game === 'G' ? { suit: 'J', caption: 'Grand: jacks only' } : null,
       side: [{ title: 'Game', html: s.game ? `<div class="big">${GNAME[s.game]}${s.hand ? ' · hand' : ''}</div><div>Declarer: ${who(s, s.declarer)} · bid ${s.bid.value}</div>${s.game !== 'null' && s.game !== 'ouvert' ? `<div>Declarer has ${declPts} card points</div>` : ''}` : `<div>Bidding: ${s.bid.value || 'none yet'}</div>` }],
     };
   },

@@ -2,6 +2,7 @@
 import { deck, shuffle, sortCards, hi, rngOf } from '../core/cards.js';
 import { clone, log, fx, must, posFor } from './lib/common.js';
 import { panel, btn, scoreTable, cardsRow } from '../core/table.js';
+import { chipsHTML } from '../core/pieces.js';
 
 const CAT = ['High card', 'One pair', 'Two pair', 'Three of a kind', 'Straight', 'Flush', 'Full house', 'Four of a kind', 'Straight flush'];
 
@@ -270,10 +271,13 @@ export default {
     const seats = Array.from({ length: s.n }, (_, i) => {
       const tag = !s.inHand[i] ? (s.chips[i] <= 0 ? 'Out' : '') : s.folded[i] ? 'Folded' : s.phase.startsWith('bet') && s.roundBet[i] ? `Bet ${s.roundBet[i]}` : s.drawn[i] !== null && s.phase !== 'bet1' ? `Drew ${s.drawn[i]}` : '';
       const showdown = (s.phase === 'handOver' || s.phase === 'gameOver') && s.result?.showdown && s.result.vals[i];
+      // Bankroll and this round's bet as chip stacks (the amounts are in the plate and its bubble).
+      const bet = s.phase.startsWith('bet') ? s.roundBet[i] : 0;
+      const extra = s.chips[i] > 0 || bet ? `<div class="seat-chips">${s.chips[i] > 0 ? chipsHTML(s.chips[i], { size: 26, perStack: 4 }) : ''}${bet ? `<span class="bet">${chipsHTML(bet, { size: 22, stacks: 2, perStack: 4 })}</span>` : ''}</div>` : '';
       return { seat: i, pos: posFor(s.n, i), name: `${i === 0 ? s.names[0] : s.names[i]} · ${s.chips[i]}`, mine: i === 0, turn: s.turn === i,
-        dealer: s.dealer === i, count: i && s.inHand[i] && !s.folded[i] && !showdown ? 5 : 0, faceUp: i && showdown ? s.hands[i] : null, faceUpWidth: 36, tag, tagMuted: s.folded[i] };
+        dealer: s.dealer === i, count: i && s.inHand[i] && !s.folded[i] && !showdown ? 5 : 0, faceUp: i && showdown ? s.hands[i] : null, faceUpWidth: 36, tag, tagMuted: s.folded[i], extra };
     });
-    const center = `<div class="pot" aria-label="Pot ${pot(s)}"><span class="chip-stack" aria-hidden="true"></span><b>Pot ${pot(s)}</b>${s.phase.startsWith('bet') ? `<span>Bet to call: ${s.currentBet}</span>` : ''}</div>${actions ? `<div class="hand-actions">${actions}</div>` : ''}`;
+    const center = `<div class="pot" aria-label="Pot ${pot(s)}">${chipsHTML(pot(s), { size: 34, stacks: 4, perStack: 6 })}<b>Pot ${pot(s)}</b>${s.phase.startsWith('bet') ? `<span>Bet to call: ${s.currentBet}</span>` : ''}</div>${actions ? `<div class="hand-actions">${actions}</div>` : ''}`;
     return {
       subtitle: `Hand ${s.handNo}${Number(s.opts.hands) ? ` of ${s.opts.hands}` : ''} · ante ${ANTE} · bets ${SMALL}/${BIG}`,
       scores: [{ label: 'Your chips', value: s.chips[0], us: true }],

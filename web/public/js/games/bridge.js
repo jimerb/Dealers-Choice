@@ -347,6 +347,7 @@ export default {
       hand: { cards: s.hands[0], legal: humanTurnOn(0) ? legal(s, 0).map((c) => c.id) : null },
       center: trickHTML(s.trick.map((p) => ({ pos: POS4[p.seat], card: p.card })), s.phase === 'trickDone' ? POS4[s.winner] : null),
       banner, overlay,
+      trump: s.contract && s.phase !== 'auction' ? (s.contract.strain === 'NT' ? { suit: 'NT', caption: 'No trump' } : { suit: s.contract.strain }) : null,
       side: [{ title: 'Auction', html: auctionHTML },
         { title: 'Tricks', html: s.contract ? scoreTable(['We', 'They'], [['Taken', s.tricks[0], s.tricks[1]]]) : '—' }],
     };

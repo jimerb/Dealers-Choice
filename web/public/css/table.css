@@ -37,7 +37,8 @@
 .plate .avatar { width: 28px; height: 28px; font-size: 13px; }
 .plate.partner .avatar, .plate.me .avatar { background: var(--brass); color: var(--on-brass); }
 .plate.turn { border-color: var(--brass-2); box-shadow: 0 0 0 4px rgba(226,194,122,.25); }
-.plate .dealer { font-size: 11px; font-weight: 800; background: var(--ink); color: var(--ground); border-radius: 50%; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; }
+/* dealer button: the cream-and-brass disc with a D on its face */
+.plate .dealer { flex: none; font-family: var(--font-display); font-size: 11px; font-weight: 400; line-height: 1; color: var(--card-ink); background: url(/assets/art/tokens/dealer-button.png) center / contain no-repeat; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,.55); }
 .bubble { font-size: 13px; font-weight: 700; padding: 3px 9px; border-radius: 8px; background: var(--ink); color: var(--ground); }
 .bubble.pass { background: var(--line-2); color: var(--ink); }
 
@@ -132,13 +133,9 @@ table.score th:first-child, table.score td:first-child { text-align: left; color
 .memory-grid .empty-slot { border-color: rgba(244,239,227,.12); }
 .center { flex-direction: column; gap: 14px; }
 .hand-actions { display: flex; gap: 10px; justify-content: center; }
-.peg-track { position: relative; height: 18px; border-radius: 9px; background: var(--ground); border: 1px solid var(--line-2); overflow: hidden; }
-.peg-track span { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, #8E6D25, var(--brass)); }
-.peg-track b { position: absolute; right: 8px; top: -1px; font-size: 12px; }
 .count-badge { width: 70px; aspect-ratio: 5 / 7; border-radius: 8px; background: rgba(8,24,19,.8); border: 2px solid var(--brass); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; color: var(--brass-2); }
 .pot { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 22px; border-radius: 16px; background: rgba(8,24,19,.7); border: 1px solid var(--line-2); font-size: 14px; color: var(--ink-2); }
 .pot b { font-size: 22px; color: var(--brass-2); }
-.chip-stack { width: 46px; height: 30px; background: radial-gradient(circle at 50% 35%, #E2C27A 0 9px, #8E2F2F 10px 14px, transparent 15px), radial-gradient(circle at 30% 70%, #F4EFE3 0 9px, #1D2B4A 10px 14px, transparent 15px), radial-gradient(circle at 72% 70%, #C9A24A 0 9px, #17604A 10px 14px, transparent 15px); }
 .canasta-table { display: flex; flex-direction: column; gap: 14px; align-items: center; width: 100%; }
 .meld-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; --card-w: 48px; min-height: 72px; }
 .meld-row.empty { color: var(--ink-3); font-size: 13px; align-items: center; }
@@ -151,3 +148,60 @@ table.score th:first-child, table.score td:first-child { text-align: left; color
 .bid-btn { min-height: 36px; padding: 0 6px; }
 .bid-btn.red { color: #F08A80; }
 table.auction td, table.auction th { text-align: center !important; }
+
+/* ---------- table pieces (js/core/pieces.js) ---------- */
+/* chip stacks: each chip sits a little above the one below it */
+.chips { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; --lift: calc(var(--chip) * .2); }
+.chip-cols { display: inline-flex; align-items: flex-end; gap: calc(var(--chip) * .12); }
+.chip-col { position: relative; width: var(--chip); height: calc(var(--chip) + (var(--n) - 1) * var(--lift)); }
+.chip-col img { position: absolute; left: 0; bottom: calc(var(--i) * var(--lift)); width: var(--chip); height: var(--chip); filter: drop-shadow(0 1px 1px rgba(0,0,0,.55)); }
+.chip-col b { position: absolute; left: 0; top: 0; width: var(--chip); height: var(--chip); display: flex; align-items: center; justify-content: center; font-size: calc(var(--chip) * .3); font-weight: 800; color: var(--card-ink); letter-spacing: -.3px; }
+.chips-text { font-size: 13px; color: var(--ink-2); white-space: nowrap; }
+.seat-chips { display: flex; align-items: flex-end; gap: 10px; min-height: 22px; }
+.seat-chips .bet { display: inline-flex; align-items: flex-end; padding-left: 8px; border-left: 1px solid rgba(244,239,227,.25); }
+.pot .chips { margin-bottom: 2px; }
+
+/* cribbage board: the walnut board with holes and pegs drawn over it */
+.felt.with-board { grid-template-areas: "top top top" "board board board" "west center east" "south south south"; grid-template-rows: auto auto minmax(220px, 1fr) auto; }
+.felt.with-board .center { min-height: 0; padding-bottom: 34px; } /* room for the banner */
+.felt.with-board .overlay { position: static; width: 100%; } /* panels take the center's place and keep the board in view */
+.area-board { grid-area: board; display: flex; justify-content: center; padding: 6px 0 2px; min-width: 0; }
+.crib-board { margin: 0; display: flex; align-items: center; gap: 16px; width: 100%; justify-content: center; }
+.crib-board svg { display: block; flex: 0 1 560px; min-width: 0; height: auto; filter: drop-shadow(0 6px 12px rgba(0,0,0,.4)); }
+.crib-board .holes circle { fill: #1A100A; stroke: rgba(226,194,122,.35); stroke-width: 1.5; }
+.crib-board .divider { stroke: rgba(226,194,122,.55); stroke-width: 2; }
+.crib-board figcaption { display: flex; flex-direction: column; gap: 8px; font-size: 14px; color: var(--ink-2); }
+.peg-key { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.peg-key img { width: 14px; height: 14px; }
+.peg-key b { color: var(--ink); font-size: 16px; }
+
+/* card tray: cards rest on its felt, the label sits underneath */
+.tray-wrap { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.tray { width: var(--tray-w); max-width: 100%; aspect-ratio: 900 / 358; background: url(/assets/art/tokens/tray.png) center / 100% 100% no-repeat; display: flex; align-items: center; justify-content: center; gap: calc(var(--tray-w) * .02); --card-w: calc(var(--tray-w) * .19); filter: drop-shadow(0 4px 8px rgba(0,0,0,.35)); }
+.tray .card, .tray .empty-slot { flex: none; }
+.tray .empty-slot { border-color: rgba(244,239,227,.3); }
+.tray-wrap figcaption { font-size: 13px; color: var(--ink-2); font-weight: 600; }
+.card-panel .tray-wrap { margin: 4px 0 12px; }
+
+/* trump plaque: pinned to the felt's top-left corner */
+.felt > .trump-plaque { position: absolute; left: 16px; top: 16px; z-index: 1; }
+.trump-plaque { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; width: 112px; pointer-events: none; }
+.trump-plaque .plaque { width: 100%; aspect-ratio: 480 / 205; background: url(/assets/art/tokens/trump-plaque.png) center / contain no-repeat; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 3px 6px rgba(0,0,0,.4)); }
+.trump-plaque .plaque img { width: 27%; height: auto; }
+.trump-plaque .plaque span { font-family: var(--font-display); font-size: 20px; color: var(--card-ink); }
+.trump-plaque figcaption { font-size: 12px; font-weight: 600; color: var(--ink-2); text-align: center; line-height: 1.25; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
+
+@media (max-width: 760px) {
+  .felt > .trump-plaque { left: 8px; top: 8px; }
+  .trump-plaque { width: 76px; }
+  .trump-plaque figcaption { font-size: 11px; }
+  .crib-board { flex-direction: column; gap: 4px; }
+  .crib-board svg { flex: none; width: 100%; }
+  .crib-board figcaption { flex-direction: row; font-size: 13px; gap: 14px; }
+  /* narrow table: smaller chips (beating the inline size) and only the top stack of each pile */
+  .seat-chips { gap: 6px; }
+  .seat-chips .chips { --chip: 19px !important; }
+  .seat-chips .chip-col + .chip-col { display: none; }
+  .seat-chips .bet { padding-left: 6px; }
+  .pot .chips { --chip: 26px !important; }
+}

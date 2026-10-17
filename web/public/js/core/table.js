@@ -12,11 +12,14 @@
 //   aiAct(state) -> state                        (acts for actor(state); must also handle seat 0 for tests)
 //   view(state, ui) -> view model (see renderTable)
 //   delay?(state) -> ms
+// View model extras: vm.board (HTML for a full-width row above the center, e.g. the cribbage board),
+// vm.trump ({ suit, caption? }: the trump plaque in the felt's corner; see core/pieces.js).
 // Engines may set state.fx = ['card', ...] (sound event names) on transitions.
 import { cardHTML, backHTML, cardName, paintFelt } from '../skin.js';
 import { mountChrome, esc, playerName, playerAvatar, avatarHTML } from '../header.js';
 import { play } from './sound.js';
 import { pickOpponents, castByName } from './cast.js';
+import { trumpPlaqueHTML } from './pieces.js';
 
 const MAX_SEATS = 6;
 const pace = () => { try { return localStorage.getItem('dc.speed') === 'fast' ? 0.45 : 1; } catch { return 1; } };
@@ -119,11 +122,13 @@ export function mountTable(game) {
       `<span class="score-chip${s.us ? ' us' : ''}"><b>${esc(s.label)}</b>${esc(String(s.value))}</span>`).join('');
     const felt = document.getElementById('felt');
     paintFelt(felt);
+    felt.classList.toggle('with-board', !!vm.board);
     const areas = { top: [], west: [], east: [], south: [] };
     for (const st of vm.seats) { const r = seatHTML(st); areas[r.area].push(r.html); }
     const south = vm.seats.find((s) => s.pos === 'south');
     felt.innerHTML = `
       <div class="area-top">${areas.top.join('')}</div>
+      ${vm.board ? `<div class="area-board">${vm.board}</div>` : ''}${vm.trump ? trumpPlaqueHTML(vm.trump.suit, vm.trump) : ''}
       <div class="area-west">${areas.west.join('')}</div>
       <div class="area-east">${areas.east.join('')}</div>
       <div class="center">${vm.center ?? ''}${vm.banner ? `<div class="banner" role="status">${esc(vm.banner)}</div>` : ''}${vm.overlay ? `<div class="overlay">${vm.overlay}</div>` : ''}</div>

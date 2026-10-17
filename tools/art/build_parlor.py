@@ -7,7 +7,7 @@ Writes  art/parlor/masters/{cards,backs}/          750x1050 print-quality master
         web/public/assets/skins/parlor/cards/      500x700 faces (AS.png, 10H.png, JK1.png, T21.png, EX.png, CS.png ...)
         web/public/assets/skins/parlor/backs/      500x700 backs
         web/public/assets/skins/parlor/tables/     1024x1024 seamless tiles
-        web/public/assets/art/{tokens,cast,lobby,brand}/
+        web/public/assets/art/{tokens,pips,cast,lobby,brand}/
         art/parlor/proof/                          contact sheets of the built output
 
 Route A from the art brief: the 52 faces are assembled here from pips, court half-portraits and the
@@ -279,6 +279,13 @@ def main():
         if key:
             im = fit(im, *sizes[key])
         im.save(out(os.path.join(ART, 'tokens', f)), optimize=True)
+
+    # suit pips for the table pieces (the trump plaque): 128x128, centred, transparent
+    for s in SUITS:
+        im = fit(PIPS[s], 128, 128)
+        pad = Image.new('RGBA', (128, 128), (0, 0, 0, 0))
+        pad.paste(im, ((128 - im.width) // 2, (128 - im.height) // 2), im)
+        pad.save(out(os.path.join(ART, 'pips', f'pip-{s}.png')), optimize=True)
 
     for f in os.listdir(os.path.join(SRC, 'cast')):
         src('cast', f).convert('RGB').resize((512, 512), Image.LANCZOS).save(out(os.path.join(ART, 'cast', f)), optimize=True)

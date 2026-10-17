@@ -59,7 +59,7 @@ web/public/pinochle.html       the Pinochle table
 web/public/solitaire.html      the solitaire parlor
 web/public/js/games/           one rules engine and computer player per game
 web/public/js/solitaire/       the solitaire engine and layouts
-web/public/js/core/            cards, table, sound and music
+web/public/js/core/            cards, table, table pieces (chips, board, tray, plaque), sound and music
 web/public/js/skin.js          card styles (Parlor and the drawn deck)
 web/public/assets/             card art, table felts, sounds and music
 web/test/                      rules and engine tests

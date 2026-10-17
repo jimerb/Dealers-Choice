@@ -5,6 +5,7 @@ import { cardHTML, backHTML, cardName, paintFelt } from '../../skin.js';
 import { mountChrome, esc, playerName, playerAvatar, avatarHTML } from '../../header.js';
 import { play } from '../../core/sound.js';
 import { pickOpponents, castByName } from '../../core/cast.js';
+import { trumpPlaqueHTML } from '../../core/pieces.js';
 
 mountChrome('pinochle');
 
@@ -165,7 +166,7 @@ function sidePanel() {
   const contract = s.highBidder === null || s.phase === 'bidding'
     ? `<div class="big">Bidding</div><div style="color:var(--ink-3);font-size:14px">${esc(s.names[s.dealer])} dealt · hand ${s.handNo}</div>`
     : `<div class="big">${s.highBidder === 0 ? 'You' : esc(s.names[s.highBidder])} · ${s.highBid}</div>
-       ${s.trump ? `<div style="display:flex;align-items:center;gap:8px">Trump ${suitSpan(s.trump)} ${P.SUIT_NAMES[s.trump]}</div>` : '<div>Naming trump…</div>'}`;
+       ${s.trump ? '' : '<div>Naming trump…</div>'}`;
   const counters = (t) => [...s.taken[t], ...s.taken[t + 2]].filter(P.isCounter).length * 10;
   const tricks = (t) => s.tricksWon[t] + s.tricksWon[t + 2];
   const live = s.melds ? `<section class="panel"><h2>This hand</h2>
@@ -188,7 +189,7 @@ function render() {
   paintFelt(felt);
   const b = banner();
   const ov = overlay();
-  felt.innerHTML = `
+  felt.innerHTML = `${s.trump ? trumpPlaqueHTML(s.trump) : ''}
     <div class="seat north">${plate(2)}${backs(2, false)}</div>
     <div class="seat west">${plate(1)}${backs(1, true)}</div>
     <div class="seat east">${plate(3)}${backs(3, true)}</div>
