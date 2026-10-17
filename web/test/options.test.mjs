@@ -469,3 +469,14 @@ test('skat: kontra doubles the score and re doubles it again', async () => {
   assert.ok(!canRe({ ...said, rePlayed: true }, s.declarer));
   assert.ok(!canKontra({ ...s, trickNo: 1 }, def));
 });
+
+// ------------------------------------------------------------------ Poker
+test('poker: two- and three-player tables play out', async () => {
+  const game = await load('poker');
+  for (const players of [2, 3]) {
+    const s = game.newGame({ names: NAMES, seed: 1, opts: { ...defaults(game), players } });
+    assert.equal(s.names.length, players);
+    assert.equal(game.view(s, ui()).seats.length, players);
+    for (const end of playOut(game, { players, hands: 0 }, 2)) assert.equal(end.chips.filter((c) => c > 0).length === 1 || end.chips[0] <= 0, true);
+  }
+});
