@@ -8,3 +8,6 @@ __pycache__/
 # Editors and OS
 .DS_Store
 *.swp
+
+# Task worktrees created by the coding assistant
+/.claude/worktrees/
