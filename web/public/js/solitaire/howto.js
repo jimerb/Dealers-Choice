@@ -14,7 +14,7 @@ const list = (x) => (Array.isArray(x) ? x : x ? [x] : []);
 const prose = (x) => (Array.isArray(x) ? `<ul>${x.map((t) => `<li>${t}</li>`).join('')}</ul>` : `<p>${x}</p>`);
 
 function figHTML(f) {
-  const cards = f.cards.split(' ').map((t) => { const m = CARD.exec(t); return m ? cardHTML({ rank: m[1], suit: m[2] }) : `<span class="howto-op" aria-hidden="true">${t}</span>`; }).join('');
+  const cards = f.cards.split(' ').map((t) => { const m = CARD.exec(t); return m ? cardHTML({ rank: m[1], suit: m[2] }) : `<span class="howto-op${t === '·' ? ' gap' : ''}" aria-hidden="true">${t}</span>`; }).join('');
   return `<figure class="howto-fig"><div class="howto-cards${f.fan ? ' fan' : ''}">${cards}</div>${f.caption ? `<figcaption>${f.caption}</figcaption>` : ''}</figure>`;
 }
 

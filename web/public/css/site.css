@@ -110,10 +110,12 @@ dialog.howto[open] { display: flex; flex-direction: column; }
 .howto-controls > div { padding: 10px 14px; border-radius: 12px; background: var(--ground); border: 1px solid var(--line); }
 .howto-controls dt { font-weight: 700; color: var(--ink); font-size: 15px; }
 .howto-controls dd { margin: 2px 0 0; }
-.howto-fig { margin: 12px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; --card-w: 40px; }
-.howto-cards { display: flex; align-items: center; gap: 4px; }
+.howto-fig { margin: 12px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; --card-w: 44px; }
+.howto-cards { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 4px; }
+.howto-cards.fan { flex-wrap: nowrap; }
 .howto-cards.fan .card + .card { margin-left: calc(var(--card-w) * -.5); }
 .howto-op { padding: 0 2px; color: var(--ink-3); font-weight: 700; }
+.howto-op.gap { padding: 0 8px; }
 .howto-fig figcaption { font-size: 14px; color: var(--ink-3); }
 .howto-tip { margin: 16px 0 0; padding: 10px 14px; border-left: 3px solid var(--brass); background: rgba(201,162,74,.1); border-radius: 0 10px 10px 0; color: var(--ink-2); }
 .howto-tip b { color: var(--brass-2); }
