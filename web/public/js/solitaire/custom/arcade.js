@@ -22,7 +22,16 @@ function arcade(def) {
   }
   return {
     id: def.id, name: def.name, group: 'Arcade', blurb: def.blurb, timed: true,
-    how: `${def.how}<p><b>Rounds:</b> ${def.rounds} rounds of ${def.seconds} seconds. Finish with ${fmt(def.bonusAt)}+ points to earn a bonus round, and end the bonus round with ${fmt(def.winAt)}+ to win. Click <b>Take score</b> when you're done with a round: every second left on the clock is worth 100 points.</p>`,
+    how: {
+      ...def.how,
+      score: [
+        ...def.how.score,
+        `${def.rounds} rounds of ${def.seconds} seconds. <b>Take score</b> ends a round early, and every second left on the clock adds 100 points.`,
+        `Finish the last round with ${fmt(def.bonusAt)} or more to earn a bonus round, then end the bonus round with ${fmt(def.winAt)} or more to win.`,
+        'There is no undo in the arcade. The clock stops while How to play is open.',
+      ],
+      controls: `${def.how.controls} {Click} Take score to end the round early.`,
+    },
     newGame(seed) { const s = { variant: def.id, moves: 0, seed, round: 1, bonus: false, score: 0 }; startRound(s); return s; },
     tick(s) {
       if (s.phase !== 'play') return s;
@@ -87,8 +96,21 @@ function xOf(i) {
 }
 const towers = arcade({
   id: 'towers', name: '3 Towers', blurb: 'Clear three towers by playing cards one up or down from the pile.', rounds: 2, seconds: 60, bonusAt: 50000, winAt: 75000,
-  how: `<p>Three towers of overlapping cards. Click any <b>uncovered</b> card that is one rank higher or lower than the pile's top card (wrapping between king and ace) to move it onto the pile. Keep going to build a run: the first card scores 100, the second 200, the third 300 and so on. When you're stuck, click the stock for a new pile card (−100 and the run resets).</p>
-    <p>Clearing a whole tower scores 5,000, then 10,000, then 15,000 for the third.</p>`,
+  how: {
+    goal: `Score as many points as you can by clearing three towers of cards before the clock runs out.`,
+    deal: `Twenty-eight cards form three overlapping towers; only the uncovered ones are face up. One card starts the pile, and the rest are the stock.`,
+    play: [
+      `Move any uncovered card that is <b>one rank higher or lower</b> than the pile's top card onto the pile, in any suit. King and ace connect.`,
+      `Keep going to build a run: 5, 6, 7, 6, 5…`,
+      `When you're stuck, turn a new pile card from the stock.`,
+    ],
+    score: [
+      `Each card in a run is worth more than the last: 100 for the first, 200 for the second, 300 for the third, and so on.`,
+      `A new card from the stock costs 100 and starts the run over.`,
+      `Clearing a tower scores 5,000, then 10,000, then 15,000 for the third. Clearing every card ends the round.`,
+    ],
+    controls: `{Click} an uncovered card to play it onto the pile. {Click} the stock for a new pile card.`,
+  },
   deal(s, rng) {
     const d = up(shuffle(freshDeck(1), rng));
     s.cards = d.slice(0, 28).map((c) => ({ ...c, gone: false }));
@@ -131,8 +153,20 @@ const handHTML = (cards, i, label, sel) => `<button class="bj-hand${sel ? ' sel'
 
 const best21 = arcade({
   id: 'best21', name: 'Best 21', blurb: 'Build five blackjack hands as close to 21 as you can.', rounds: 3, seconds: 45, bonusAt: 120000, winAt: 160000,
-  how: `<p>Cards come off the stock one at a time. Click one of the <b>five hands</b> to add the card to it, or park it in the <b>reserve</b> (one card per round) to use later. Aces count 1 or 11; face cards 10. Going over 21 in any hand ends the round at once.</p>
-    <p>Score: 100 × the total of all five hands, plus 10,000 for every hand of exactly 21.</p>`,
+  how: {
+    goal: `Score as many points as you can by building five blackjack hands before the clock runs out.`,
+    deal: `Five empty hands, an empty reserve, and a shuffled deck turned one card at a time.`,
+    play: [
+      `Put each card on one of the <b>five hands</b>, aiming for 21 or close to it.`,
+      `Aces count 1 or 11; jacks, queens and kings count 10.`,
+      `Once per round you may park a card in the <b>reserve</b> and play it on a hand later.`,
+      `Going over 21 on any hand ends the round at once, and that round scores nothing.`,
+    ],
+    score: [
+      `At the end of a round: 100 × the total of every hand, plus 10,000 for each hand of exactly 21.`,
+    ],
+    controls: `{Click} a hand to add the next card. {Click} the reserve to park a card; {click} it again, then a hand, to play it.`,
+  },
   deal(s, rng) { s.stock = up(shuffle(freshDeck(2), rng)); s.hands = [[], [], [], [], []]; s.reserve = null; s.reserveUsed = false; s.useReserve = false; },
   roundEnd(s) {
     if (s.busted) { s.busted = false; return 0; }
@@ -166,8 +200,22 @@ const best21 = arcade({
 
 const fast21 = arcade({
   id: 'fast21', name: 'Fast 21', blurb: 'Rapid-fire blackjack: make 21s and five-card Charlies.', rounds: 3, seconds: 90, bonusAt: 30000, winAt: 40000,
-  how: `<p>Play stock cards one at a time onto <b>four blackjack hands</b>, or park up to three in the reserve. Each card played to a hand scores 100. A hand that reaches exactly <b>21</b> (1,000) or holds <b>five cards</b> without busting (a five-card Charlie, 750) is cleared so you can build it again. Those scores replace the per-card points for that hand.</p>
-    <p>If a card would bust a hand, it bounces back to the stock and costs 100. At the end of the round the totals of the hands still on the table are added. Play all 52 cards for a 10,000 bonus.</p>`,
+  how: {
+    goal: `Score as many points as you can by making 21s and five-card hands before the clock runs out.`,
+    deal: `Four empty hands, a reserve, and a shuffled deck turned one card at a time.`,
+    play: [
+      `Put each card on one of the <b>four hands</b>.`,
+      `A hand that reaches exactly <b>21</b>, or holds <b>five cards</b> without going over, is cleared so you can build it again.`,
+      `A card that would take a hand over 21 bounces back for you to place somewhere else.`,
+      `You may park up to three cards per round in the <b>reserve</b>. Once all three are parked, or the stock is empty, you can play the top reserve card onto a hand.`,
+    ],
+    score: [
+      `Every card played to a hand scores 100. A 21 scores 1,000 and a five-card hand 750, in place of that hand's card points.`,
+      `A card that bounces costs 100.`,
+      `At the end of the round the totals of the hands still on the table are added, plus 10,000 if you played all 52 cards to hands.`,
+    ],
+    controls: `{Click} a hand to add the next card. {Click} the reserve to park a card, or, once its cards can be played, to pick up the top one; then {click} a hand.`,
+  },
   deal(s, rng) { s.stock = up(shuffle(freshDeck(3), rng)); s.hands = [[], [], [], []]; s.reserve = []; s.reserveUsed = 0; s.useReserve = false; s.played = 0; },
   roundEnd(s) { return s.hands.reduce((t, h) => t + bjTotal(h), 0) + (s.played === 52 ? 10000 : 0); },
   render(s) {
@@ -247,7 +295,20 @@ function gridGame({ id, name, blurb, rounds, seconds, bonusAt, winAt, how, makeD
 
 const pick2 = gridGame({
   id: 'pick2', name: 'Pick 2', blurb: 'Remove pairs and two-card sequences before time runs out.', rounds: 2, seconds: 60, bonusAt: 80000, winAt: 120000, stockPenalty: 0,
-  how: `<p>Sixteen cards are on the table and one upcard is turned. Click two cards (from the table and/or the upcard) that form a <b>pair</b> (two 7s: 3,000 points) or a <b>sequence</b> (neighboring ranks like 9-10, A-2 or K-A: 500 points) to remove them. When you can't find any more, click the stock: the old upcard moves to an empty spot on the table (or under the stock) and a new card is turned. Clear the whole table for a 10,000 bonus.</p>`,
+  how: {
+    goal: `Score as many points as you can by removing pairs and sequences before the clock runs out.`,
+    deal: `Sixteen face-up cards in a 4 × 4 grid, one upcard beside them, and the stock.`,
+    play: [
+      `Remove two cards that make a <b>pair</b> (two 7s) or a <b>sequence</b> (neighboring ranks such as 9-10; A-2 and K-A count too). Use table cards, the upcard, or both.`,
+      `When you can't find any more, turn a new upcard. The old one moves to an empty spot on the table, or under the stock if the table is full.`,
+    ],
+    fig: { cards: '7S 7H · 9D 10C · KS AH', caption: 'A pair, a sequence, and K-A' },
+    score: [
+      `A pair scores 3,000 and a sequence 500.`,
+      `Clearing the whole table scores 10,000 and ends the round.`,
+    ],
+    controls: `{Click} two cards to remove them. {Click} a selected card again to let go of it. {Click} the stock for a new upcard.`,
+  },
   makeDeck: () => freshDeck(5),
   judge(cards) {
     if (cards.length < 2) return {};
@@ -262,8 +323,21 @@ const pick2 = gridGame({
 
 const sum11 = gridGame({
   id: 'sum11', name: 'Sum 11', blurb: 'Remove any combination of cards that adds up to eleven.', rounds: 2, seconds: 90, bonusAt: 80000, winAt: 120000, stockPenalty: 200, rowPoints: true,
-  how: `<p>A special deck: 2 through 10 of every suit plus sixteen aces (always worth 1), no face cards. Click any number of cards, from the table and/or the upcard, that <b>add up to exactly 11</b> to remove them: 1,500 points per combination, plus 400 for each card from the top row, 300 from the second, 200 from the third and 100 from the bottom.</p>
-    <p>Click the stock for a new upcard (−200); the old upcard moves to an empty spot on the table if there is one. Clear the table for 10,000.</p>`,
+  how: {
+    goal: `Score as many points as you can by removing cards that add up to 11 before the clock runs out.`,
+    deal: `A special deck: 2 through 10 of every suit plus sixteen aces, and no face cards. Sixteen cards lie face up in a 4 × 4 grid, with one upcard beside them.`,
+    play: [
+      `Remove any group of two or more cards that adds up to <b>exactly 11</b>, from the table, the upcard, or both. Aces are always worth 1.`,
+      `When you're stuck, turn a new upcard. The old one moves to an empty spot on the table, or under the stock if the table is full.`,
+    ],
+    fig: { cards: '6S + 4H + AD · 8C + 3D', caption: 'Two ways to make 11' },
+    score: [
+      `Each group scores 1,500, plus 400 for every card from the top row, 300 from the second, 200 from the third and 100 from the bottom.`,
+      `A new upcard costs 200.`,
+      `Clearing the whole table scores 10,000 and ends the round.`,
+    ],
+    controls: `{Click} cards to select them; they disappear as soon as they add up to 11. {Click} a selected card again to let go of it. {Click} the stock for a new upcard.`,
+  },
   makeDeck: () => {
     const cards = [];
     for (const su of ['S', 'H', 'C', 'D']) for (let r = 2; r <= 10; r++) cards.push({ id: `${r}${su}`, rank: String(r), suit: su });

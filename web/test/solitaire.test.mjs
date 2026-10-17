@@ -9,7 +9,6 @@ test('every parlor entry is playable and has How to play text', () => {
   for (const id of ids) {
     const v = VARIANTS[id] ?? CUSTOM[id];
     assert.ok(v, `missing layout ${id}`);
-    if (typeof v.how === 'string') continue; // LEGACY
     const h = v.how;
     assert.ok(h && typeof h === 'object', `${id} needs How to play content`);
     for (const key of ['goal', 'deal']) assert.ok(typeof h[key] === 'string' && h[key].length >= 20, `${id}: How to play needs a ${key}`);
