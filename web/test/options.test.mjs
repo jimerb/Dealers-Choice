@@ -190,3 +190,22 @@ test('euchre: who leads after a player goes alone', async () => {
   assert.equal(lead('loner'), 1); // left of you
   assert.equal(lead(undefined), 3); // saved settings from before the option
 });
+
+// ------------------------------------------------------------------ Crazy Eights
+test('crazy8: every option plays out', () => everyOption('crazy8'));
+
+test('crazy8: automatic drawing keeps drawing until you can play', async () => {
+  const game = await load('crazy8');
+  const c = (rank, suit) => ({ id: `${rank}${suit}`, rank, suit });
+  const setup = (draw) => {
+    const s = game.newGame({ names: NAMES, seed: 2, opts: { ...defaults(game), draw } });
+    Object.assign(s, { turn: 0, phase: 'play', pendingDraw: 0, suit: 'H', discard: [c('5', 'H')], stock: [c('7', 'S'), c('9', 'H'), c('4', 'S'), c('2', 'D')] });
+    s.hands[0] = [c('3', 'C')];
+    return game.act(s, { act: 'draw' });
+  };
+  const auto = setup('auto');
+  assert.deepEqual(auto.hands[0].map((x) => x.id).sort(), ['2D', '3C', '4S', '9H']);
+  assert.equal(auto.turn, 0);
+  assert.equal(setup('manual').hands[0].length, 2);
+  assert.equal(setup(undefined).hands[0].length, 2);
+});

@@ -101,6 +101,18 @@ function draw(s, seat) {
   return s;
 }
 
+/** Your draw. With automatic drawing one click keeps drawing until you hold a card you can play. */
+export function humanDraw(s) {
+  const penalty = s.pendingDraw > 0;
+  draw(s, 0);
+  while (s.opts.draw === 'auto' && !penalty && s.phase === 'play' && s.turn === 0 && !s.hands[0].some((c) => canPlay(s, c))) {
+    const n = s.hands[0].length;
+    draw(s, 0);
+    if (s.hands[0].length === n) break;
+  }
+  return s;
+}
+
 function finish(s, outSeat) {
   const handPts = s.hands.map((h) => h.reduce((t, c) => t + pts(c), 0));
   const gain = Array(s.n).fill(0);
@@ -143,6 +155,7 @@ export default {
     { key: 'players', label: 'Players', options: [[2, 'You + 1'], [3, 'You + 2'], [4, 'You + 3']], default: 4 },
     { key: 'variant', label: 'Game type', options: [['normal', 'Crazy Eights'], ['very', 'Very Crazy Eights']], default: 'normal' },
     { key: 'target', label: 'Play to', options: [[0, 'Single hand'], [100, '100 points'], [200, '200 points'], [300, '300 points'], [400, '400 points']], default: 100 },
+    { key: 'draw', label: 'Drawing', options: [['manual', 'One card per click'], ['auto', 'Draw until you can play']], default: 'manual' },
     { key: 'reshuffle', label: 'When the stock runs out', options: [['yes', 'Reshuffle the discards'], ['no', 'Game ends when blocked']], default: 'yes' },
   ],
   newGame({ names, seed, opts }) {
@@ -158,7 +171,7 @@ export default {
   act(state, a) {
     const s = clone(state);
     if (a.act === 'play') return play(s, 0, a.id);
-    if (a.act === 'draw') return draw(s, 0);
+    if (a.act === 'draw') return humanDraw(s);
     if (a.act === 'suit') {
       must(s.phase === 'chooseSuit', 'No suit to choose.');
       s.phase = 'play'; s.suit = a.suit;
