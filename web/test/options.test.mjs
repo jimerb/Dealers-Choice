@@ -173,3 +173,20 @@ test('cribbage: a best-of-seven match counts skunks as extra games', async () =>
   }
   for (const st of playOut(game, { match: 'single' }, 2)) assert.equal(st.match, null);
 });
+
+// ------------------------------------------------------------------ Euchre
+test('euchre: every option plays out', () => everyOption('euchre'));
+
+test('euchre: who leads after a player goes alone', async () => {
+  const game = await load('euchre');
+  const lead = (aloneLead) => {
+    const s = game.newGame({ names: NAMES, seed: 5, opts: { ...defaults(game), aloneLead } });
+    // Round two: you name a suit and go alone while your partner (across) deals and sits out.
+    Object.assign(s, { round: 2, turn: 0, dealer: 2 });
+    const suit = ['S', 'H', 'C', 'D'].find((x) => x !== s.up.suit);
+    return game.act(s, { act: 'name', suit, alone: '1' }).turn;
+  };
+  assert.equal(lead('dealer'), 3); // left of the dealer
+  assert.equal(lead('loner'), 1); // left of you
+  assert.equal(lead(undefined), 3); // saved settings from before the option
+});
