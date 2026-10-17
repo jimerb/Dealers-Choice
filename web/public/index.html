@@ -25,9 +25,16 @@
 <iframe id="screen" title="Dealers Choice"></iframe>
 <script type="module">
   import { startMusic, stopMusic, setMusicVolume, nowPlaying, musicStatus } from './js/core/music.js';
+  import { gesture, effect, preload, audioStatus, ACTIVATION_EVENTS, isActivation } from './js/core/audio.js';
+  import { applyMusic } from './js/core/sound.js';
 
-  // Screens call these through window.top (see js/core/sound.js), so one player serves every page.
-  window.dcMusic = { startMusic, stopMusic, setMusicVolume, nowPlaying, musicStatus };
+  // Screens call these through window.top (see js/core/sound.js), so one audio graph and one
+  // music player serve every page, and a tap on any screen unlocks sound for all of them.
+  window.dcAudio = { startMusic, stopMusic, setMusicVolume, nowPlaying, musicStatus, gesture, effect, preload, audioStatus };
+  for (const type of ACTIVATION_EVENTS) window.addEventListener(type, (e) => { if (isActivation(e)) gesture(); }, { capture: true, passive: true });
+  // Load the session's song now, before the lobby asks for it, so the first tap plays it at once
+  // (and play it straight away if this browser allows sound without a tap).
+  applyMusic();
 
   // Only pages inside the site's own folder may be loaded into the frame (paths are relative,
   // so the site works at / or under a subfolder).
