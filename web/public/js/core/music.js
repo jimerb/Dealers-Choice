@@ -176,6 +176,7 @@ export function stopMusic() {
 }
 
 export function setMusicVolume(v) {
+  if (Number(v) === volume) return;   // every screen sets it on load: leave a fade in progress alone
   volume = Number(v);
   if (el && wanted && !el.paused) level(volume, SLIDE_MS);
 }

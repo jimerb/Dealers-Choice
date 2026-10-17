@@ -28,6 +28,13 @@ export function isActivation(e) {
   }
 }
 
+/** Did this event really let the page start sound? A touch that ended a scroll did not, which
+ *  the window's navigator.userActivation can tell; browsers without it get the benefit of the
+ *  doubt. Pass the navigator of the window the event happened in. */
+export function activates(e, nav) {
+  return isActivation(e) && (!nav || !nav.userActivation || nav.userActivation.isActive);
+}
+
 /** The shared context, or null before the first gesture (or without Web Audio). */
 export const audioContext = () => ctx;
 

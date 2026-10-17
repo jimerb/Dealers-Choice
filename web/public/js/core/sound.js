@@ -3,7 +3,7 @@
 // synthesized by tools/art/build_sounds.py; audition every effect on /sounds.html.
 import * as localMusic from './music.js';
 import * as localAudio from './audio.js';
-import { ACTIVATION_EVENTS, isActivation } from './audio.js';
+import { ACTIVATION_EVENTS, activates } from './audio.js';
 
 // The site shell (index.html) owns the one audio graph and music player, so music plays through
 // page changes and one tap unlocks sound for every screen. A screen shown inside the shell uses
@@ -75,7 +75,7 @@ export function applyMusic() {
  *  lifted finger or pen, a key) calls the shell's gesture() synchronously inside the event, which
  *  iPhone and iPad need; it keeps trying on later gestures until sound is really playing. */
 export function initAudio() {
-  const kick = (e) => { if (isActivation(e)) { try { engine().gesture(); } catch { /* audio unavailable */ } } };
+  const kick = (e) => { if (activates(e, navigator)) { try { engine().gesture(); } catch { /* audio unavailable */ } } };
   for (const type of ACTIVATION_EVENTS) window.addEventListener(type, kick, { capture: true, passive: true });
   applyMusic();
   // Fetch the effects once the page itself has loaded, so they don't hold up its pictures.

@@ -68,6 +68,8 @@ button { font: inherit; }
 .icon-btn:hover { border-color: var(--brass); }
 .sound-pop { position: absolute; right: 0; top: 52px; z-index: 20; width: 240px; background: var(--panel); border: 1px solid var(--line-2); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 16px 40px rgba(0,0,0,.45); }
 .sound-pop[hidden] { display: none; }
+/* on a phone the speaker sits at the left edge: open the popover rightwards so it stays on screen */
+@media (max-width: 720px) { .sound-pop { right: auto; left: 0; max-width: calc(100vw - 32px); box-sizing: border-box; } }
 .sound-pop label { font-size: 13px; font-weight: 700; color: var(--ink-3); }
 .sound-pop input[type=range] { width: 100%; accent-color: var(--brass); min-height: 28px; }
 .sound-pop .choice { font-weight: 500; color: var(--ink-2); font-size: 14px; }
