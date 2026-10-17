@@ -89,6 +89,51 @@ table.score th:first-child, table.score td:first-child { text-align: left; color
 .verdict { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
 .verdict.good { color: #8FD3B6; } .verdict.bad { color: #F08A80; }
 
+/* ---------- Pinochle variants ---------- */
+.scores { display: inline-flex; flex-wrap: wrap; gap: 8px; }
+.muted { color: var(--ink-3); font-size: 14px; }
+.turn-up-row { display: flex; align-items: center; gap: 12px; --card-w: 52px; }
+.card-panel .turn-up-row { margin-bottom: 14px; flex-wrap: nowrap; }
+.card-panel .turn-up-row p { margin: 0; }
+table.score.wide th, table.score.wide td { padding: 6px; }
+table.score small { color: var(--ink-3); font-size: 12px; }
+/* two-handed: the stock lying over the turned trump card; melded cards face up on the felt */
+.stock-seat { justify-content: center; }
+.stock-pile { display: flex; flex-direction: column; align-items: center; gap: 6px; --card-w: 56px; }
+.stock-cards { display: flex; align-items: flex-start; }
+.stock-cards .stock-top { margin-left: calc(var(--card-w) * -.5); margin-top: calc(var(--card-w) * .14); }
+.stock-count { font-size: 13px; font-weight: 600; color: var(--ink-2); text-align: center; }
+.meld-row.tabled { --card-w: 40px; gap: 4px; min-height: 0; }
+.trick.two { height: 250px; }
+.card-panel.declare { max-width: 440px; }
+.meld-opts { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.meld-opts .btn { justify-content: space-between; min-height: 40px; text-align: left; }
+/* New game dialog: one radio card per variant */
+.variant-list { display: flex; flex-direction: column; gap: 6px; }
+.field .variant-opt { align-items: flex-start; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); cursor: pointer; text-transform: none; letter-spacing: 0; font-size: 15px; font-weight: 500; color: var(--ink); }
+.variant-opt:has(input:checked) { border-color: var(--brass-2); background: var(--panel-2); }
+.variant-opt input { margin: 4px 0 0; accent-color: var(--brass); flex: none; }
+.variant-opt span { display: flex; flex-direction: column; gap: 2px; }
+.variant-opt small { color: var(--ink-3); font-size: 13px; }
+.newgame-warn { color: #F0B7A0; font-size: 14px; margin: 4px 0 8px; }
+.rules-body details { border-top: 1px solid var(--line); padding: 4px 0; }
+.rules-body summary { cursor: pointer; font-weight: 700; color: var(--ink); padding: 6px 0; }
+@media (max-width: 760px) {
+  .stock-pile { --card-w: 34px; gap: 4px; }
+  .stock-count { font-size: 11px; }
+  .meld-row.tabled { --card-w: 30px; gap: 2px; }
+  .trick.two { height: 210px; }
+  .card-panel .turn-up-row { --card-w: 44px; }
+  .scores { gap: 6px; }
+  .scores .score-chip { padding: 6px 10px; font-size: 14px; }
+  /* four score columns (Cutthroat): the results panel takes the felt's full width, side seats step below it */
+  .felt:has(.card-panel table.score.wide) { grid-template-areas: "north north north" "center center center" "west . east" "south south south"; grid-template-rows: auto auto auto auto; }
+  .card-panel:has(table.score.wide) { padding: 16px 14px; width: 100%; }
+  table.score.wide { font-size: 14px; }
+  table.score.wide th, table.score.wide td { padding: 6px 4px; }
+  table.score.wide small { display: block; font-size: 11px; }
+}
+
 /* ---------- generic table (play.html) ---------- */
 .felt.generic { grid-template-areas: "top top top" "west center east" "south south south"; grid-template-rows: auto minmax(320px, 1fr) auto; }
 .area-top { grid-area: top; display: flex; justify-content: space-around; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
