@@ -125,3 +125,51 @@ test('gin: a match runs game after game until someone reaches the target', async
     assert.equal(s.phase, 'gameOver');
   }
 });
+
+// ------------------------------------------------------------------ Cribbage
+test('cribbage: every option plays out', () => everyOption('cribbage'));
+
+/** Plays AI moves until it's your turn to count a hand or crib worth at least `min` points. */
+async function cribbageCount(opts, min) {
+  const game = await load('cribbage');
+  for (let seed = 1; seed < 60; seed++) {
+    let s = game.newGame({ names: NAMES, seed, opts: { ...defaults(game), counting: 'manual', ...opts } });
+    while (game.actor(s) !== null) {
+      if (s.phase === 'count' && s.show[s.showIdx].total >= min && Math.max(...s.scores) < 90) return { game, s };
+      s = game.aiAct(s);
+    }
+  }
+  throw new Error('no hand to count');
+}
+
+test('cribbage: manual counting gives missed points to the opponent (Muggins)', async () => {
+  const { game, s } = await cribbageCount({}, 4);
+  const x = s.show[s.showIdx];
+  assert.equal(game.actor(s), 0);
+  assert.throws(() => game.act(s, { act: 'claim', n: String(x.total + 1) }), /more than/);
+  const after = game.act(s, { act: 'claim', n: String(x.total - 3) });
+  assert.equal(after.scores[0], s.scores[0] + x.total - 3);
+  assert.equal(after.scores[1], s.scores[1] + 3);
+  assert.equal(after.show[s.showIdx].muggins, 3);
+  // A full claim costs nothing.
+  const exact = game.act(s, { act: 'claim', n: String(x.total) });
+  assert.deepEqual(exact.scores, [s.scores[0] + x.total, s.scores[1]]);
+  // Counted for you (the default), hands are scored without stopping.
+  for (const st of playOut(game, { counting: 'auto' }, 2)) assert.ok(st.log.every((l) => !/Muggins/.test(l)));
+});
+
+test('cribbage: a best-of-seven match counts skunks as extra games', async () => {
+  const { game, s } = await cribbageCount({ match: 'seven' }, 1);
+  s.scores = [120, 50];
+  const won = game.act(s, { act: 'claim', n: '1' });
+  assert.equal(won.phase, 'gameDone');
+  assert.equal(won.skunk, 'double skunk');
+  assert.deepEqual(won.match.games, [3, 0]);
+  const next = game.act(won, { act: 'nextgame' });
+  assert.deepEqual([next.scores, next.match.gameNo, next.dealer, next.phase], [[0, 0], 2, 1, 'discard']);
+  for (const st of playOut(game, { match: 'seven' }, 3)) {
+    assert.equal(st.phase, 'gameOver');
+    assert.ok(st.match.games[st.winner] >= 4 && st.match.games[1 - st.winner] < 4);
+  }
+  for (const st of playOut(game, { match: 'single' }, 2)) assert.equal(st.match, null);
+});
