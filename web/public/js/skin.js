@@ -8,6 +8,7 @@
 //                 specials: true  -> jokers, Tarot trumps/knights and the Excuse are images too
 //                                    (cards/JK1.webp, JK2.webp, T1..T21.webp, EX.webp, CS.webp ...)
 //                 tile: true      -> tables are seamless tiles, repeated instead of stretched
+//                 lightTables     -> pale surfaces (Linen): the felt gets data-tone="light" for dark ink
 //   type 'drawn': cards rendered with HTML/CSS (no image files needed).
 
 export const SKINS = {
@@ -19,6 +20,7 @@ export const SKINS = {
     tables: ['felt-green', 'felt-oxblood', 'felt-midnight', 'walnut', 'linen', 'slate'],
     specials: true,
     tile: true,
+    lightTables: ['linen'],
   },
   house: {
     label: 'Dealers Choice (drawn)',
@@ -138,8 +140,14 @@ export function tableBackground() {
   return skin.tile ? `${url} 0 0 / 512px repeat` : `${url} center / cover`;
 }
 
+/** 'light' for pale table surfaces, where felt text and outlines need dark ink; otherwise 'dark'. */
+export function tableTone() {
+  return SKINS[currentSkin()].lightTables?.includes(currentTable()) ? 'light' : 'dark';
+}
+
 /** Paint a felt element with the chosen table, under a light shade so cards stand out. */
 export function paintFelt(el) {
   const bg = tableBackground();
   el.style.background = bg ? `linear-gradient(rgba(10,40,30,.25), rgba(10,40,30,.25)), ${bg}` : '';
+  el.dataset.tone = tableTone();
 }

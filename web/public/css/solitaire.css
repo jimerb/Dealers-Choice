@@ -7,7 +7,7 @@
 .sol-label { font-size: 12px; color: var(--ink-3); min-height: 14px; }
 .sol-tableau { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, var(--card-w))); gap: 10px; justify-content: start; }
 .sol-col { position: relative; width: var(--card-w); }
-.sol-col .sol-empty { position: absolute; inset: 0 0 auto 0; width: var(--card-w); aspect-ratio: 5 / 7; border-radius: calc(var(--card-w) * .06); border: 2px dashed rgba(244,239,227,.25); }
+.sol-col .sol-empty { position: absolute; inset: 0 0 auto 0; width: var(--card-w); aspect-ratio: 5 / 7; border-radius: calc(var(--card-w) * .06); border: 2px dashed var(--mark, rgba(244,239,227,.25)); }
 .sol-card, .sol-flat { padding: 0; border: 0; background: none; cursor: pointer; display: block; border-radius: calc(var(--card-w) * .06); }
 .sol-card { position: absolute; left: 0; }
 .sol-card.sel .card, .sol-flat.sel .card { box-shadow: 0 0 0 3px var(--brass-2), 0 6px 14px rgba(0,0,0,.4); }
@@ -24,7 +24,7 @@
 .pyr-gap { width: var(--card-w); aspect-ratio: 5 / 7; }
 .poker-grid { display: grid; grid-template-columns: repeat(5, var(--card-w)) 120px; gap: 8px; align-items: center; --card-w: clamp(50px, 6vw, 72px); }
 .pg-cell { width: var(--card-w); aspect-ratio: 5 / 7; display: block; }
-.pg-empty { border: 2px dashed rgba(244,239,227,.35); border-radius: 8px; background: transparent; cursor: pointer; }
+.pg-empty { border: 2px dashed var(--mark, rgba(244,239,227,.35)); border-radius: 8px; background: transparent; cursor: pointer; }
 .pg-empty:hover { border-color: var(--brass-2); }
 .pg-score { font-size: 12px; color: var(--ink-2); display: flex; flex-direction: column; }
 .pg-score b { color: var(--brass-2); font-size: 15px; }

@@ -118,7 +118,7 @@ table.score th:first-child, table.score td:first-child { text-align: left; color
 .pile-btn { padding: 0; border: 0; background: none; cursor: pointer; border-radius: 8px; }
 .pile-btn[disabled] { cursor: default; }
 .pile-btn:not([disabled]) .card { box-shadow: 0 0 0 3px var(--brass-2); }
-.empty-slot { width: var(--card-w); aspect-ratio: 5 / 7; border-radius: calc(var(--card-w) * .06); border: 2px dashed rgba(244,239,227,.35); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--ink-3); }
+.empty-slot { width: var(--card-w); aspect-ratio: 5 / 7; border-radius: calc(var(--card-w) * .06); border: 2px dashed var(--mark, rgba(244,239,227,.35)); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--ink-3); }
 .rules-body { max-height: 60vh; overflow: auto; color: var(--ink-2); font-size: 15px; }
 .rules-body h3 { color: var(--ink); font-size: 16px; margin: 14px 0 4px; }
 .rules-body p, .rules-body ul { margin: 0 0 8px; }
@@ -130,7 +130,7 @@ table.score th:first-child, table.score td:first-child { text-align: left; color
   .melds { grid-template-columns: 1fr; }
 }
 .memory-grid { display: grid; gap: 8px; justify-items: center; align-items: center; padding: 8px; }
-.memory-grid .empty-slot { border-color: rgba(244,239,227,.12); }
+.memory-grid .empty-slot { border-color: var(--mark-soft, rgba(244,239,227,.12)); }
 .center { flex-direction: column; gap: 14px; }
 .hand-actions { display: flex; gap: 10px; justify-content: center; }
 .count-badge { width: 70px; aspect-ratio: 5 / 7; border-radius: 8px; background: rgba(8,24,19,.8); border: 2px solid var(--brass); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; color: var(--brass-2); }
@@ -158,7 +158,7 @@ table.auction td, table.auction th { text-align: center !important; }
 .chip-col b { position: absolute; left: 0; top: 0; width: var(--chip); height: var(--chip); display: flex; align-items: center; justify-content: center; font-size: calc(var(--chip) * .3); font-weight: 800; color: var(--card-ink); letter-spacing: -.3px; }
 .chips-text { font-size: 13px; color: var(--ink-2); white-space: nowrap; }
 .seat-chips { display: flex; align-items: flex-end; gap: 10px; min-height: 22px; }
-.seat-chips .bet { display: inline-flex; align-items: flex-end; padding-left: 8px; border-left: 1px solid rgba(244,239,227,.25); }
+.seat-chips .bet { display: inline-flex; align-items: flex-end; padding-left: 8px; border-left: 1px solid var(--mark, rgba(244,239,227,.25)); }
 .pot .chips { margin-bottom: 2px; }
 
 /* cribbage board: the walnut board with holes and pegs drawn over it */
@@ -205,3 +205,14 @@ table.auction td, table.auction th { text-align: center !important; }
   .seat-chips .bet { padding-left: 6px; }
   .pot .chips { --chip: 26px !important; }
 }
+
+/* ---------- light tables (Linen; SKINS lightTables, set by paintFelt) ---------- */
+/* Whatever sits straight on the felt switches to dark ink; the dark islands keep the light tokens. */
+.felt[data-tone="light"] { --ink: #1E2622; --ink-2: #26302B; --ink-3: #3E4A44; --line-2: rgba(30,38,34,.42); --brass-2: #9A6F17; --mark: rgba(30,38,34,.5); --mark-soft: rgba(30,38,34,.2); color: var(--ink); }
+.felt[data-tone="light"] :where(.plate, .card-panel, .pot, .count-badge, .meld-count, .bj-hand, .toast, .bubble, .banner, .banner-inline, .tray) {
+  --ink: #F4EFE3; --ink-2: #D7E2DC; --ink-3: #A9C2B7; --line-2: #3C6B5A; --brass-2: #E2C27A; --mark: initial; --mark-soft: initial;
+}
+.felt[data-tone="light"] :where(.plate, .card-panel, .meld-count) { color: var(--ink); }
+.felt[data-tone="light"] .trump-plaque figcaption { text-shadow: 0 1px 1px rgba(255,255,255,.55); }
+.felt[data-tone="light"] .red-suit, .felt[data-tone="light"] .arcade-time.low { color: var(--card-red); }
+.felt[data-tone="light"] :where(.plate, .card-panel, .pot, .bj-hand) .red-suit { color: #F08A80; }
