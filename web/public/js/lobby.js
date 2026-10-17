@@ -1,4 +1,4 @@
-import { CATEGORIES, GAMES, SOLITAIRE } from './catalog.js';
+import { CATEGORIES, GAMES, SOLITAIRE, PINOCHLE_VARIANTS } from './catalog.js';
 import { mountChrome, esc, playerName, hasName } from './header.js';
 
 mountChrome('lobby');
@@ -26,6 +26,7 @@ function render() {
       <div class="group-head"><h3>${c.title}</h3><span>${c.blurb}</span></div>
       <div class="tiles">${GAMES.filter((g) => g.category === c.id).map(tile).join('')}</div>
     </div>`).join('');
+  document.getElementById('pinochle-variants').innerHTML = PINOCHLE_VARIANTS.map((v) => `<li><a href="${v.href}">${esc(v.name)}</a></li>`).join('');
   document.getElementById('parlor').innerHTML = SOLITAIRE.map((col) => `
     <div><h3>${col.title}</h3><ul>${col.games.map(([n, id]) => `<li class="ready"><a href="solitaire.html?v=${id}">${esc(n)}</a></li>`).join('')}</ul></div>`).join('');
   document.getElementById('greeting').textContent = hasName() ? `Welcome back, ${playerName()}.` : 'Welcome! Set your name under Table settings.';

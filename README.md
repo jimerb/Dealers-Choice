@@ -37,7 +37,7 @@ effects, all made for this game.
 
 | Game | Players | What you're in for |
 |---|---|---|
-| **Pinochle** | 4 · partners | Partnership Auction: bid, name trump, lay down your meld and run the tricks, first team to 1,000 |
+| **Pinochle** | 2 or 4 | Five ways to play: Partnership Auction, Two-Handed, Double-Pack, Partnership and Cutthroat |
 | **Bridge** | 4 · partners | A full auction and play, with Rubber or Chicago scoring |
 | **Spades** | 4 · partners | Bid your tricks, risk a nil or double nil, and watch out for bags |
 | **Hearts** | 4 | Pass three, dodge the queen of spades, or shoot the moon |

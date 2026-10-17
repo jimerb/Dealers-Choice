@@ -215,7 +215,7 @@ function overlay() {
       const bt = sideOf(s.highBidder);
       const need = Math.max(0, s.highBid - P.teamMeld(s, bt));
       goal = `${bt === 0 ? 'Your team' : 'They'} bid ${s.highBid} and need ${need} more in counters (meld counts only if the team wins a trick).`;
-    } else goal = v.partners ? 'Meld counts only if the team wins a trick. No bidding: every point you take is yours.' : 'Every player for themselves. Meld counts only if that player wins a trick.';
+    } else goal = v.partners ? 'Meld counts only if the team wins a trick. No bidding: each team keeps what it makes.' : 'Every player for themselves. Meld counts only if that player wins a trick.';
     const order = v.partners ? [0, 2, 1, 3] : [0, 1, 2, 3];
     const foot = v.partners ? `<span>Us <b>${P.teamMeld(s, 0)}</b> · Them <b>${P.teamMeld(s, 1)}</b></span>` : '<span></span>';
     return `<div class="card-panel" style="max-width:560px"><h3>Meld</h3><p>${trumpLine} ${goal}</p>
@@ -350,7 +350,6 @@ document.getElementById('variant-list').innerHTML = P.VARIANT_IDS.map((id) => {
 }).join('');
 function openNewGame(variant = state.variant, { fromLink = false } = {}) {
   dlg.querySelector(`input[value="${variant}"]`).checked = true;
-  dlg.returnValue = '';
   const warn = document.getElementById('newgame-warn');
   const live = state.phase !== 'gameOver';
   warn.hidden = !live;
@@ -360,13 +359,13 @@ function openNewGame(variant = state.variant, { fromLink = false } = {}) {
   document.getElementById('newgame-keep').textContent = fromLink ? `Keep playing ${P.variantOf(state).name}` : 'Cancel';
   dlg.showModal();
 }
-dlg.addEventListener('close', () => {
-  if (dlg.returnValue !== 'deal') { pendingSwitch = null; syncUrl(); return; }
-  const id = dlg.querySelector('input[name="variant"]:checked')?.value ?? state.variant;
+// Act on the button itself (the dialog's own close event can arrive late in a background tab).
+dlg.querySelector('form').addEventListener('submit', (e) => {
   pendingSwitch = null;
-  set(fresh(null, id));
+  if (e.submitter?.value === 'deal') set(fresh(null, dlg.querySelector('input[name="variant"]:checked')?.value ?? state.variant));
   syncUrl();
 });
+dlg.addEventListener('cancel', () => { pendingSwitch = null; syncUrl(); });
 
 document.getElementById('btn-new').addEventListener('click', () => openNewGame());
 document.getElementById('btn-rules').addEventListener('click', () => document.getElementById('rules').showModal());
