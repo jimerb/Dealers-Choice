@@ -23,9 +23,8 @@
     <h1>Pinochle</h1>
     <span class="sub" id="sub">Partnership Auction</span>
     <span class="spacer"></span>
-    <span class="score-chip us"><b>Us</b><span id="score-us">0</span></span>
-    <span class="score-chip"><b>Them</b><span id="score-them">0</span></span>
-    <span class="sub">to 1,000</span>
+    <span class="scores" id="scores" aria-label="Scores"></span>
+    <span class="sub" id="target">to 1,000</span>
     <button class="btn sm" type="button" id="btn-rules">Rules</button>
     <button class="btn sm" type="button" id="btn-new">New game</button>
   </div>
@@ -35,15 +34,42 @@
   </div>
 </main>
 <dialog id="rules" aria-labelledby="rules-title">
-  <h2 id="rules-title">Partnership Auction Pinochle</h2>
-  <div style="max-height:60vh;overflow:auto;color:var(--ink-2);font-size:15px">
-    <p><b>Teams:</b> you and your partner across the table against the two players beside you. 48-card deck (two each of A, 10, K, Q, J, 9 per suit), 12 cards each. Ranking: A &gt; 10 &gt; K &gt; Q &gt; J &gt; 9.</p>
-    <p><b>Bidding:</b> starts left of the dealer at 100, in steps of 10. Once you pass you're out. The last bidder names trump and leads first. If everyone else passes without a bid, the last player is stuck with 100.</p>
-    <p><b>Meld:</b> run in trump (A-10-K-Q-J) 150 · royal marriage (K-Q of trump) 40 · marriage 20 · pinochle (J♦ Q♠) 40 · double pinochle 300 · dix (9 of trump) 10 · aces/kings/queens/jacks around 100/80/60/40. Meld counts only if your team wins at least one trick.</p>
-    <p><b>Play:</b> follow suit and beat the winning card if you can. If you can't follow, trump (and overtrump if possible). Otherwise play anything. Equal cards: the first one played wins.</p>
-    <p><b>Scoring:</b> aces, tens and kings are 10 each, and the last trick is 10. The bidding team scores meld + counters if it reaches the bid, otherwise it loses the bid. The other team scores what it took. First team to 1,000 wins (the bidding team wins ties).</p>
+  <h2 id="rules-title">Pinochle</h2>
+  <div class="rules-body">
+    <p><b>The deck:</b> 48 cards, two each of A, 10, K, Q, J and 9 in every suit (Double-Pack uses 80: four each of A, 10, K, Q, J). Cards rank A &gt; 10 &gt; K &gt; Q &gt; J &gt; 9; of two equal cards, the one played first wins.</p>
+    <p><b>Meld:</b> run in trump (A-10-K-Q-J) 150 · royal marriage (K-Q of trump) 40 · marriage 20 · pinochle (J♦ Q♠) 40 · double pinochle 300 · dix (9 of trump) 10 · aces/kings/queens/jacks around 100/80/60/40.</p>
+    <details data-v="auction"><summary>Partnership Auction</summary>
+      <p>You and your partner across the table against the two players beside you, 12 cards each. Bidding starts left of the dealer at 100, in steps of 10; once you pass you're out. The last bidder names trump and leads first. If everyone else passes without a bid, the last player is stuck with 100.</p>
+      <p>Follow suit and beat the winning card if you can. If you can't follow, trump (and overtrump if possible); otherwise play anything. Meld counts only if your team wins a trick.</p>
+      <p>Aces, tens and kings are 10 each, and the last trick is 10. The bidding team scores meld + counters if it reaches the bid, otherwise it loses the bid. The other team scores what it took. First team to 1,000 wins (the bidding team wins ties).</p>
+    </details>
+    <details data-v="two-handed"><summary>Two-Handed</summary>
+      <p>You against one opponent, 12 cards each. The next card is turned up for trump (if it is the 9, the dealer scores 10) and the rest form the stock. The non-dealer leads.</p>
+      <p><b>While the stock lasts</b> you may play any card; there's no need to follow suit. The trick winner may lay down one meld (its cards stay face up and can still be played), and may trade the 9 of trump for the turned card or meld it, 10 points either way. A card can score again only in a different kind of meld, or in the bigger meld of its own kind: a run on a royal marriage adds 110, a double pinochle on a pinochle adds 260. Then the winner draws, the loser draws, and the winner leads.</p>
+      <p><b>After the last draw</b> (the loser takes the turned card) melding ends and the last 12 tricks are played: follow suit, beat a trump lead if you can, and trump when you can't follow.</p>
+      <p>Melds score when made. Cards taken score A 11, 10 10, K 4, Q 3, J 2, and the last trick 10. First to 1,000 at the end of a hand wins.</p>
+    </details>
+    <details data-v="double-pack"><summary>Double-Pack</summary>
+      <p>Played like Partnership Auction with the 80-card deck, 20 cards each. Bids start at 500. There are no nines, so no dix. Doubled melds score ten times the single meld (double aces 1,000, double run 1,500), triples 15 times and quadruples 20 times; pinochles go 40, 300, 600, 900.</p>
+      <p>Aces, tens and kings are 10 each and the last trick is 20, so 500 are up for grabs in tricks. First team to 3,550 wins.</p>
+    </details>
+    <details data-v="partnership"><summary>Partnership</summary>
+      <p>Two teams as in Partnership Auction, but no bidding. The dealer's last card is turned up for trump and stays in the dealer's hand. If it's a 9, the dealer scores the dix; otherwise the first player from the dealer's left holding the 9 of trump may trade it for the turned card, scoring 10.</p>
+      <p>Everyone melds, the player left of the dealer leads, and the play follows the Partnership Auction rules. Each team scores meld (if it won a trick) plus counters, last trick 10. First team to 1,000 wins; if both pass it in the same hand, the higher score wins.</p>
+    </details>
+    <details data-v="cutthroat"><summary>Cutthroat</summary>
+      <p>Four-handed, every player for themselves. Trump is turned up and the dix can be traded as in Partnership; there's no bidding. Each player scores their own meld (if they won a trick) plus the counters they took, last trick 10. First to 1,000 wins; if two pass it in the same hand, the higher score wins.</p>
+    </details>
   </div>
   <form method="dialog" class="dialog-actions"><button class="btn primary">Got it</button></form>
+</dialog>
+<dialog id="newgame" aria-labelledby="newgame-title">
+  <h2 id="newgame-title">New game</h2>
+  <form method="dialog">
+    <fieldset class="field"><legend>Choose a game</legend><div id="variant-list" class="variant-list"></div></fieldset>
+    <p class="newgame-warn" id="newgame-warn" hidden></p>
+    <div class="dialog-actions"><button class="btn" value="keep" id="newgame-keep">Cancel</button><button class="btn primary" value="deal">Deal</button></div>
+  </form>
 </dialog>
 <footer id="site-footer"></footer>
 <script type="module" src="js/games/pinochle/ui.js"></script>

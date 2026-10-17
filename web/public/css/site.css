@@ -162,7 +162,7 @@ dialog.howto[open] { display: flex; flex-direction: column; }
 /* The hero art is painted on the same green as --ground, so its edges melt into the panel. */
 .feature-art { position: relative; aspect-ratio: 16 / 10; background: var(--ground); }
 .feature-art img { width: 100%; height: 100%; display: block; object-fit: cover; transition: transform .35s ease; }
-.feature:hover .feature-art img { transform: scale(1.03); }
+.feature-art:hover img { transform: scale(1.03); }
 .feature-art::after { content: ''; position: absolute; inset: 0; pointer-events: none;
   background: linear-gradient(to bottom, rgba(14,36,29,.75) 0%, rgba(14,36,29,0) 26%, rgba(14,36,29,0) 72%, var(--ground) 100%); }
 .feature-head { position: absolute; z-index: 1; top: 0; left: 0; right: 0; padding: 24px 28px; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
@@ -174,7 +174,11 @@ dialog.howto[open] { display: flex; flex-direction: column; }
 .stat span { display: block; font-size: 12px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 1px; }
 .stat b { font-size: 17px; font-weight: 600; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; font-size: 14px; color: var(--ink-2); padding: 0; margin: 0; list-style: none; }
-.chips li { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line-2); }
+.chips li { border-radius: 999px; border: 1px solid var(--line-2); }
+.chips a { display: block; padding: 6px 12px; border-radius: inherit; color: var(--ink); text-decoration: none; }
+.chips a:hover, .chips a:focus-visible { background: var(--panel-2); color: var(--brass-2); }
+.chips li:has(a:hover) { border-color: var(--brass); }
+.feature-art { display: block; color: inherit; text-decoration: none; }
 
 .section-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 16px; margin: 16px 0 8px; }
 .section-head h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 36px; }
