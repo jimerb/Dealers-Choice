@@ -72,6 +72,7 @@ const board = document.getElementById('board');
 function renderChooser() {
   const stats = readStats();
   chooser.innerHTML = `<div class="section-head" style="margin-top:8px"><h2>Solitaire parlor</h2><span style="color:var(--ink-3)">${SOLITAIRE.reduce((t, g) => t + g.games.length, 0)} layouts</span></div>
+    <img class="sol-banner" src="/assets/art/lobby/solitaire-banner.png" width="1536" height="480" alt="" decoding="async">
     ${SOLITAIRE.map((g) => `<div class="group"><div class="group-head"><h3>${g.title}</h3></div><div class="tiles">${g.games.map(([name, id]) => {
       const v = info(id);
       return `<a class="tile ready sol-tile" href="/solitaire.html?v=${id}" data-v="${id}"><div class="tile-body"><b>${esc(name)}</b><span>${esc(v.blurb)}</span>

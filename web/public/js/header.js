@@ -12,10 +12,8 @@ export function hasName() {
   try { return Boolean(localStorage.getItem('dc.name')); } catch { return false; }
 }
 
-const LOGO = `<svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
-  <rect x="3" y="6" width="22" height="30" rx="3" fill="#F4EFE3" transform="rotate(-10 14 21)"/>
-  <rect x="14" y="4" width="22" height="30" rx="3" fill="#C9A24A" transform="rotate(8 25 19)"/>
-  <path d="M25 12c-3 4-6 5.5-6 8.5a3 3 0 0 0 5 2.2l-1 3.3h4l-1-3.3a3 3 0 0 0 5-2.2c0-3-3-4.5-6-8.5z" fill="#0E241D"/></svg>`;
+const LOGO_SRC = '/assets/art/brand/logo-mark';
+const LOGO = `<img class="brand-mark" src="${LOGO_SRC}-64.png" srcset="${LOGO_SRC}-64.png 64w, ${LOGO_SRC}-180.png 180w" sizes="40px" width="40" height="40" alt="">`;
 const SPEAKER = (muted) => `<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
   <path d="M4 9h4l5-4v14l-5-4H4z"/>${muted ? '<path d="M17 9l5 6M22 9l-5 6"/>' : '<path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>'}</svg>`;
 
