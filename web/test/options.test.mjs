@@ -289,3 +289,67 @@ test('memory: two players race to a number of pairs over several boards, with a 
   assert.equal(one.matched[0] + one.matched[1], 8);
   assert.equal(one.board, 1);
 });
+
+// ------------------------------------------------------------------ Tarot
+test('tarot: every option plays out', () => everyOption('tarot', 1));
+
+test('tarot: the taker can lead the first trick', async () => {
+  const game = await load('tarot');
+  const firstTurn = (firstLead) => {
+    const s = game.newGame({ names: NAMES, seed: 6, opts: { ...defaults(game), firstLead } });
+    Object.assign(s, { phase: 'bid', turn: 0, bidCount: 3, high: 0, taker: null });
+    return game.act(s, { act: 'bid', v: '4' }); // a Garde Contre goes straight to play
+  };
+  const t = firstTurn('taker');
+  assert.deepEqual([t.phase, t.taker, t.turn], ['play', 0, 0]);
+  assert.equal(firstTurn('dealer').turn, (t.dealer + 1) % 4);
+  assert.equal(firstTurn(undefined).turn, (t.dealer + 1) % 4);
+});
+
+test('tarot: poignée sizes and misère hands', async () => {
+  const { poignee, miserable } = await import(new URL('tarot.js', dir));
+  const trumps = (n) => Array.from({ length: n }, (_, i) => ({ id: `T${i + 1}`, rank: String(i + 1), suit: 'T' }));
+  const EX = { id: 'EX', rank: 'EX', suit: 'X' };
+  assert.equal(poignee(trumps(9)), null);
+  assert.equal(poignee([...trumps(9), EX]).pts, 20); // the Excuse makes up the tenth
+  assert.equal(poignee(trumps(13)).pts, 30);
+  assert.equal(poignee(trumps(15)).pts, 40);
+  const low = [{ id: '5S', rank: '5', suit: 'S' }, { id: '2H', rank: '2', suit: 'H' }];
+  assert.ok(miserable([...low, EX])); // no trumps (the Excuse isn't one) and no court cards
+  assert.ok(miserable([...low, ...trumps(3)])); // trumps but no court cards
+  assert.ok(!miserable([...low, ...trumps(3), { id: 'KS', rank: 'K', suit: 'S' }]));
+});
+
+/** Plays one Tarot deal to its end; `tweak` changes the state before play. */
+async function tarotDeal(seed, opts, tweak = () => {}) {
+  const game = await load('tarot');
+  let s = game.newGame({ names: NAMES, seed, opts: { ...defaults(game), ...opts } });
+  let tweaked = false;
+  while (s.phase !== 'handOver' && s.phase !== 'gameOver') {
+    if (s.phase === 'play' && !tweaked) { tweak(s); tweaked = true; }
+    s = game.aiAct(s);
+  }
+  return s;
+}
+
+test('tarot: misère is paid apart from the deal', async () => {
+  const plain = await tarotDeal(3, {});
+  const mis = await tarotDeal(3, { misere: 'yes' }, (s) => { s.misere = [1]; });
+  assert.deepEqual(mis.result.delta, plain.result.delta.map((d, p) => d + (p === 1 ? 30 : -10)));
+});
+
+test('tarot: poignées add to the winning side’s score', async () => {
+  let checked = 0;
+  for (let seed = 1; seed <= 40 && checked < 3; seed++) {
+    const yes = await tarotDeal(seed, { bonuses: 'yes' });
+    if (!yes.poignees.length) continue;
+    const no = await tarotDeal(seed, { bonuses: 'no' });
+    const t = yes.taker, sign = yes.result.made ? 1 : -1;
+    const bonus = yes.poignees.reduce((a, x) => a + x.pts, 0) + (yes.result.slam ? 200 : 0);
+    assert.equal(yes.result.bonus, bonus);
+    assert.equal(yes.result.delta[t] - no.result.delta[t], 3 * sign * bonus);
+    assert.deepEqual(no.poignees, []);
+    checked++;
+  }
+  assert.ok(checked > 0, 'some deal had a poignée');
+});

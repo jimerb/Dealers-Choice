@@ -42,7 +42,9 @@ function deal(s) {
   s.bids = [null, null, null, null]; s.high = 0; s.taker = null; s.bidCount = 0;
   s.phase = 'bid'; s.turn = (s.dealer + 1) % 4;
   s.trick = []; s.trickNo = 0; s.won = [[], [], [], []]; s.excuseOwner = null; s.excuseTrickWinner = null; s.lastTrickHadPetit = null; s.result = null;
-  s.discard = [];
+  s.discard = []; s.trickWins = [0, 0, 0, 0]; s.poignees = [];
+  // Misère (an option): a hand dealt with no trumps, or with no court cards, may be declared for a bonus.
+  s.misere = s.opts.misere === 'yes' ? [0, 1, 2, 3].filter((p) => miserable(s.hands[p])) : [];
   fx(s, 'shuffle');
   log(s, `Deal ${s.dealNo}: ${s.names[s.dealer]} deals.`);
   return s;
@@ -80,8 +82,28 @@ function ecart(s, p, ids) {
   return s;
 }
 
+const COURTS = ['K', 'Q', 'C', 'J'];
+/** Misère: no trumps (the Excuse doesn't count), or no kings, queens, knights or jacks. */
+export const miserable = (h) => !h.some(isTrump) || !h.some((c) => COURTS.includes(c.rank) && !isTrump(c));
+/** Poignée: 10, 13 or 15 trumps shown (the Excuse may count as one) for 20, 30 or 40 points. */
+export function poignee(h) {
+  const n = h.filter(isTrump).length + (h.some(isExcuse) ? 1 : 0);
+  return n >= 15 ? { n, pts: 40, name: 'triple' } : n >= 13 ? { n, pts: 30, name: 'double' } : n >= 10 ? { n, pts: 20, name: 'single' } : null;
+}
+
 function startPlay(s) {
-  s.phase = 'play'; s.turn = (s.dealer + 1) % 4;
+  // The player next to the dealer leads, or by option the taker.
+  s.phase = 'play'; s.turn = s.opts.firstLead === 'taker' ? s.taker : (s.dealer + 1) % 4;
+  // Declarations are made before the first trick (shown automatically).
+  for (const p of s.misere ?? []) log(s, `${who(s, p)} ${p === 0 ? 'declare' : 'declares'} misère.`);
+  if (s.opts.bonuses === 'yes') {
+    for (let p = 0; p < 4; p++) {
+      const pg = poignee(s.hands[p]);
+      if (!pg) continue;
+      s.poignees.push({ seat: p, ...pg });
+      log(s, `${who(s, p)} ${p === 0 ? 'show' : 'shows'} a ${pg.name} poignée (${pg.n} trumps).`);
+    }
+  }
 }
 
 export function legal(s, p) {
@@ -129,6 +151,7 @@ function play(s, p, id) {
 
 function collect(s) {
   const w = s.winner;
+  if (s.trickWins) s.trickWins[w]++;
   for (const x of s.trick) {
     if (isExcuse(x.card)) { s.won[x.seat].push(x.card); s.excuseOwner = x.seat; s.excuseTrickWinner = w; }
     else s.won[w].push(x.card);
@@ -162,10 +185,18 @@ function score(s) {
   let base = (25 + Math.ceil(Math.abs(diff))) * mult;
   let petit = 0;
   if (s.lastTrickHadPetit !== null) petit = (side(s.lastTrickHadPetit) === 0 ? 10 : -10) * mult;
-  const takerScore = (made ? base : -base) + petit;
+  // Poignées and a slam (chelem: every trick) add to the score, whichever side wins it.
+  let bonus = 0;
+  if (s.opts.bonuses === 'yes') {
+    bonus += (s.poignees ?? []).reduce((a, x) => a + x.pts, 0);
+    if (s.trickWins?.[t] === 18) bonus += 200;
+  }
+  const takerScore = (made ? base + bonus : -(base + bonus)) + petit;
   const delta = [0, 1, 2, 3].map((p) => (p === t ? 3 * takerScore : -takerScore));
+  // Misère is paid apart from the deal: 30 to the declarer, 10 from each other player.
+  for (const m of s.misere ?? []) for (let p = 0; p < 4; p++) delta[p] += p === m ? 30 : -10;
   s.scores = s.scores.map((v, i) => v + delta[i]);
-  s.result = { takerPts, bouts, need, made, delta, petit, base };
+  s.result = { takerPts, bouts, need, made, delta, petit, base, bonus, slam: s.trickWins?.[t] === 18 };
   log(s, `${who(s, t)} ${made ? (t === 0 ? 'make' : 'makes') : (t === 0 ? 'miss' : 'misses')} the contract (${takerPts} of ${need}).`);
   s.turn = null;
   const target = Number(s.opts.target);
@@ -237,11 +268,17 @@ function aiPlay(s, p) {
 const RULES = `<p>Four players; one <b>taker</b> plays against the other three. The deck has four suits (K, Q, Knight, J, 10…1), 21 numbered <b>trumps</b> and the <b>Excuse</b>. Eighteen cards each; six form the <b>chien</b>.</p>
 <h3>Bidding</h3><p>Prise &lt; Garde &lt; Garde Sans &lt; Garde Contre (multipliers 1, 2, 4, 6). After a Prise or Garde, the taker takes the chien and sets six cards aside (no trumps, kings or the Excuse). With Garde Sans the chien counts for the taker unseen; with Garde Contre it goes to the defenders.</p>
 <h3>Play</h3><p>Follow suit; if you can't, you must trump, and overtrump if you can. The Excuse can be played any time, never wins, and stays with its owner.</p>
-<h3>Scoring</h3><p>Bouts (trump 1, trump 21, the Excuse) and kings are worth 4½, queens 3½, knights 2½, jacks 1½, everything else ½. The points the taker needs depend on bouts won: 0 bouts 56, 1 bout 51, 2 bouts 41, 3 bouts 36. The score is (25 + the margin) × the multiplier, paid by or to each defender. Winning the last trick with the trump 1 (<i>petit au bout</i>) is worth 10 × the multiplier.</p>`;
+<h3>Scoring</h3><p>Bouts (trump 1, trump 21, the Excuse) and kings are worth 4½, queens 3½, knights 2½, jacks 1½, everything else ½. The points the taker needs depend on bouts won: 0 bouts 56, 1 bout 51, 2 bouts 41, 3 bouts 36. The score is (25 + the margin) × the multiplier, paid by or to each defender. Winning the last trick with the trump 1 (<i>petit au bout</i>) is worth 10 × the multiplier.</p>
+<p>Options: the taker may lead the first trick; a poignée (10, 13 or 15 trumps, shown before play) adds 20, 30 or 40 and a slam by the taker adds 200 to the winning side's score; a misère (dealt no trumps, or no court cards) earns 30 from the table.</p>`;
 
 export default {
   id: 'tarot', title: 'Tarot', version: 1, seats: 4, rulesHTML: RULES,
-  settings: [{ key: 'target', label: 'Game ends when a player reaches', options: [[500, '500 points'], [1000, '1,000 points']], default: 500 }],
+  settings: [
+    { key: 'target', label: 'Game ends when a player reaches', options: [[500, '500 points'], [1000, '1,000 points']], default: 500 },
+    { key: 'firstLead', label: 'First lead', options: [['dealer', 'Player next to the dealer'], ['taker', 'The taker']], default: 'dealer' },
+    { key: 'bonuses', label: 'Poignée and slam bonuses', options: [['no', 'No'], ['yes', 'Yes']], default: 'no' },
+    { key: 'misere', label: 'Misère declarations', options: [['no', 'Not allowed'], ['yes', 'Allowed']], default: 'no' },
+  ],
   newGame({ names, seed, opts }) {
     return deal({ v: 1, seed, rngN: 0, names: names.slice(0, 4), opts, scores: [0, 0, 0, 0], dealNo: 0, dealer: 3, log: [], fx: [], partners: false });
   },
@@ -284,7 +321,7 @@ export default {
     else if (s.phase === 'handOver' || s.phase === 'gameOver') {
       const r = s.result;
       overlay = panel(s.phase === 'gameOver' ? (s.scores[0] === Math.max(...s.scores) ? 'You win!' : `${s.names[s.scores.indexOf(Math.max(...s.scores))]} wins`) : `${who(s, s.taker)} ${r.made ? 'made' : 'missed'} the ${BIDS[s.high]}`,
-        `<p>Taker's points: <b>${r.takerPts}</b> (needed ${r.need} with ${r.bouts} bout${r.bouts === 1 ? '' : 's'})${r.petit ? `<br>Petit au bout: ${r.petit > 0 ? '+' : ''}${r.petit}` : ''}</p>
+        `<p>Taker's points: <b>${r.takerPts}</b> (needed ${r.need} with ${r.bouts} bout${r.bouts === 1 ? '' : 's'})${r.petit ? `<br>Petit au bout: ${r.petit > 0 ? '+' : ''}${r.petit}` : ''}${r.bonus ? `<br>${r.slam ? 'Slam and poignées' : 'Poignées'}: ${r.bonus} to the winners` : ''}${s.misere?.length ? `<br>Misère: ${s.misere.map((p) => who(s, p)).join(', ')}` : ''}</p>
         ${scoreTable(s.names.map((n, i) => (i === 0 ? 'You' : n)), [['This deal', ...r.delta.map((d) => (d > 0 ? `+${d}` : d))], ['Total', ...s.scores.map((v) => `<b>${v}</b>`)]])}
         <div class="row" style="justify-content:flex-end">${s.phase === 'gameOver' ? btn('Play again', 'again', '', true) : btn('Next deal', 'next', '', true)}</div>`);
     } else if (s.phase === 'trickDone') banner = `${who(s, s.winner)} ${s.winner === 0 ? 'take' : 'takes'} it`;
@@ -301,6 +338,7 @@ export default {
       center: trickHTML(s.trick.map((x) => ({ pos: POS4[x.seat], card: x.card })), s.phase === 'trickDone' ? POS4[s.winner] : null),
       banner, overlay,
       side: [{ title: 'Contract', html: s.taker !== null && s.phase !== 'bid' ? `<div class="big">${BIDS[s.high]} ×${MULT[s.high]}</div><div>Taker: ${who(s, s.taker)} · ${takerTaken} points in tricks</div>` : 'Bidding…' },
+        ...(s.poignees?.length || s.misere?.length) && s.phase !== 'bid' ? [{ title: 'Declarations', html: [...(s.poignees ?? []).map((x) => `${who(s, x.seat)}: ${x.name} poignée (${x.n})`), ...(s.misere ?? []).map((p) => `${who(s, p)}: misère`)].join('<br>') }] : [],
         { title: 'Card points', html: '<div style="font-size:13px">Bouts &amp; kings 4½ · queens 3½ · knights 2½ · jacks 1½ · others ½</div>' }],
     };
   },
