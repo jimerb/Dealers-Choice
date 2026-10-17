@@ -6,8 +6,19 @@ import { deck, shuffle, makeRng, SUIT_TITLE, SYM } from '../../core/cards.js';
 const HOURS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q'];
 const clock = {
   id: 'clock', name: 'Clock', group: 'One deck', blurb: 'Send each card to its hour before the fourth king turns up.',
-  how: `<p>Twelve face-down piles of four sit around a clock face (ace = 1 o'clock … jack = 11, queen = 12). A card is turned from the stock. Click the pile at <b>its hour</b>: the card is tucked face up under that pile and the pile's next face-down card is turned up for you to place.</p>
-    <p>Kings go to the middle. After a king, a fresh card comes from the stock. You win if all twelve hours are filled with their four cards before the fourth king appears.</p>`,
+  how: {
+    goal: `Fill all twelve hours of the clock with their four cards before the fourth king turns up.`,
+    deal: `Twelve face-down piles of four sit around a clock face, and the last four cards are the stock. A card is turned up in the middle to start.`,
+    play: [
+      `Put the turned-up card on the pile at <b>its hour</b>: ace = 1 o'clock, 2 to 10 as numbered, jack = 11, queen = 12.`,
+      `The card is tucked under that pile face up, and the pile's next face-down card comes up for you to place.`,
+      `Kings go to the middle by themselves, and a new card comes from the stock.`,
+      `The game ends when the fourth king appears.`,
+    ],
+    score: `You win when every hour shows all four of its cards.`,
+    controls: `{Click} the pile at the hour of the card in the middle.`,
+    tip: `Clock has no choices to make; it's a quick game of pure luck.`,
+  },
   newGame(seed) {
     const d = freshDeck(seed);
     const piles = HOURS.map((_, i) => ({ down: d.slice(i * 4, i * 4 + 4), up: [] }));
@@ -99,8 +110,19 @@ function rollDone(s, knocked) {
 }
 const bowling = {
   id: 'bowling', name: 'Bowling', group: 'One deck', blurb: 'Fill the ten pins in rank order before your balls run out.',
-  how: `<p>Ten frames, scored like real bowling. In each frame cards are turned up one at a time. Place each card on an empty <b>pin</b> (numbered 1–10) so that pin values never go down as the pin numbers go up: a card must be at least as high as every filled lower-numbered pin and no higher than every filled higher-numbered pin (aces low; equal ranks are fine).</p>
-    <p>A card that can't go on any pin must go to the waste for the current ball. Three wasted cards end a ball. Fill all ten pins with the first ball for a <b>strike</b>, or by the end of the second for a <b>spare</b>; otherwise you score one point per pin filled. Score <b>230 or more</b> to win.</p>`,
+  how: {
+    goal: `Bowl ten frames and score 230 or more.`,
+    deal: `Ten empty pins in a triangle, numbered from 1 at the bottom point up to 7–10 along the top. Each frame uses a freshly shuffled deck, turned one card at a time.`,
+    play: [
+      `Place each card on an empty pin so ranks never go down as the pin numbers go up: a card must be at least as high as every filled lower-numbered pin, and no higher than any filled higher-numbered pin. Aces are low; equal ranks are fine.`,
+      `A card that fits on a pin must be placed. One that fits nowhere goes to the waste for that ball.`,
+      `Three wasted cards end a ball, and each frame has two balls.`,
+      `Fill all ten pins with the first ball for a <b>strike</b>, or by the end of the second ball for a <b>spare</b>.`,
+    ],
+    score: `Frames score like real bowling: a point for each pin filled, plus the usual strike and spare bonuses, with bonus balls in the tenth frame. Reach <b>230</b> to win.`,
+    controls: `{Click} an empty pin to place the card; pins where it fits are highlighted. If it fits nowhere, {click} Waste this card.`,
+    tip: `Put middling cards on the middle pins and save the end pins for very low and very high cards.`,
+  },
   newGame(seed) { const s = { variant: 'bowling', moves: 0, seed, rack: 0, frame: 1, rolls: [], frameRolls: [], over: false }; newRack(s); return s; },
   render(s) {
     const v = s.current ? rk(s.current) : null;
@@ -186,9 +208,19 @@ function endHand(s) {
 }
 const euchresol = {
   id: 'euchresol', name: 'Euchre', group: 'One deck', blurb: 'Play Euchre hands against the deck; first to 10 points.',
-  how: `<p>A 24-card Euchre deck (9 through ace). You get five cards; a card is turned up. <b>Order it up</b> to make its suit trump (the deck will play that card on the first trick), or <b>pass</b> and name another suit. Tick <b>Double stakes</b> if you think you'll take all five tricks.</p>
-    <p>You lead the first trick. The deck answers by turning cards until it finds one that follows suit or is trump. Whoever wins a trick leads the next; when the deck leads, it plays its top card and you must follow suit if you can. The jack of trump is highest, then the other jack of the same color (which counts as trump), then A K Q 10 9.</p>
-    <p>Take 3–4 tricks: 1 point; all five: 2 (4 with double stakes). Take fewer than 3, or miss a double, and the deck scores 2. First to 10 wins. If the deck runs out of cards you win the remaining tricks.</p>`,
+  how: {
+    goal: `Be the first to 10 points, playing Euchre hands against the deck.`,
+    deal: `A 24-card deck (9 through ace). You get five cards, and one card is turned up.`,
+    play: [
+      `Choose trump: <b>order up</b> the turned card's suit (the deck then plays that card on the first trick), or name another suit. Tick <b>Double stakes</b> if you expect to take all five tricks.`,
+      `You lead the first trick. The deck answers by turning cards until it finds one that follows suit or is trump.`,
+      `Whoever wins a trick leads the next. When the deck leads, you must follow suit if you can.`,
+      `The jack of trump is highest, then the other jack of the same color (which counts as trump), then A K Q 10 9.`,
+    ],
+    score: `Take 3 or 4 tricks for 1 point, or all five for 2 (4 with double stakes). Take fewer than three, or miss a double, and the deck scores 2. If the deck runs out of cards, you win the remaining tricks.`,
+    controls: `{Click} Order it up or a Name button to set trump, then {click} a card in your hand to play it. Cards you can't play are dimmed.`,
+    tip: `Holding both jacks of the turned card's color makes ordering up a safe bet.`,
+  },
   newGame(seed) { const s = { variant: 'euchresol', moves: 0, seed, handNo: 0, score: [0, 0] }; euDeal(s); return s; },
   render(s) {
     const handBtns = s.hand.map((c) => cardBtn(c, { c: 'play', id: c.id }, { disabled: s.phase !== 'play' || !legal(s).some((x) => x.id === c.id) })).join('');
