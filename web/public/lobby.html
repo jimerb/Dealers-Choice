@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/js/frame.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dealers Choice</title>
+<meta name="description" content="Dealers Choice: classic card games in your browser.">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/site.css">
+</head>
+<body>
+<header id="site-header"></header>
+<main class="wrap" id="top">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-copy">
+      <span class="eyebrow">Tonight's table</span>
+      <p class="greeting" id="greeting"></p>
+      <h1 id="hero-title">Pull up a chair.<br>Pinochle's dealing.</h1>
+      <p>Partnership Auction Pinochle with three computer players: bid, name trump, lay down your meld and run the tricks. Sixteen more classic card games and a whole solitaire parlor are ready too.</p>
+      <div class="hero-actions">
+        <a class="btn primary" href="/pinochle.html">Deal me in</a>
+        <a class="btn" href="#games">Browse all games</a>
+      </div>
+    </div>
+    <a class="feature" href="/pinochle.html" style="text-decoration:none;color:inherit" aria-label="Play Pinochle">
+      <div class="feature-head"><h2>Pinochle</h2><span class="pill">Ready to play</span></div>
+      <div class="fan" id="hero-fan"></div>
+      <div class="stats">
+        <div class="stat"><span>Players</span><b>4 · partners</b></div>
+        <div class="stat"><span>Deck</span><b>48 cards</b></div>
+        <div class="stat"><span>Game to</span><b>1,000</b></div>
+      </div>
+      <ul class="chips" aria-label="Pinochle variants">
+        <li>Partnership Auction</li><li>Two-Handed · soon</li><li>Double-Pack · soon</li><li>Partnership · soon</li><li>Cutthroat · soon</li>
+      </ul>
+    </a>
+  </section>
+
+  <section id="games" aria-labelledby="games-title">
+    <div class="section-head">
+      <h2 id="games-title">The card room</h2>
+      <div class="filters" role="group" aria-label="Filter games" id="filters"></div>
+    </div>
+    <div id="groups"></div>
+  </section>
+
+  <section class="parlor" id="solitaire" aria-labelledby="sol-title">
+    <div class="section-head" style="margin:0">
+      <h2 id="sol-title" style="font-size:32px">Solitaire parlor</h2>
+      <a class="btn sm" href="/solitaire.html">Open the parlor</a>
+    </div>
+    <div class="parlor-cols" id="parlor"></div>
+  </section>
+</main>
+<footer id="site-footer"></footer>
+<script type="module" src="/js/lobby.js"></script>
+</body>
+</html>

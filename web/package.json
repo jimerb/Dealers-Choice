@@ -1,0 +1,12 @@
+{
+  "name": "dealers-choice",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dealers Choice: a web card-game suite",
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "engines": { "node": ">=20" }
+}

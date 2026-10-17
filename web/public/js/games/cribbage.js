@@ -1,0 +1,243 @@
+// Cribbage (2 players) to 121: discard to the crib, peg to 31, count hands and crib.
+import { deck, shuffle, sortCards, rngOf, lo, pipValue, SYM } from '../core/cards.js';
+import { clone, log, fx, must } from './lib/common.js';
+import { panel, btn, cardsRow } from '../core/table.js';
+import { cardHTML, backHTML } from '../skin.js';
+
+const sortHand = (h) => sortCards(h, { rankFn: lo, bySuit: false, desc: false });
+const label = (c) => `${c.rank}${SYM[c.suit]}`;
+const WIN = 121;
+
+/** Score a 4-card hand plus starter. Returns { total, items: [[name, pts]] }. */
+export function scoreHand(hand, starter, isCrib = false) {
+  const all = [...hand, starter];
+  const items = [];
+  // Fifteens
+  let fifteens = 0;
+  for (let m = 1; m < 32; m++) {
+    let t = 0;
+    for (let i = 0; i < 5; i++) if (m & (1 << i)) t += pipValue(all[i]);
+    if (t === 15) fifteens++;
+  }
+  if (fifteens) items.push([`Fifteen ×${fifteens}`, fifteens * 2]);
+  // Pairs
+  let pairs = 0;
+  for (let i = 0; i < 5; i++) for (let j = i + 1; j < 5; j++) if (all[i].rank === all[j].rank) pairs++;
+  if (pairs) items.push([`Pair${pairs > 1 ? ` ×${pairs}` : ''}`, pairs * 2]);
+  // Runs (with multiplicity)
+  const counts = Array(14).fill(0);
+  all.forEach((c) => counts[lo(c)]++);
+  let runPts = 0;
+  for (let start = 1; start <= 13; start++) {
+    let len = 0, mult = 1;
+    while (start + len <= 13 && counts[start + len]) { mult *= counts[start + len]; len++; }
+    if (len >= 3 && (start === 1 || !counts[start - 1])) { runPts += len * mult; }
+  }
+  if (runPts) items.push(['Runs', runPts]);
+  // Flush
+  if (hand.every((c) => c.suit === hand[0].suit)) {
+    if (starter.suit === hand[0].suit) items.push(['Flush of five', 5]);
+    else if (!isCrib) items.push(['Flush of four', 4]);
+  }
+  // Nobs
+  if (hand.some((c) => c.rank === 'J' && c.suit === starter.suit)) items.push(['His nobs', 1]);
+  return { total: items.reduce((t, [, p]) => t + p, 0), items };
+}
+
+/** Points for the latest card played during pegging. */
+function pegPoints(pile, count) {
+  const items = [];
+  if (count === 15) items.push(['Fifteen', 2]);
+  if (count === 31) items.push(['Thirty-one', 2]);
+  let same = 1;
+  for (let i = pile.length - 2; i >= 0 && pile[i].rank === pile.at(-1).rank; i--) same++;
+  if (same >= 2) items.push([{ 2: 'Pair', 3: 'Three of a kind', 4: 'Four of a kind' }[same], { 2: 2, 3: 6, 4: 12 }[same]]);
+  for (let n = pile.length; n >= 3; n--) {
+    const v = pile.slice(-n).map(lo).sort((a, b) => a - b);
+    if (v.every((x, i) => i === 0 || x === v[i - 1] + 1)) { items.push([`Run of ${n}`, n]); break; }
+  }
+  return items;
+}
+
+function addPoints(s, p, pts, why) {
+  if (!pts || s.phase === 'gameOver') return s;
+  s.scores[p] = Math.min(WIN, s.scores[p] + pts);
+  log(s, `${p === 0 ? 'You' : 'North'} peg ${pts} (${why}).`);
+  fx(s, 'score');
+  if (s.scores[p] >= WIN) {
+    s.phase = 'gameOver'; s.winner = p; s.turn = null;
+    const other = s.scores[1 - p];
+    s.skunk = other < 61 ? 'double skunk' : other < 91 ? 'skunk' : null;
+    fx(s, p === 0 ? 'win' : 'lose');
+  }
+  return s;
+}
+
+function deal(s) {
+  const rng = rngOf(s);
+  s.handNo++; s.dealer = s.handNo === 1 ? s.dealer : 1 - s.dealer;
+  const d = shuffle(deck(), rng);
+  s.hands = [sortHand(d.slice(0, 6)), sortHand(d.slice(6, 12))];
+  s.rest = d.slice(12);
+  s.crib = []; s.starter = null; s.phase = 'discard'; s.turn = 0;
+  s.count = 0; s.pile = []; s.played = [[], []]; s.go = [false, false]; s.lastPlayer = null; s.show = null; s.pegHands = null;
+  fx(s, 'shuffle');
+  log(s, `Hand ${s.handNo}: ${s.dealer === 0 ? 'your crib' : "North's crib"}.`);
+  return s;
+}
+
+function aiDiscard(hand, isDealer) {
+  let best = null;
+  for (let i = 0; i < 6; i++) for (let j = i + 1; j < 6; j++) {
+    const keep = hand.filter((_, k) => k !== i && k !== j);
+    const toss = [hand[i], hand[j]];
+    const seen = new Set(hand.map((c) => c.id));
+    let total = 0, n = 0;
+    for (const st of deck()) { if (seen.has(st.id)) continue; total += scoreHand(keep, st).total; n++; }
+    let v = total / n;
+    const tossVal = (pipValue(toss[0]) + pipValue(toss[1]) === 15 ? 2 : 0) + (toss[0].rank === toss[1].rank ? 2 : 0) + (toss.some((c) => c.rank === '5') ? 1 : 0);
+    v += isDealer ? tossVal : -tossVal;
+    if (!best || v > best.v) best = { v, ids: [toss[0].id, toss[1].id] };
+  }
+  return best.ids;
+}
+
+function discard(s, ids) {
+  must(s.phase === 'discard' && ids?.length === 2, 'Choose two cards for the crib.');
+  const ai = aiDiscard(s.hands[1], s.dealer === 1);
+  for (const [p, toss] of [[0, ids], [1, ai]]) {
+    s.crib.push(...s.hands[p].filter((c) => toss.includes(c.id)));
+    s.hands[p] = s.hands[p].filter((c) => !toss.includes(c.id));
+  }
+  s.pegHands = [s.hands[0].slice(), s.hands[1].slice()];
+  s.starter = s.rest[Math.floor(rngOf(s)() * s.rest.length)];
+  fx(s, 'flip');
+  log(s, `The starter is the ${label(s.starter)}.`);
+  if (s.starter.rank === 'J') addPoints(s, s.dealer, 2, 'his heels');
+  if (s.phase === 'gameOver') return s;
+  s.phase = 'peg'; s.turn = 1 - s.dealer;
+  return autoGo(s);
+}
+
+const canPlay = (s, p) => s.hands[p].filter((c) => s.count + pipValue(c) <= 31);
+
+/** Handle "go" automatically when the player to move can't play. */
+function autoGo(s) {
+  while (s.phase === 'peg') {
+    if (!s.hands[0].length && !s.hands[1].length) {
+      if (s.count > 0 && s.count < 31 && s.lastPlayer !== null) addPoints(s, s.lastPlayer, 1, 'last card');
+      if (s.phase === 'gameOver') return s;
+      return startShow(s);
+    }
+    const p = s.turn;
+    if (canPlay(s, p).length) return s;
+    const o = 1 - p;
+    if (canPlay(s, o).length) { if (!s.go[p] && s.hands[p].length) log(s, `${p === 0 ? 'You say' : 'North says'} "Go".`); s.go[p] = true; s.turn = o; return s; }
+    // Neither can play: last player scores 1 for the go and the count resets.
+    if (s.count < 31 && s.lastPlayer !== null) addPoints(s, s.lastPlayer, 1, 'go');
+    if (s.phase === 'gameOver') return s;
+    s.count = 0; s.pile = []; s.go = [false, false];
+    s.turn = s.lastPlayer === null ? p : 1 - s.lastPlayer;
+    if (!s.hands[s.turn].length) s.turn = 1 - s.turn;
+  }
+  return s;
+}
+
+function peg(s, p, id) {
+  must(s.phase === 'peg' && s.turn === p, 'Not your turn.');
+  const c = s.hands[p].find((x) => x.id === id);
+  must(c, 'Card not in hand.');
+  must(s.count + pipValue(c) <= 31, `That would go past 31 (count is ${s.count}).`);
+  s.hands[p] = s.hands[p].filter((x) => x.id !== id);
+  s.played[p].push(c); s.pile.push(c); s.count += pipValue(c); s.lastPlayer = p;
+  fx(s, 'card');
+  for (const [why, pts] of pegPoints(s.pile, s.count)) { addPoints(s, p, pts, why); if (s.phase === 'gameOver') return s; }
+  if (s.count === 31) { s.count = 0; s.pile = []; s.go = [false, false]; }
+  s.turn = s.go[1 - p] && canPlay(s, p).length ? p : 1 - p;
+  if (!s.hands[s.turn].length && s.hands[1 - s.turn].length) s.turn = 1 - s.turn;
+  return autoGo(s);
+}
+
+function startShow(s) {
+  const non = 1 - s.dealer;
+  const a = scoreHand(s.pegHands[non], s.starter);
+  const b = scoreHand(s.pegHands[s.dealer], s.starter);
+  const c = scoreHand(s.crib, s.starter, true);
+  s.show = [{ who: non, kind: 'hand', cards: s.pegHands[non], ...a }, { who: s.dealer, kind: 'hand', cards: s.pegHands[s.dealer], ...b }, { who: s.dealer, kind: 'crib', cards: s.crib, ...c }];
+  // Count in order: non-dealer, dealer, crib. The game can end mid-count.
+  for (const x of s.show) { addPoints(s, x.who, x.total, x.kind === 'crib' ? 'crib' : 'hand'); if (s.phase === 'gameOver') return s; }
+  s.phase = 'show'; s.turn = null;
+  return s;
+}
+
+function aiPeg(s, p) {
+  const opts = canPlay(s, p);
+  let best = null;
+  for (const c of opts) {
+    const pile = [...s.pile, c]; const count = s.count + pipValue(c);
+    let v = pegPoints(pile, count).reduce((t, [, x]) => t + x, 0) * 10;
+    if (count === 5 || count === 21) v -= 4;
+    if (count < 15 && count + 10 >= 15) v -= 1;
+    v -= pipValue(c) * 0.1;
+    if (!best || v > best.v) best = { v, c };
+  }
+  return best.c.id;
+}
+
+const RULES = `<p>Two players race to 121 points. Each player gets six cards and lays two in the dealer's <b>crib</b>. A starter card is cut (a jack gives the dealer 2 for "his heels").</p>
+<h3>Pegging</h3><p>Take turns playing cards and announcing the running count, never past 31. Score 2 for making 15 or 31, 2/6/12 for pairs/three/four of a kind, and runs of 3+. If you can't play, say "Go"; the last card under 31 earns 1.</p>
+<h3>Counting</h3><p>Then each hand (non-dealer first) and the crib are counted with the starter: fifteens 2 each, pairs 2, runs 1 per card, flush 4 (5 with the starter; the crib needs 5), and the jack of the starter's suit 1 ("his nobs").</p>`;
+
+export default {
+  id: 'cribbage', title: 'Cribbage', version: 1, rulesHTML: RULES,
+  settings: [{ key: 'first', label: 'First dealer', options: [['me', 'Me'], ['north', 'North'], ['random', 'Random']], default: 'random' }],
+  newGame({ names, seed, opts }) {
+    const s = { v: 1, seed, rngN: 0, names: [names[0], 'North'], opts, scores: [0, 0], handNo: 0, log: [], fx: [], partners: false };
+    s.dealer = opts.first === 'me' ? 0 : opts.first === 'north' ? 1 : (rngOf(s)() < 0.5 ? 0 : 1);
+    return deal(s);
+  },
+  actor(s) {
+    if (s.phase === 'gameOver') return null;
+    if (s.phase === 'discard' || s.phase === 'show') return 0;
+    return s.turn;
+  },
+  delay: () => 900,
+  act(state, a) {
+    const s = clone(state);
+    if (a.act === 'crib') return discard(s, a.ids);
+    if (a.act === 'play') return peg(s, 0, a.id);
+    if (a.act === 'next') { must(s.phase === 'show', 'Not done counting.'); return deal(s); }
+    if (a.act === 'again') return this.newGame({ names: s.names, seed: s.seed + 1, opts: s.opts });
+    throw new Error('Unknown action');
+  },
+  aiAct(state) {
+    const s = clone(state);
+    if (s.phase === 'discard') return discard(s, aiDiscard(s.hands[0], s.dealer === 0));
+    if (s.phase === 'show') return deal(s);
+    return peg(s, s.turn, aiPeg(s, s.turn));
+  },
+  view(s, ui) {
+    let overlay = '', banner = '';
+    const counts = (x) => `<div style="margin-bottom:10px"><b>${x.who === 0 ? 'Your' : "North's"} ${x.kind}</b> · ${x.total} pts${cardsRow([...x.cards, s.starter], 40)}<div style="font-size:13px;color:var(--ink-2)">${x.items.map(([n, p]) => `${n} ${p}`).join(' · ') || 'Nineteen (nothing)'}</div></div>`;
+    if (s.phase === 'discard') overlay = panel(s.dealer === 0 ? 'Your crib' : "North's crib", `<p>Choose two cards to lay away (${ui.selected.size}/2).</p><div class="row">${btn('Send to crib', 'crib', `data-with-sel ${ui.selected.size === 2 ? '' : 'disabled'}`, true)}</div>`);
+    else if (s.phase === 'show') overlay = panel(`Hand ${s.handNo}: the count`, `<div style="max-height:50vh;overflow:auto">${s.show.map(counts).join('')}</div><div class="row" style="justify-content:flex-end">${btn('Next hand', 'next', '', true)}</div>`, 'max-width:520px');
+    else if (s.phase === 'gameOver') overlay = panel(s.winner === 0 ? 'You win!' : 'North wins', `<p>${s.scores[0]} – ${s.scores[1]}${s.skunk ? ` · a ${s.skunk}!` : ''}</p>${s.show ? s.show.map(counts).join('') : ''}<div class="row" style="justify-content:flex-end">${btn('Play again', 'again', '', true)}</div>`);
+    else banner = s.turn === 0 ? `Count is ${s.count}: play a card` : 'North is playing…';
+    const bar = (p) => `<div class="peg-track" role="img" aria-label="${p === 0 ? 'Your' : "North's"} score ${s.scores[p]} of 121"><span style="width:${(s.scores[p] / WIN) * 100}%"></span><b>${s.scores[p]}</b></div>`;
+    const center = `<div style="display:flex;flex-direction:column;align-items:center;gap:10px">
+      <div class="row" style="--card-w:52px;gap:4px;min-height:80px">${s.played[1].map((c) => cardHTML(c)).join('')}</div>
+      <div class="row" style="gap:24px;--card-w:70px"><div class="pile">${s.starter ? cardHTML(s.starter) : backHTML()}<span>Starter</span></div>
+        <div class="pile"><span class="count-badge">${s.count}</span><span>Count</span></div>
+        <div class="pile">${s.crib.length ? backHTML() : '<span class="empty-slot">Crib</span>'}<span>${s.dealer === 0 ? 'Your' : "North's"} crib</span></div></div>
+      <div class="row" style="--card-w:52px;gap:4px;min-height:80px">${s.played[0].map((c) => cardHTML(c)).join('')}</div></div>`;
+    return {
+      subtitle: `Hand ${s.handNo} · to 121`,
+      scores: [{ label: 'You', value: s.scores[0], us: true }, { label: 'North', value: s.scores[1] }],
+      seats: [{ seat: 0, pos: 'south', name: s.names[0], mine: true, turn: s.turn === 0, dealer: s.dealer === 0 }, { seat: 1, pos: 'north', name: 'North', count: s.hands[1].length, turn: s.turn === 1, dealer: s.dealer === 1 }],
+      hand: s.phase === 'discard' ? { cards: s.hands[0], legal: s.hands[0].map((c) => c.id), mode: 'select', maxSelect: 2 }
+        : { cards: s.hands[0], legal: s.phase === 'peg' && s.turn === 0 ? canPlay(s, 0).map((c) => c.id) : null },
+      center, banner, overlay,
+      side: [{ title: 'The board', html: `<div style="display:flex;flex-direction:column;gap:8px"><div>You</div>${bar(0)}<div>North</div>${bar(1)}</div>` }],
+    };
+  },
+};

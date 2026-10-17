@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/js/frame.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Solitaire · Dealers Choice</title>
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/site.css">
+<link rel="stylesheet" href="/css/table.css">
+<link rel="stylesheet" href="/css/solitaire.css">
+</head>
+<body>
+<header id="site-header"></header>
+<main class="table-page">
+  <section id="chooser" class="wrap" style="padding:0"></section>
+  <section id="board" hidden>
+    <div class="table-top">
+      <button class="btn sm" type="button" data-cmd="menu" id="back-menu">← All solitaires</button>
+      <h1 id="sol-title">Solitaire</h1>
+      <span class="sub" id="sol-status"></span>
+      <span class="spacer"></span>
+      <div class="row" id="sol-tools">
+        <button class="btn sm" type="button" data-cmd="rules">How to play</button>
+        <button class="btn sm" type="button" data-cmd="undo">Undo</button>
+        <button class="btn sm" type="button" data-cmd="auto">Auto-finish</button>
+        <button class="btn sm" type="button" data-cmd="restart">Restart deal</button>
+        <button class="btn sm primary" type="button" data-cmd="new">New deal</button>
+      </div>
+    </div>
+    <p class="sub" id="sol-sub" style="margin:-6px 0 12px"></p>
+    <div class="felt sol-felt" id="sol-area" aria-label="Solitaire table"></div>
+    <p class="sub" style="margin-top:10px">Click a card (or the top of a stack), then where it should go. Double-click sends a card to its best spot. "How to play" explains this layout's rules.</p>
+  </section>
+</main>
+<dialog id="sol-rules" aria-labelledby="sol-rules-title">
+  <h2 id="sol-rules-title">How to play</h2>
+  <div id="sol-rules-body" class="rules-body"></div>
+  <form method="dialog" class="dialog-actions"><button class="btn primary">Got it</button></form>
+</dialog>
+<footer id="site-footer"></footer>
+<script type="module" src="/js/solitaire/ui.js"></script>
+</body>
+</html>

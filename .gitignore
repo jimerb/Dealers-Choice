@@ -1,0 +1,10 @@
+# Local-only working files. Never commit.
+/_private/
+
+# Python caches
+__pycache__/
+*.pyc
+
+# Editors and OS
+.DS_Store
+*.swp
