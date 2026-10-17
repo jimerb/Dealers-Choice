@@ -4,7 +4,7 @@ import * as AI from './ai.js';
 import { cardHTML, backHTML, cardName, paintFelt, preloadSkin } from '../../skin.js';
 import { mountChrome, esc, playerName, playerAvatar, avatarHTML } from '../../header.js';
 import { play } from '../../core/sound.js';
-import { pickOpponents, castByName } from '../../core/cast.js';
+import { pickOpponents, castByName, renamePlaceholders } from '../../core/cast.js';
 import { trumpPlaqueHTML } from '../../core/pieces.js';
 
 mountChrome('pinochle');
@@ -16,7 +16,8 @@ const suitSpan = (s) => `<span class="trump-sym${s === 'H' || s === 'D' ? ' red-
 const pace = () => { try { return localStorage.getItem('dc.speed') === 'fast' ? 0.45 : 1; } catch { return 1; } };
 
 let state = load();
-if (!state) { state = fresh(); save(); } // save at once so a reload keeps the same opponents
+if (!state) state = fresh();
+save(); // save at once so a reload keeps the same opponents (new, or renamed in an old save)
 let timer = null;
 
 /** A new game: fresh opponents from the cast, or the same ones when playing again (`keep`). */
@@ -25,7 +26,12 @@ function fresh(keep = null) {
   return P.newGame({ seed: Math.floor(Math.random() * 2 ** 31), names: [playerName(), ...others] });
 }
 function load() {
-  try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); return s && Array.isArray(s.hands) ? s : null; } catch { return null; }
+  try {
+    const s = JSON.parse(localStorage.getItem(SAVE_KEY));
+    if (!s || !Array.isArray(s.hands)) return null;
+    s.names = renamePlaceholders(s.names, { gameId: 'pinochle' }); // old saves: 'West', 'North' … get cast members
+    return s;
+  } catch { return null; }
 }
 function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch { /* ignore */ } }
 

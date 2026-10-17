@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
-import { CAST, PLAYER_PORTRAITS, pickOpponents, castByName, portraitFor, playerPortrait } from '../public/js/core/cast.js';
+import { CAST, PLAYER_PORTRAITS, pickOpponents, castByName, portraitFor, playerPortrait, renamePlaceholders } from '../public/js/core/cast.js';
 
 const pub = (path) => new URL(`../public${path}`, import.meta.url);
 // Small seeded generator so picks are reproducible.
@@ -68,4 +68,32 @@ test('seat names map to portraits; unknown names fall back to none', () => {
   assert.equal(playerPortrait('player-03'), '/assets/art/cast/player-03-96.webp');
   assert.equal(playerPortrait(''), '');
   assert.equal(playerPortrait('../etc'), '');
+});
+
+test('pickOpponents can skip names already at the table', () => {
+  for (let seed = 1; seed <= 50; seed++) {
+    const picks = pickOpponents(3, { rng: seeded(seed), exclude: ['Mabel', ' dex ', 'Guest'] }).map((c) => c.name);
+    assert.equal(picks.length, 3);
+    assert.ok(!picks.includes('Mabel') && !picks.includes('Dex'));
+  }
+  assert.equal(pickOpponents(20, { exclude: CAST.slice(0, 10).map((c) => c.name) }).length, 2, 'only who is left');
+});
+
+test('old saves: placeholder seat names become distinct cast members, nothing else changes', () => {
+  for (let seed = 1; seed <= 50; seed++) {
+    const out = renamePlaceholders(['Jim', 'West', 'Rosa', 'East', 'Northwest', 'Northeast'], { gameId: 'poker', rng: seeded(seed) });
+    assert.equal(out.length, 6);
+    assert.equal(out[0], 'Jim');
+    assert.equal(out[2], 'Rosa', 'cast members already seated stay put');
+    for (const i of [1, 3, 4, 5]) assert.ok(castByName(out[i]), `seat ${i} is a cast member: ${out[i]}`);
+    assert.equal(new Set(out.map((n) => n.toLowerCase())).size, 6, 'no one sits twice');
+  }
+  // seat 0 is the player, even if they happen to be called North; only exact matches count
+  const mine = renamePlaceholders(['North', 'north', 'West ', 'Westley', 'North'], { rng: seeded(3) });
+  assert.deepEqual(mine.slice(0, 4), ['North', 'north', 'West ', 'Westley']);
+  assert.ok(castByName(mine[4]));
+  // nothing to do: the very same array comes back
+  const fine = ['You', 'Mabel', 'Colonel', 'Ivy'];
+  assert.equal(renamePlaceholders(fine), fine);
+  assert.equal(renamePlaceholders(undefined), undefined);
 });

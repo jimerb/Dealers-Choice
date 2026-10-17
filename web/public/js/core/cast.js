@@ -34,13 +34,17 @@ export const playerPortrait = (id) => PLAYER_PORTRAITS.find((p) => p.id === id)?
 // A regular is this many times as likely as anyone else to be picked: a nudge, not a booking.
 const REGULAR_WEIGHT = 2.5;
 
+const key = (name) => String(name ?? '').trim().toLowerCase();
+
 /**
  * Choose `count` distinct opponents (0 … CAST.length), in seat order. Each pick is weighted, so a
- * game's regulars turn up more often without always appearing. Deterministic for a given rng.
+ * game's regulars turn up more often without always appearing. Names in `exclude` are skipped
+ * (fewer picks come back if the cast runs out). Deterministic for a given rng.
  */
-export function pickOpponents(count, { gameId = null, rng = Math.random } = {}) {
-  const n = Math.max(0, Math.min(CAST.length, Math.floor(Number(count) || 0)));
-  const pool = CAST.map((c) => ({ c, w: gameId && c.games.includes(gameId) ? REGULAR_WEIGHT : 1 }));
+export function pickOpponents(count, { gameId = null, rng = Math.random, exclude = [] } = {}) {
+  const skip = new Set(exclude.map(key));
+  const pool = CAST.filter((c) => !skip.has(key(c.name))).map((c) => ({ c, w: gameId && c.games.includes(gameId) ? REGULAR_WEIGHT : 1 }));
+  const n = Math.max(0, Math.min(pool.length, Math.floor(Number(count) || 0)));
   const out = [];
   while (out.length < n) {
     let r = rng() * pool.reduce((t, p) => t + p.w, 0);
@@ -53,9 +57,23 @@ export function pickOpponents(count, { gameId = null, rng = Math.random } = {}) 
 
 /** The cast member sitting under a seat name (case-insensitive), or null (e.g. 'West' in old saves). */
 export function castByName(name) {
-  const k = String(name ?? '').trim().toLowerCase();
-  return CAST.find((c) => c.name.toLowerCase() === k) ?? null;
+  return CAST.find((c) => key(c.name) === key(name)) ?? null;
 }
 
 /** Portrait path for a seat name, or '' so the caller falls back to the initial. */
 export const portraitFor = (name) => castByName(name)?.portrait ?? '';
+
+/** Seat names that saved games from before the cast used for the computer players. */
+export const PLACEHOLDER_NAMES = ['West', 'North', 'East', 'Northwest', 'Northeast'];
+
+/**
+ * Old saves: give computer seats (1+) still named 'West', 'North' … fresh, distinct cast picks that
+ * aren't already at the table. Returns a new array, or the same one when nothing needed changing.
+ */
+export function renamePlaceholders(names, { gameId = null, rng = Math.random } = {}) {
+  if (!Array.isArray(names)) return names;
+  const stale = names.map((n, i) => i > 0 && PLACEHOLDER_NAMES.includes(n));
+  const picks = pickOpponents(stale.filter(Boolean).length, { gameId, rng, exclude: names });
+  if (!picks.length) return names;
+  return names.map((n, i) => (stale[i] && picks.length ? picks.shift().name : n));
+}

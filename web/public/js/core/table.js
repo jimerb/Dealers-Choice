@@ -18,7 +18,7 @@
 import { cardHTML, backHTML, cardName, paintFelt, preloadSkin } from '../skin.js';
 import { mountChrome, esc, playerName, playerAvatar, avatarHTML } from '../header.js';
 import { play } from './sound.js';
-import { pickOpponents, castByName } from './cast.js';
+import { pickOpponents, castByName, renamePlaceholders } from './cast.js';
 import { trumpPlaqueHTML } from './pieces.js';
 
 const MAX_SEATS = 6;
@@ -58,13 +58,16 @@ export function mountTable(game) {
       if (!s || s.v !== game.version) return null;
       // Older builds handed every game six names; keep only the seats this game has.
       if (game.seats && Array.isArray(s.names) && s.names.length > game.seats) s.names = s.names.slice(0, game.seats);
+      // Older builds also named the computer seats 'West', 'North' …; seat members of the cast there.
+      s.names = renamePlaceholders(s.names, { gameId: game.id });
       return s;
     } catch { return null; }
   };
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { /* ignore */ } };
 
   let state = load();
-  if (!state) { state = fresh(); save(); } // save at once so a reload keeps the same opponents
+  if (!state) state = fresh();
+  save(); // save at once so a reload keeps the same opponents (new, or renamed in an old save)
   const ui = { selected: new Set() };
   let timer = null;
 
