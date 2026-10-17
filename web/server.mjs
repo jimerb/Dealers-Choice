@@ -36,10 +36,15 @@ const server = createServer(async (req, res) => {
     res.end('<!doctype html><title>Not found</title><body style="font-family:sans-serif;background:#0E241D;color:#F4EFE3;padding:40px"><h1>Misdeal: page not found</h1><p><a style="color:#E2C27A" href="/">Back to the lobby</a></p>');
     return;
   }
+  // no-cache + an ETag: the browser revalidates each file and gets a tiny 304 when it hasn't changed.
+  const st = await stat(file);
+  const etag = `W/"${st.size.toString(16)}-${Math.floor(st.mtimeMs).toString(16)}"`;
+  if (req.headers['if-none-match'] === etag) { res.writeHead(304, { etag, 'cache-control': 'no-cache' }).end(); return; }
   const body = await readFile(file);
   const headers = {
     'content-type': TYPES[extname(file).toLowerCase()] || 'application/octet-stream',
     'cache-control': 'no-cache',
+    etag,
     'x-content-type-options': 'nosniff',
     'accept-ranges': 'bytes',
   };
