@@ -26,7 +26,7 @@ const STOP_MS = 400;    // fade out on stop
 const SLIDE_MS = 80;    // volume slider changes glide, so they don't click
 
 let el = null, bus = null, file = null, state = null, volume = 0.3, wanted = false;
-let fadeTimer = null, doneTimer = null, failures = 0;
+let fadeTimer = null, doneTimer = null, failures = 0, buffering = 'metadata';
 
 // ---- playlist (pure, so it can be tested)
 
@@ -81,7 +81,7 @@ function advance() {
 function element() {
   if (el) return el;
   el = new Audio();
-  el.preload = 'auto';
+  el.preload = buffering;
   el.addEventListener('ended', () => {
     failures = 0;
     advance();
@@ -157,6 +157,13 @@ onGesture((c) => {
   attach(c);
   if (wanted && el.paused) play();
 });
+
+/** Buffer the song ahead (the shell calls this once the first screen has loaded, so the song
+ *  doesn't hold up the lobby's pictures; until then only its header is fetched). */
+export function bufferMusic() {
+  buffering = 'auto';
+  if (el) el.preload = 'auto';
+}
 
 /** Load the session's song and start it as soon as the browser allows. Safe to call repeatedly. */
 export function startMusic() {
