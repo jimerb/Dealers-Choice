@@ -69,3 +69,10 @@
 .bj-cards { display: flex; flex-wrap: wrap; }
 .bj-cards .card + .card { margin-left: calc(var(--card-w) * -.45); }
 .arcade-grid { display: grid; grid-template-columns: repeat(4, var(--card-w)); gap: 8px; }
+
+/* phones: size cards so a row of columns (--cols, or Pyramid's seven) fits the felt instead of overlapping */
+@media (max-width: 760px) {
+  .sol-felt { container-type: inline-size; padding: 10px; }
+  .sol-board, .sol-board.wide, .sol-board.xwide { --card-w: min(56px, calc((100cqw - (var(--cols, 7) - 1) * 5px) / var(--cols, 7))); gap: 14px; }
+  .sol-top, .sol-tableau, .pyr-row { gap: 5px; }
+}

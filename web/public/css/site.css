@@ -173,7 +173,10 @@ fieldset.field { border: 0; padding: 0; margin: 0 0 16px; }
 
 @media (max-width: 520px) {
   .hero { padding: 28px 0 32px; gap: 28px; }
-  .feature-head { padding: 16px 18px; }
+  /* the title and pill sit above the art instead of over the cards */
+  .feature-art { aspect-ratio: auto; display: flex; flex-direction: column; }
+  .feature-art img { height: auto; aspect-ratio: 16 / 10; }
+  .feature-head { position: relative; order: -1; padding: 16px 18px 0; align-items: center; }
   .feature-head h2 { font-size: 24px; }
   .feature-info { padding: 0 18px 20px; gap: 14px; }
   .stats { gap: 8px; }

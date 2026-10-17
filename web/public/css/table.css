@@ -124,9 +124,33 @@ table.score th:first-child, table.score td:first-child { text-align: left; color
 .rules-body p, .rules-body ul { margin: 0 0 8px; }
 
 @media (max-width: 760px) {
+  .table-page { padding: 12px 12px 28px; }
   .felt { grid-template-columns: 64px minmax(0,1fr) 64px; min-height: 560px; padding: 10px; border-radius: 18px; }
   .backs { --card-w: 30px; }
+  /* side seats get a 64px column, and a row of top seats shares the width: stack each plate
+     (portrait over name) and let long names wrap */
+  :is(.area-west, .area-east, .seat.west, .seat.east) { min-width: 0; max-width: 100%; }
+  .area-top:has(> .seat + .seat) { gap: 8px; flex-wrap: nowrap; }
+  .area-top:has(> .seat + .seat) > .seat { flex: 1 1 0; min-width: 0; }
+  :is(.area-west, .area-east, .seat.west, .seat.east, .area-top:has(> .seat + .seat)) .plate { flex-direction: column; gap: 3px; max-width: 100%; padding: 4px 5px 5px; border-radius: 14px; font-size: 11px; line-height: 1.2; white-space: normal; text-align: center; overflow-wrap: anywhere; }
+  :is(.area-west, .area-east, .seat.west, .seat.east, .area-top:has(> .seat + .seat)) .plate .avatar { width: 24px; height: 24px; font-size: 11px; }
+  :is(.area-west, .area-east, .seat.west, .seat.east, .area-top:has(> .seat + .seat)) .bubble { font-size: 11px; padding: 2px 6px; }
+  /* your hand: smaller cards; a long hand squeezes its overlap instead of running off the felt */
+  .hand { --card-w: 50px; padding: 30px 4px 4px; }
+  .banner { white-space: normal; text-align: center; width: max-content; font-size: 13px; line-height: 1.3; padding: 6px 12px; border-radius: 14px; }
+  .area-south, .seat.south { min-width: 0; max-width: 100%; }
+  .hand { max-width: 100%; }
+  .hand .slot { flex: 0 1 auto; min-width: 0; }
+  .center { min-width: 0; }
+  .felt:has(> .area-west:empty):has(> .area-east:empty) > .center { grid-column: 1 / -1; } /* no side seats: use the full width */
+  .hand-actions { flex-wrap: wrap; gap: 6px; }
+  .hand-actions .btn { padding: 0 12px; }
   .trick { width: 230px; height: 230px; }
+  /* panels (bidding, meld, results) join the flow so the felt grows to fit them instead of clipping
+     them; the trick they would cover steps aside */
+  .center > .overlay { position: static; width: 100%; }
+  .center:has(> .overlay) > .trick { display: none; }
+  .center:has(> .overlay):has(> .banner) { padding-bottom: 34px; }
   .melds { grid-template-columns: 1fr; }
 }
 .memory-grid { display: grid; gap: 8px; justify-items: center; align-items: center; padding: 8px; }
@@ -193,6 +217,7 @@ table.auction td, table.auction th { text-align: center !important; }
 
 @media (max-width: 760px) {
   .felt > .trump-plaque { left: 8px; top: 8px; }
+  .felt:has(> .trump-plaque) { padding-top: 62px; } /* the top seat's plate is too wide to share the row */
   .trump-plaque { width: 76px; }
   .trump-plaque figcaption { font-size: 11px; }
   .crib-board { flex-direction: column; gap: 4px; }
