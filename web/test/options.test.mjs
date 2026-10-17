@@ -94,3 +94,34 @@ test('bridge: sitting out as dummy lets North play both hands', async () => {
   }
   assert.ok(partnerDeclared > 0);
 });
+
+// ------------------------------------------------------------------ Gin Rummy
+test('gin: every option plays out', () => everyOption('gin', 1));
+
+test('gin: a match runs game after game until someone reaches the target', async () => {
+  const game = await load('gin');
+  for (const [match, check] of [['g3', (m, w) => m.games[w] === 3], ['p500', (m, w) => m.points[w] >= 500]]) {
+    for (let seed = 1; seed <= 3; seed++) {
+      let s = game.newGame({ names: NAMES, seed, opts: { ...defaults(game), match } });
+      let games = 0;
+      while (game.actor(s) !== null) {
+        if (s.phase === 'gameDone') {
+          games++;
+          assert.ok(Math.max(...s.scores) >= 100);
+          s = game.act(s, { act: 'nextgame' });
+          assert.deepEqual([s.scores, s.handsWon, s.match.gameNo], [[0, 0], [0, 0], games + 1]);
+          continue;
+        }
+        s = game.aiAct(s);
+      }
+      assert.ok(check(s.match, s.final.winner), `${match}: ${JSON.stringify(s.match)}`);
+      assert.equal(s.match.games[0] + s.match.games[1], games + 1);
+    }
+  }
+  // One game (the default, and saved settings from before the option) ends the first time someone reaches 100.
+  for (const opts of [defaults(game), { type: 'gin', skill: 'intermediate' }]) {
+    const [s] = playOut(game, opts, 1);
+    assert.equal(s.match, null);
+    assert.equal(s.phase, 'gameOver');
+  }
+});
