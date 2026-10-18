@@ -126,7 +126,7 @@ export function backHTML(extra = '') {
   const skin = SKINS[name];
   const back = currentBack();
   if (skin.type === 'image') {
-    return `<span class="card back img ${extra}"><img src="${backURL(skin, back)}" alt=""" draggable="false"></span>`;
+    return `<span class="card back img ${extra}"><img src="${backURL(skin, back)}" alt="" draggable="false"></span>`;
   }
   return `<span class="card back drawn back-${back} ${extra}" aria-hidden="true"></span>`;
 }

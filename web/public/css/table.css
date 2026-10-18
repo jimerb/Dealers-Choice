@@ -331,4 +331,5 @@ table.auction td, table.auction th { text-align: center !important; }
   .center:has(> .overlay) > .trick { display: none; }
   .center:has(> .overlay):has(> .banner) { padding-bottom: 34px; }
   .felt:has(> .center > .overlay) > .center { min-height: 0; }
+  .memory-grid { --card-w: 46px !important; gap: 6px; padding: 4px; } /* beats the inline size: the whole grid fits the screen's height */
 }
