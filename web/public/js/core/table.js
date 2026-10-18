@@ -16,6 +16,7 @@
 // vm.trump ({ suit, caption? }: the trump plaque in the felt's corner; see core/pieces.js).
 // Engines may set state.fx = ['card', ...] (sound event names) on transitions.
 import { variantTip } from './tip.js';
+import { GAMES } from '../catalog.js';
 import { cardHTML, backHTML, cardName, paintFelt, preloadSkin } from '../skin.js';
 import { mountChrome, esc, playerName, playerAvatar, avatarHTML } from '../header.js';
 import { play } from './sound.js';
@@ -183,7 +184,9 @@ export function mountTable(game) {
 
   // -------- top bar buttons
   document.getElementById('btn-new').addEventListener('click', () => openSettings(true));
-  if (game.settings?.length) variantTip(game.id, 'This game has options. Choose <b>New game</b> to change the rules or the number of players.');
+  // Only games with real variants (listed in the catalog, the same list as the lobby badge) get the note.
+  const variants = GAMES.find((g) => g.id === game.id)?.variants ?? [];
+  if (variants.length) variantTip(game.id, `This game has ${variants.length} variants: ${variants.map(esc).join(' and ')}. Choose <b>New game</b> to pick one.`);
   function openSettings() {
     const d = document.getElementById('game-settings');
     const o = readOpts();

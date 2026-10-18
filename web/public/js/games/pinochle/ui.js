@@ -371,7 +371,7 @@ dlg.querySelector('form').addEventListener('submit', (e) => {
 dlg.addEventListener('cancel', () => { pendingSwitch = null; syncUrl(); });
 
 document.getElementById('btn-new').addEventListener('click', () => openNewGame());
-variantTip('pinochle', 'This game has variants. Choose <b>New game</b> to play Two-Handed, Double-Pack, Partnership or Cutthroat.');
+variantTip('pinochle', 'This game has 5 variants: Partnership Auction, Two-Handed, Double-Pack, Partnership and Cutthroat. Choose <b>New game</b> to pick one.');
 window.addEventListener('dc:settings', () => {
   state = { ...state, names: [playerName(), ...state.names.slice(1)] };
   save(); render();
