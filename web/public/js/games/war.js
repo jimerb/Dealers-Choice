@@ -55,12 +55,25 @@ function finish(s, w) {
   return s;
 }
 
-const RULES = `<p>The deck is split between you and your opponent. Click your deck (or press <b>Flip</b>) and both players turn over their top card. The higher card wins both (aces are high).</p>
-<p>A tie means <b>war</b>: each player puts three cards face down, then flips another. The winner takes everything on the table.</p>
-<p>Depending on the setting, the game ends when one player wins a number of wars or holds every card.</p>`;
+const HOWTO = {
+  goal: 'Win the wars (three by default), or win every card in the deck.',
+  deal: 'The deck is split evenly between you and your opponent: 26 cards each, face down.',
+  play: [
+    'Both players turn over their top card. The higher card wins both (aces are high and suits don’t matter), and they go to the bottom of the winner’s pile.',
+    'A tie means <b>war</b>: each player lays up to three cards face down, then turns one more face up. The higher card takes everything on the table; another tie means another war.',
+    'A player who runs out of cards loses, even in the middle of a war.',
+  ],
+  fig: { cards: '7S · 7H', caption: 'A tie: time for war!' },
+  score: 'The first player to win the number of wars you chose wins the game, or, if you play for every card, whoever ends up with the whole deck.',
+  options: {
+    ends: 'the game ends when a player has won 3, 6 or 9 wars, or when one player holds every card.',
+  },
+  controls: '{Click} Flip to turn over the next cards, or Flip 10 to play ten turns at once.',
+  tip: 'War is pure luck, so sit back and enjoy the battles. Flip 10 speeds through a long game.',
+};
 
 export default {
-  id: 'war', title: 'War', version: 1, seats: 2, rulesHTML: RULES,
+  id: 'war', title: 'War', version: 1, seats: 2, howto: HOWTO,
   settings: [{ key: 'ends', label: 'Game ends', options: [[3, 'After 3 wars won'], [6, 'After 6 wars won'], [9, 'After 9 wars won'], [0, 'When one player has every card']], default: 3 }],
   newGame,
   actor: (s) => (s.phase === 'gameOver' ? null : 0),

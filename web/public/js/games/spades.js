@@ -155,12 +155,32 @@ function aiPlay(s, seat) {
   return followPlay(L, t, seat, 'S', { partnerOf: partnerNil ? null : p }).id;
 }
 
-const RULES = `<p>Partners sit across: you and your partner against the two players beside you. Spades are always trump. Each player bids how many tricks they'll take; a team must take at least its combined bid.</p>
-<h3>Play</h3><p>Follow suit if you can, otherwise trump or discard. Spades can't be led until one has been played.</p>
-<h3>Scoring</h3><ul><li>Made bid: 10 per trick bid, plus 1 per extra trick (a "bag").</li><li>Set: −10 per trick bid.</li><li>Nil (take no tricks): ±100. Blind nil (bid before seeing your cards): ±200.</li><li>Every 10 bags costs 100 points.</li></ul>`;
+const HOWTO = {
+  goal: 'Make your team’s bid every hand and be the first team to the winning score (500 by default).',
+  deal: 'Four players in two partnerships: you and the player across from you against the two players beside you. Each player gets 13 cards.',
+  play: [
+    '<b>Bidding</b>, starting left of the dealer: each player bids how many tricks they expect to take (1 to 13), or <b>nil</b>, promising to take none. Before you look at your cards you may bid <b>blind nil</b> instead.',
+    'Partners’ bids are added together: your team needs that many tricks between you (a nil bidder is counted on their own).',
+    'The player left of the dealer leads. Follow suit if you can; otherwise play any card, a spade included.',
+    '<b>Spades are always trump</b>: the highest spade wins the trick, or else the highest card of the suit led. Spades can’t be led until one has been played (spades are <b>broken</b>), unless you hold nothing else.',
+  ],
+  score: [
+    'Make your bid: 10 points for each trick bid, plus 1 for each extra trick (a <b>bag</b>).',
+    'Fall short and you’re <b>set</b>: you lose 10 points for each trick bid.',
+    'A nil bidder who takes no tricks scores 100, and loses 100 otherwise; blind nil is worth 200 either way. Tricks taken by a failed nil count as bags.',
+    'Every 10 bags cost your team 100 points.',
+    'A team that reaches the winning score wins, and a team that falls to the losing score loses.',
+  ],
+  options: {
+    win: 'play to 250, 500, 750 or 1,000 points.',
+    lose: 'a team that falls to −100, −200, −300 or −400 loses.',
+  },
+  controls: 'At the start of each hand, {click} Blind nil or Show my hand. Then {click} Nil or a number to bid. To play, {click} a highlighted card.',
+  tip: 'Keep an eye on your bags: near ten, bid a trick higher rather than collect more. If your partner bids nil, take the tricks they might otherwise win.',
+};
 
 export default {
-  id: 'spades', title: 'Spades', version: 1, seats: 4, rulesHTML: RULES,
+  id: 'spades', title: 'Spades', version: 1, seats: 4, howto: HOWTO,
   settings: [
     { key: 'win', label: 'Winning score', options: [[250, '250'], [500, '500'], [750, '750'], [1000, '1,000']], default: 500 },
     { key: 'lose', label: 'Losing score', options: [[-100, '−100'], [-200, '−200'], [-300, '−300'], [-400, '−400']], default: -300 },

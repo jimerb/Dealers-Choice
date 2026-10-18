@@ -265,14 +265,33 @@ function aiPlay(s, p) {
   return (cheap[0] ?? nonEx[0] ?? L[0]).id;
 }
 
-const RULES = `<p>Four players; one <b>taker</b> plays against the other three. The deck has four suits (K, Q, Knight, J, 10…1), 21 numbered <b>trumps</b> and the <b>Excuse</b>. Eighteen cards each; six form the <b>chien</b>.</p>
-<h3>Bidding</h3><p>Prise &lt; Garde &lt; Garde Sans &lt; Garde Contre (multipliers 1, 2, 4, 6). After a Prise or Garde, the taker takes the chien and sets six cards aside (no trumps, kings or the Excuse). With Garde Sans the chien counts for the taker unseen; with Garde Contre it goes to the defenders.</p>
-<h3>Play</h3><p>Follow suit; if you can't, you must trump, and overtrump if you can. The Excuse can be played any time, never wins, and stays with its owner.</p>
-<h3>Scoring</h3><p>Bouts (trump 1, trump 21, the Excuse) and kings are worth 4½, queens 3½, knights 2½, jacks 1½, everything else ½. The points the taker needs depend on bouts won: 0 bouts 56, 1 bout 51, 2 bouts 41, 3 bouts 36. The score is (25 + the margin) × the multiplier, paid by or to each defender. Winning the last trick with the trump 1 (<i>petit au bout</i>) is worth 10 × the multiplier.</p>
-<p>Options: the taker may lead the first trick; a poignée (10, 13 or 15 trumps, shown before play) adds 20, 30 or 40 and a slam by the taker adds 200 to the winning side's score; a misère (dealt no trumps, or no court cards) earns 30 from the table.</p>`;
+const HOWTO = {
+  goal: 'Have the highest score when a player reaches the end score (500 by default). Each deal, one player, the <b>taker</b>, plays against the other three.',
+  deal: 'Four players and a 78-card deck: four suits of 14 cards (king, queen, <b>knight</b>, jack, then 10 down to 1), 21 numbered <b>trumps</b> and the <b>Excuse</b>. Each player gets 18 cards and six go face down as the <b>chien</b>. A player dealt the 1 of trump as their only trump (without the Excuse) means a redeal.',
+  play: [
+    '<b>Bidding</b> goes once around, starting next to the dealer: pass, or bid higher than before: <b>Prise</b>, <b>Garde</b>, <b>Garde Sans</b>, <b>Garde Contre</b>. If everyone passes, the cards are redealt.',
+    'After a Prise or Garde the taker picks up the chien and sets six cards aside, which count for the taker (no trumps, kings or the Excuse). With Garde Sans the chien counts for the taker unseen; with Garde Contre it counts for the defenders.',
+    'The player next to the dealer leads. Follow suit if you can. If you can’t, you must play a trump, and beat the highest trump in the trick if you can; the same goes when trumps are led.',
+    'The <b>Excuse</b> can be played at any time instead. It never wins a trick, and it goes back to its owner, who gives a ½-point card in exchange.',
+  ],
+  score: [
+    'Card points: the three <b>bouts</b> (trump 1, trump 21 and the Excuse) and kings are 4½, queens 3½, knights 2½, jacks 1½, and every other card ½.',
+    'The taker needs 56 points with no bouts, 51 with one, 41 with two and 36 with all three.',
+    'A deal is worth 25 plus the points the taker made or missed by, times the bid: Prise 1, Garde 2, Garde Sans 4, Garde Contre 6. Each defender pays the taker that much, or the taker pays each defender.',
+    'Winning the last trick with the trump 1 (<b>petit au bout</b>) is worth 10 times the bid to that side.',
+  ],
+  options: {
+    target: 'the game ends when a player reaches 500 or 1,000 points.',
+    firstLead: 'the player next to the dealer leads the first trick, or the taker does.',
+    bonuses: 'Yes adds <b>poignées</b> (a player with 10, 13 or 15 trumps, the Excuse counting as one, shows them before play for 20, 30 or 40) and 200 when the taker wins every trick (a <b>slam</b>). These bonuses go to whichever side wins the deal.',
+    misere: 'Allowed lets a player dealt no trumps, or no kings, queens, knights or jacks, declare <b>misère</b> (done for you): they collect 10 from each other player.',
+  },
+  controls: 'When it’s your bid, {click} Pass or a bid. If you take with a Prise or Garde, {click} Take the chien, then {click} six cards to set aside and {click} Set aside. To play, {click} a highlighted card.',
+  tip: 'Bouts lower the points you need, so a hand with the 21 or the Excuse is worth bidding on. When a fellow defender is winning a trick, add your points to it.',
+};
 
 export default {
-  id: 'tarot', title: 'Tarot', version: 1, seats: 4, rulesHTML: RULES,
+  id: 'tarot', title: 'Tarot', version: 1, seats: 4, howto: HOWTO,
   settings: [
     { key: 'target', label: 'Game ends when a player reaches', options: [[500, '500 points'], [1000, '1,000 points']], default: 500 },
     { key: 'firstLead', label: 'First lead', options: [['dealer', 'Player next to the dealer'], ['taker', 'The taker']], default: 'dealer' },

@@ -446,14 +446,36 @@ function aiPlay(s, p) {
   return L.slice().sort((a, b) => points(a) - points(b) || P(a) - P(b))[0].id;
 }
 
-const RULES = `<p>Three players; 32 cards (7–A). Each gets ten, and two go face down as the <b>skat</b>. The highest bidder becomes the <b>declarer</b> and plays alone against the other two.</p>
-<h3>Bidding</h3><p>Middlehand bids to Forehand (18, 20, 22, 23…); Forehand says "yes" or passes. Then Rearhand bids to the survivor. Bid no more than the game you can play is worth.</p>
-<h3>Games</h3><ul><li><b>Suit</b> (♣ 12, ♠ 11, ♥ 10, ♦ 9) and <b>Grand</b> (24): all four jacks are top trumps (♣♠♥♦), then the trump suit A 10 K Q 9 8 7.</li><li>Value = base × (matadors "with/without" + 1, +1 hand, +1 schneider, +1 schwarz).</li><li><b>Null</b> (23; hand 35, ouvert 46, ouvert hand 59): no trumps, and the declarer must take no tricks.</li></ul>
-<h3>Winning</h3><p>Card points: A 11, 10 10, K 4, Q 3, J 2 (120 total). The declarer needs 61 including the skat. A win scores the game value; a loss costs double. If the game is worth less than the bid, the declarer loses.</p>
-<p>Options: <b>Kontra</b> (a defender, before playing to the first trick) doubles the score and <b>Re</b> (the declarer's answer) doubles it again. When everyone passes you can play <b>Ramsch</b>: jacks are the only trumps, everyone plays alone, and whoever takes the most card points loses them (doubled if someone took no tricks). <b>Schieberamsch</b> first offers a grand hand, then passes the skat round; each player who leaves it doubles the stakes.</p>`;
+const HOWTO = {
+  goal: 'Have the highest score after the last deal (12 by default). Each deal, the highest bidder, the <b>declarer</b>, plays alone against the other two.',
+  deal: 'Three players and a 32-card deck (7 through ace). Each player gets ten cards and two go face down as the <b>skat</b>. The player left of the dealer is <b>Forehand</b>, the next is <b>Middlehand</b>, and the dealer is <b>Rearhand</b>.',
+  play: [
+    '<b>Bidding</b>: Middlehand bids to Forehand, going up through the game values (18, 20, 22, 23, 24, 27…), and Forehand says yes (holds) or passes. Then Rearhand bids to whoever is left. If both others pass, Forehand may still play at 18; if nobody bids at all, the deal is thrown in.',
+    'The declarer either picks up the skat and lays two cards away (their points count for the declarer), or plays <b>hand</b>, without the skat, for a higher value.',
+    'Then the declarer names the game: a <b>suit</b> game (♣ ♠ ♥ ♦ trump), a <b>grand</b> (only the jacks are trump) or a <b>null</b> (no trumps at all; the declarer must not take a single trick). In <b>null ouvert</b> the declarer’s cards are laid face up after the first trick.',
+    'In suit games and grands the four jacks are the top trumps (♣J ♠J ♥J ♦J), followed in a suit game by A 10 K Q 9 8 7 of the trump suit. Other suits run A 10 K Q 9 8 7. In null the order is A K Q J 10 9 8 7.',
+    'Forehand leads. Follow suit if you can (jacks belong to trump, not to their own suit); otherwise play anything.',
+  ],
+  fig: { cards: 'JC JS JH JD', caption: 'The four jacks, highest first: always the top trumps outside null.' },
+  score: [
+    'Card points: aces 11, tens 10, kings 4, queens 3, jacks 2, so 120 in the deck. In suit games and grands the declarer needs 61, counting the skat.',
+    'A suit game or grand is worth its <b>base value</b> (♦ 9, ♥ 10, ♠ 11, ♣ 12, grand 24) times a multiplier: 1 plus the number of <b>matadors</b> (the top trumps you hold, or are missing, in an unbroken run from the ♣J), plus 1 for hand, plus 1 for <b>schneider</b> (one side ends with 30 card points or fewer), plus 1 for <b>schwarz</b> (one side takes every trick).',
+    'Null is worth 23 (hand 35, ouvert 46, ouvert hand 59).',
+    'A won game scores its value for the declarer; a lost one costs twice the value. If the game turns out to be worth less than the bid, the declarer loses (an <b>overbid</b>).',
+  ],
+  options: {
+    deals: 'how many deals the game lasts: 12, 24 or 36.',
+    kontra: 'Not allowed; Allowed, so a defender may say <b>Kontra</b> before playing to the first trick (doubling the score) and the declarer may answer <b>Re</b> before their next card (doubling it again); or Kontra only from a defender who made a bid.',
+    ramsch: 'when nobody bids: Redeal; play <b>Ramsch</b> (everyone alone, only the jacks are trump, and whoever takes the most card points loses that many, doubled if a player took no tricks); or <b>Schieberamsch</b> (each player is first offered a grand hand; then each in turn picks up the skat and pushes two cards on, no jacks, or leaves it, which doubles the stakes).',
+    ramschSkat: 'in Ramsch, the skat goes with the last trick and its points count, or goes to the loser and doesn’t count.',
+    ramschMoon: 'in Ramsch, a player who takes every trick wins 120, or instead loses four times their card points.',
+  },
+  controls: 'While bidding, {click} Bid, Yes or Pass. If you win, {click} Pick up the skat or Play hand; to lay away, {click} two cards and then Put in skat. Then {click} the game you want (each button shows its value with your matadors). To play, {click} a highlighted card. When Kontra is allowed, a Kontra! or Re! button appears while you can call it.',
+  tip: 'Count your jacks before you bid: two or more jacks with a long suit make a solid suit game. The declare buttons show what each game is worth, so don’t bid past that.',
+};
 
 export default {
-  id: 'skat', title: 'Skat', version: 1, seats: 3, rulesHTML: RULES,
+  id: 'skat', title: 'Skat', version: 1, seats: 3, howto: HOWTO,
   settings: [
     { key: 'deals', label: 'Game length', options: [[12, '12 deals'], [24, '24 deals'], [36, '36 deals']], default: 12 },
     { key: 'kontra', label: 'Kontra and Re', options: [['no', 'Not allowed'], ['yes', 'Allowed'], ['bid18', 'Kontra only from a defender who bid']], default: 'no' },
