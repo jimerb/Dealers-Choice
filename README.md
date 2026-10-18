@@ -61,14 +61,14 @@ effects, all made for this game.
 
 | Game | Players | What you're in for |
 |---|---|---|
-| **Poker** | 2–8 | Five-card draw: ante up, bet, raise, draw and bluff |
+| **Poker** | 2–6 | Five-card draw: ante up, bet, raise, draw and bluff |
 
 ### 🐟 Family table
 *Quick games for every age.*
 
 | Game | Players | What you're in for |
 |---|---|---|
-| **Go Fish** | 2–4 | Got any fives? |
+| **Go Fish** | 4 | Got any fives? |
 | **Old Maid** | 4 | Don't get stuck with the odd card |
 | **War** | 2 | Flip, compare and declare war |
 | **Memory Match** | 1–2 | Turn them over and find every pair |
