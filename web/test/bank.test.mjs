@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  KEY, START, TIERS, HALL_OF_FAME_AT, freshState, normalize, applyChange, takeLoanState, resetState,
+  KEY, CORRUPT_KEY, MAX_BANK, START, TIERS, HALL_OF_FAME_AT, freshState, normalize, applyChange, takeLoanState, resetState,
   recordHandState, loanEligible, loanAmount, createBank, money,
 } from '../public/js/core/bank.js';
 
@@ -127,14 +127,58 @@ test('per-game stats: hands, wagered, won, net and biggest win', () => {
 
 test('normalize: wrong version or junk starts fresh, good data survives', () => {
   assert.deepEqual(normalize(null), freshState());
+  assert.deepEqual(normalize('x'), freshState());
   assert.deepEqual(normalize({ v: 2, bank: 9 }), freshState());
-  assert.deepEqual(normalize({ v: 1, bank: -4 }), freshState());
-  assert.deepEqual(normalize({ v: 1, bank: 1.5 }), freshState());
   const ok = normalize({ v: 1, bank: 777, tier: 99, loan: 'x', stats: { bj: { hands: 2, wagered: 'no' }, bad: 4 } });
   assert.equal(ok.bank, 777);
   assert.equal(ok.tier, 5);
   assert.equal(ok.loan, 0);
   assert.deepEqual(ok.stats, { bj: { hands: 2, wagered: 0, won: 0, net: 0, biggest: 0 } });
+});
+
+test('normalize: the bank is a whole number from 0 to MAX_BANK', () => {
+  assert.equal(normalize({ v: 1, bank: -4 }).bank, 0);
+  assert.equal(normalize({ v: 1, bank: 1.9 }).bank, 1);
+  assert.equal(normalize({ v: 1, bank: 'lots' }).bank, 0);
+  const big = normalize({ v: 1, bank: 1e20 });
+  assert.equal(big.bank, MAX_BANK);
+  assert.equal(big.tier, 5);
+  assert.deepEqual(big.hall, [], 'loading never enters the Hall of Fame by itself');
+});
+
+test('normalize: only a real loan amount survives', () => {
+  assert.equal(normalize({ v: 1, bank: 10, loan: 2_500 }).loan, 2_500);
+  assert.equal(normalize({ v: 1, bank: 10, loan: 1_234 }).loan, 0);
+  assert.equal(normalize({ v: 1, bank: 10, loan: -2_500 }).loan, 0);
+});
+
+test('normalize: Hall of Fame rows need a name and a YYYY-MM-DD date', () => {
+  const hall = normalize({ v: 1, bank: 10, hall: [{ name: 'Ada', date: '2026-01-02', bank: 1 }, { name: 'NoDate' }, { name: 'Bad', date: 'yesterday' }, null, { date: '2026-01-01' }, { name: 'A very long name indeed, too long', date: '2026-03-04' }] }).hall;
+  assert.deepEqual(hall.map((h) => h.name), ['Ada', 'A very long name ind']);
+  assert.deepEqual(normalize({ v: 3, hall: [{ name: 'Kept', date: '2026-01-01' }, 7] }).hall, [{ name: 'Kept', date: '2026-01-01' }]);
+});
+
+test('normalize: the tier catches up with the bank, and net is recomputed', () => {
+  const s = normalize({ v: 1, bank: 2_000_000, tier: 0, stats: { roulette: { hands: 1, wagered: 10, won: 30, net: 999, biggest: 20 } } });
+  assert.equal(s.tier, 4);
+  assert.equal(s.stats.roulette.net, 20);
+  assert.equal(normalize({ v: 1, bank: 60_000, tier: 0, loan: 2_500 }).tier, 0, 'an outstanding loan still blocks upgrades');
+});
+
+test('createBank: corrupt JSON is backed up, replaced with a fresh bank, and announced once', () => {
+  const storage = memStorage({ [KEY]: '{oops' });
+  const b = createBank({ storage, win: null });
+  assert.equal(b.balance, 5000);
+  assert.equal(storage.map.get(CORRUPT_KEY), '{oops');
+  assert.equal(JSON.parse(storage.map.get(KEY)).bank, 5000);
+  assert.deepEqual(b.drainNotices(), [{ type: 'corrupt' }]);
+  assert.deepEqual(b.drainNotices(), []);
+});
+
+test('createBank: repaired data is written back', () => {
+  const storage = memStorage({ [KEY]: JSON.stringify({ v: 1, bank: 2_000_000, tier: 0, loan: 0, stats: {}, hall: [] }) });
+  createBank({ storage, win: null });
+  assert.equal(JSON.parse(storage.map.get(KEY)).tier, 4);
 });
 
 test('createBank saves to dc.bank and reads it back', () => {
@@ -177,11 +221,6 @@ test('createBank works in memory when storage throws', () => {
   assert.equal(b.takeLoan(), false, 'one loan at a time');
   const none = createBank({ storage: null, win: null });
   assert.equal(none.balance, 5000);
-});
-
-test('createBank ignores unreadable saved data', () => {
-  const b = createBank({ storage: memStorage({ [KEY]: '{not json' }), win: null });
-  assert.equal(b.balance, 5000);
 });
 
 test('listeners hear every change with its events, and can unsubscribe', () => {

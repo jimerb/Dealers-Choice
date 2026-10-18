@@ -15,6 +15,8 @@ export const KEY = 'dc.bank';
 export const START = 5000;
 export const LOAN_LIMIT = 1000;           // a loan is offered only while the bank is under this
 export const HALL_OF_FAME_AT = 1_000_000_000;
+export const MAX_BANK = 9_000_000_000_000; // sanity clamp, well inside Number.MAX_SAFE_INTEGER
+export const CORRUPT_KEY = 'dc.bank.corrupt';
 
 /** Tiers, lowest first. `next` is the bank that upgrades out of this tier (the last one's is the
  *  Hall of Fame); `loan` is what the loan desk offers at this tier. */
@@ -34,22 +36,29 @@ const whole = (n) => Number.isSafeInteger(n) && n >= 0;
 /** A new player's bank (the Hall of Fame survives resets, so pass it in to keep it). */
 export const freshState = (hall = []) => ({ v: VERSION, bank: START, tier: 0, loan: 0, stats: {}, hall });
 
-/** Read whatever was stored back into a valid state; anything unreadable starts fresh. */
+const cleanInt = (x, lo = 0, hi = MAX_BANK) => Math.max(lo, Math.min(hi, Math.floor(Number(x)) || 0));
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const cleanHall = (rows) => (Array.isArray(rows) ? rows : [])
+  .filter((h) => h && typeof h === 'object' && typeof h.name === 'string' && typeof h.date === 'string' && DATE.test(h.date))
+  .map((h) => ({ ...h, name: h.name.slice(0, 20) }));
+
+/** Repair whatever was stored into a valid state (never throws). A wrong or missing version
+ *  starts fresh, keeping any valid Hall of Fame rows. The tier is brought up to date with the bank. */
 export function normalize(raw) {
-  if (!raw || typeof raw !== 'object' || raw.v !== VERSION || !whole(raw.bank)) return freshState(Array.isArray(raw?.hall) ? raw.hall : []);
+  if (!raw || typeof raw !== 'object') return freshState();
+  if (raw.v !== VERSION) return freshState(cleanHall(raw.hall));
   const stats = {};
-  for (const [id, s] of Object.entries(raw.stats && typeof raw.stats === 'object' ? raw.stats : {})) {
-    if (!s || typeof s !== 'object') continue;
-    stats[id] = { hands: int(s.hands), wagered: int(s.wagered), won: int(s.won), net: int(s.net), biggest: int(s.biggest) };
+  for (const [id, g] of Object.entries(raw.stats && typeof raw.stats === 'object' ? raw.stats : {})) {
+    if (!g || typeof g !== 'object') continue;
+    const wagered = cleanInt(g.wagered), won = cleanInt(g.won);
+    stats[id] = { hands: cleanInt(g.hands), wagered, won, net: won - wagered, biggest: cleanInt(g.biggest) };
   }
-  return {
-    v: VERSION,
-    bank: raw.bank,
-    tier: Math.min(TOP, Math.max(0, int(raw.tier))),
-    loan: whole(raw.loan) ? raw.loan : 0,
-    stats,
-    hall: Array.isArray(raw.hall) ? raw.hall.filter((h) => h && typeof h === 'object') : [],
-  };
+  const loan = TIERS.some((t) => t.loan === raw.loan) ? raw.loan : 0;
+  const state = { v: VERSION, bank: cleanInt(raw.bank), tier: cleanInt(raw.tier, 0, TOP), loan, stats, hall: cleanHall(raw.hall) };
+  // a tier behind its bank catches up (blocked by a loan, as always); loan repayment and the
+  // Hall of Fame wait for the next real change of money
+  while (state.loan === 0 && state.tier < TOP && state.bank >= TIERS[state.tier].next) state.tier++;
+  return state;
 }
 
 export const tierOf = (state) => TIERS[state.tier];
@@ -137,11 +146,25 @@ export function createBank({ storage = defaultStorage(), name = defaultName, now
   const listeners = new Set();
   let sessionNet = 0; // this page visit's winnings and losses at the tables (not saved)
 
-  const read = () => {
-    try { const raw = storage?.getItem(KEY); return raw ? normalize(JSON.parse(raw)) : null; } catch { return null; }
-  };
-  let state = read() ?? freshState();
+  const notices = []; // news from loading (a corrupt save), for the page to show once it is listening
   const write = () => { try { storage?.setItem(KEY, JSON.stringify(state)); } catch { /* memory only */ } };
+  const read = () => {
+    let raw = null;
+    try { raw = storage?.getItem(KEY) ?? null; } catch { return null; }
+    if (!raw) return null;
+    let parsed;
+    try { parsed = JSON.parse(raw); } catch {
+      // unreadable: keep a copy for recovery by hand, start fresh, and say so
+      try { storage.setItem(CORRUPT_KEY, raw); } catch { /* ignore */ }
+      notices.push({ type: 'corrupt' });
+      return { state: freshState(), repaired: true };
+    }
+    const fixed = normalize(parsed);
+    return { state: fixed, repaired: JSON.stringify(fixed) !== JSON.stringify(parsed) };
+  };
+  let state = freshState();
+  const loaded = read();
+  if (loaded) { state = loaded.state; if (loaded.repaired) write(); }
   const emit = (events) => { for (const fn of [...listeners]) { try { fn(state, events); } catch (e) { console.error(e); } } };
   const commit = ({ state: next, events }) => { state = next; write(); emit(events); return events; };
 
@@ -149,8 +172,9 @@ export function createBank({ storage = defaultStorage(), name = defaultName, now
   if (win?.addEventListener) {
     win.addEventListener('storage', (e) => {
       if (e.key !== KEY) return;
-      state = read() ?? freshState(state.hall);
-      emit([{ type: 'sync' }]);
+      const got = read();
+      state = got?.state ?? freshState(state.hall);
+      emit([{ type: 'sync' }, ...notices.splice(0)]);
     });
   }
 
@@ -181,6 +205,8 @@ export function createBank({ storage = defaultStorage(), name = defaultName, now
     loanAmount: () => loanAmount(state),
     takeLoan() { return commit(takeLoanState(state)).some((e) => e.type === 'loan'); },
     reset() { sessionNet = 0; commit(resetState(state)); },
+    /** News from loading the bank (e.g. { type: 'corrupt' }), handed over once. */
+    drainNotices: () => notices.splice(0),
     /** Call fn(state, events) on every change; returns a function that stops listening. */
     subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); },
   };
