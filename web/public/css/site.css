@@ -271,7 +271,7 @@ dialog { max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overfl
 /* fingers, not a mouse: small buttons and links grow to a comfortable tap size */
 @media (pointer: coarse) {
   .btn.sm { min-height: 40px; }
-  .chips a { padding: 9px 14px; }
+  .chips a { padding: 10px 14px; }
   .parlor li.ready { padding: 0; }
   .parlor li.ready a { display: block; padding: 10px 12px; }
   .sound-board-link { display: inline-block; padding: 8px 0; }
@@ -279,7 +279,7 @@ dialog { max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overfl
 /* phones (and short landscape phones): a compact header, so the table starts near the top */
 @media (max-width: 900px), (max-height: 500px) {
   .site-header .bar { padding: 8px 12px; gap: 4px 10px; }
-  .brand { gap: 10px; }
+  .brand { gap: 10px; min-height: 40px; }
   .brand-mark { width: 32px; height: 32px; border-radius: 8px; }
   .brand-word { font-size: 20px; }
   .site-nav a { display: inline-flex; align-items: center; min-height: 40px; padding: 0 10px; font-size: 14px; white-space: nowrap; }
