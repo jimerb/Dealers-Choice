@@ -223,7 +223,7 @@ const RULES = `<p>Five-card draw, no wild cards, fixed limit. Everyone antes, ge
 export default {
   id: 'poker', title: 'Poker', version: 1, rulesHTML: RULES,
   settings: [
-    { key: 'players', label: 'Players', options: [[4, '4 players'], [5, '5 players'], [6, '6 players']], default: 6 },
+    { key: 'players', label: 'Players', options: [[2, '2 players'], [3, '3 players'], [4, '4 players'], [5, '5 players'], [6, '6 players']], default: 6 },
     { key: 'hands', label: 'Game ends', options: [[0, 'When one player has all the money'], [25, 'After 25 hands'], [50, 'After 50 hands']], default: 25 },
   ],
   newGame,

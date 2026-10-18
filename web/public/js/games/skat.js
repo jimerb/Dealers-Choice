@@ -11,6 +11,7 @@ const PTS = { A: 11, 10: 10, K: 4, Q: 3, J: 2 };
 export const points = (c) => PTS[c.rank] ?? 0;
 const JORDER = ['C', 'S', 'H', 'D'];
 const GNAME = { C: 'Clubs', S: 'Spades', H: 'Hearts', D: 'Diamonds', G: 'Grand', null: 'Null', ouvert: 'Null Ouvert' };
+const gameName = (s) => (s.ramsch ? (s.opts.ramsch === 'schieben' ? 'Schieberamsch' : 'Ramsch') : GNAME[s.game]);
 
 /** Effective suit (jacks are trump in suit/grand games) and power for trick comparison. */
 export function eff(c, game) {
@@ -50,6 +51,7 @@ function deal(s) {
   s.F = F; s.M = M; s.R = R;
   s.bid = { stage: 1, caller: M, listener: F, value: 0, step: 'call' };
   s.declarer = null; s.game = null; s.hand = false; s.taken = [[], [], []]; s.tricks = [0, 0, 0];
+  s.ramsch = false; s.ramschMult = 1; s.kontra = 0; s.rePlayed = false; s.bidders = []; s.offer = null;
   s.trick = []; s.trickNo = 0; s.phase = 'bid'; s.turn = M; s.result = null; s.discarded = null;
   fx(s, 'shuffle');
   log(s, `Deal ${s.dealNo}: ${s.names[s.dealer]} deals. ${who(s, M)} bids to ${who(s, F)}.`);
@@ -67,12 +69,14 @@ function bidAction(s, p, a) {
       return stageWinner(s, b.listener);
     }
     b.value = nextBid(b.value); b.step = 'answer'; s.turn = b.listener;
+    if (s.bidders && !s.bidders.includes(p)) s.bidders.push(p);
     log(s, `${who(s, p)}: ${b.value}?`); fx(s, 'bid');
     return s;
   }
   // Listener answers.
   if (a === 'pass') { log(s, `${who(s, p)} ${p === 0 ? 'pass' : 'passes'}.`); fx(s, 'pass'); return stageWinner(s, b.caller); }
   log(s, `${who(s, p)}: yes.`); fx(s, 'click');
+  if (s.bidders && !s.bidders.includes(p)) s.bidders.push(p);
   b.step = 'call'; s.turn = b.caller;
   return s;
 }
@@ -89,14 +93,128 @@ function stageWinner(s, w) {
 
 function lastChance(s, p, a) {
   must(s.phase === 'bid' && s.bid.step === 'last' && s.turn === p, 'Not your call.');
-  if (a === 'pass') { log(s, 'Everyone passed: redeal.'); s.dealer = (s.dealer + 2) % 3; s.dealNo--; return deal(s); }
+  if (a === 'pass') {
+    if (s.opts.ramsch === 'ramsch' || s.opts.ramsch === 'schieben') return startRamsch(s);
+    log(s, 'Everyone passed: redeal.'); s.dealer = (s.dealer + 2) % 3; s.dealNo--; return deal(s);
+  }
   s.bid.value = 18;
+  if (s.bidders && !s.bidders.includes(p)) s.bidders.push(p);
   return wonBid(s, p);
 }
 
 function wonBid(s, w) {
   s.declarer = w; s.phase = 'skat'; s.turn = w;
   log(s, `${who(s, w)} ${w === 0 ? 'win' : 'wins'} the bid at ${s.bid.value}.`);
+  return s;
+}
+
+// ------------------------------------------------------------------ Ramsch (an option when everyone passes)
+// Everyone plays alone with only the jacks as trumps, and whoever takes the most card points loses them.
+// Schieberamsch first offers each player a grand hand game, then lets each pick up the skat and push two
+// cards back (no jacks); every player who declines to pick it up doubles the stakes.
+function startRamsch(s) {
+  if (s.opts.ramsch === 'schieben') {
+    s.phase = 'grandOffer'; s.offer = { count: 0 }; s.turn = s.F;
+    log(s, 'Everyone passed: Schieberamsch. Anyone for a grand hand?');
+    return s;
+  }
+  log(s, 'Everyone passed: Ramsch!');
+  return playRamsch(s);
+}
+
+function playRamsch(s) {
+  s.ramsch = true; s.game = 'G'; s.declarer = null;
+  s.hands = s.hands.map((h) => sortHand(h, 'G'));
+  s.phase = 'play'; s.turn = s.F;
+  fx(s, 'bid');
+  return s;
+}
+
+function grandOffer(s, p, yes) {
+  must(s.phase === 'grandOffer' && s.turn === p, 'Not your choice.');
+  if (yes) {
+    s.declarer = p; s.hand = true; s.bid.value = 18; s.declCards = [...s.hands[p], ...s.skat];
+    log(s, `${who(s, p)} ${p === 0 ? 'play' : 'plays'} a grand hand.`);
+    s.phase = 'declare'; s.turn = p;
+    return declare(s, p, 'G');
+  }
+  log(s, `${who(s, p)} ${p === 0 ? 'pass' : 'passes'}.`); fx(s, 'pass');
+  if (++s.offer.count === 3) { s.phase = 'push'; s.offer = { count: 0 }; s.turn = s.F; return s; }
+  s.turn = (p + 1) % 3;
+  return s;
+}
+
+function pushSkat(s, p, pickUp) {
+  must(s.phase === 'push' && s.turn === p, 'Not your choice.');
+  if (pickUp) { s.hands[p] = sortHand([...s.hands[p], ...s.skat], 'G'); s.skat = []; s.phase = 'pushDiscard'; fx(s, 'deal'); return s; }
+  s.ramschMult *= 2;
+  log(s, `${who(s, p)} ${p === 0 ? 'leave' : 'leaves'} the skat: stakes double.`); fx(s, 'click');
+  return nextPush(s, p);
+}
+
+function pushDiscard(s, p, ids) {
+  must(s.phase === 'pushDiscard' && s.turn === p && ids.length === 2, 'Choose two cards to push on.');
+  const cards = s.hands[p].filter((c) => ids.includes(c.id));
+  must(cards.length === 2 && cards.every((c) => c.rank !== 'J'), 'Jacks can’t go into the skat.');
+  s.skat = cards; s.hands[p] = s.hands[p].filter((c) => !ids.includes(c.id));
+  log(s, `${who(s, p)} ${p === 0 ? 'push' : 'pushes'} the skat on.`);
+  return nextPush(s, p);
+}
+
+function nextPush(s, p) {
+  s.phase = 'push';
+  if (++s.offer.count === 3) return playRamsch(s);
+  s.turn = (p + 1) % 3;
+  return s;
+}
+
+function scoreRamsch(s) {
+  const skatPts = s.skat.reduce((t, c) => t + points(c), 0);
+  const toLast = s.opts.ramschSkat !== 'loser';
+  const pts = s.taken.map((cs) => cs.reduce((t, c) => t + points(c), 0));
+  if (toLast) pts[s.lastTrick] += skatPts; // the skat goes with the last trick and counts
+  const most = Math.max(...pts);
+  const losers = [0, 1, 2].filter((p) => pts[p] === most);
+  const virgins = [0, 1, 2].filter((p) => s.tricks[p] === 0).length;
+  const delta = [0, 0, 0];
+  let detail;
+  const mult = s.ramschMult ?? 1;
+  if (virgins === 2 && s.opts.ramschMoon !== 'no') {
+    const p = s.tricks.findIndex((n) => n === 10);
+    delta[p] = 120 * mult;
+    detail = `${who(s, p)} took every trick (Durchmarsch)`;
+  } else {
+    const x = (virgins === 2 ? 4 : virgins === 1 ? 2 : 1) * mult;
+    for (const p of losers) delta[p] = -most * x;
+    detail = `Most card points: ${most}${x > 1 ? ` × ${x}` : ''}${virgins ? ` (${virgins === 2 ? 'everyone else took no tricks' : 'a player took no tricks'})` : ''}`;
+  }
+  s.scores = s.scores.map((v, p) => v + delta[p]);
+  s.result = { ramsch: true, pts, delta, losers, detail, skatTo: toLast ? s.lastTrick : losers[0] };
+  log(s, `Ramsch: ${detail}.`);
+  s.turn = null;
+  if (s.dealNo >= Number(s.opts.deals)) { s.phase = 'gameOver'; fx(s, s.scores[0] === Math.max(...s.scores) ? 'win' : 'lose'); }
+  else { s.phase = 'handOver'; fx(s, delta[0] < 0 ? 'lose' : 'score'); }
+  return s;
+}
+
+// ------------------------------------------------------------------ Kontra and Re (an option)
+/** A defender may say kontra before playing to the first trick; the declarer may answer re before their next card. */
+export function canKontra(s, p) {
+  if (!s.opts.kontra || s.opts.kontra === 'no' || s.ramsch || s.phase !== 'play' || p === s.declarer || s.kontra) return false;
+  if (s.trickNo > 0 || s.trick.some((x) => x.seat === p)) return false;
+  return s.opts.kontra !== 'bid18' || (s.bidders ?? []).includes(p);
+}
+export const canRe = (s, p) => s.phase === 'play' && s.kontra === 1 && p === s.declarer && !s.rePlayed;
+function kontra(s, p) {
+  must(canKontra(s, p), 'You can’t say kontra now.');
+  s.kontra = 1; s.kontraBy = p; s.rePlayed = false;
+  log(s, `${who(s, p)}: Kontra!`); fx(s, 'bid');
+  return s;
+}
+function re(s, p) {
+  must(canRe(s, p), 'You can’t say re now.');
+  s.kontra = 2;
+  log(s, `${who(s, p)}: Re!`); fx(s, 'bid');
   return s;
 }
 
@@ -140,6 +258,7 @@ function play(s, p, id) {
   must(legal(s, p).some((c) => c.id === id), 'You must follow suit (jacks count as trump).');
   s.hands[p] = s.hands[p].filter((c) => c.id !== id);
   s.trick.push({ seat: p, card });
+  if (p === s.declarer && s.kontra) s.rePlayed = true;
   fx(s, 'card');
   if (s.trick.length === 3) { s.phase = 'trickDone'; s.winner = s.trick[winnerIdx(s.trick, s.game)].seat; s.turn = null; }
   else s.turn = (p + 1) % 3;
@@ -152,7 +271,7 @@ function collect(s) {
   fx(s, 'trick');
   const isNull = s.game === 'null' || s.game === 'ouvert';
   if (isNull && w === s.declarer) return score(s);
-  if (s.trickNo === 10) return score(s);
+  if (s.trickNo === 10) { s.lastTrick = w; return s.ramsch ? scoreRamsch(s) : score(s); }
   s.phase = 'play'; s.turn = w;
   return s;
 }
@@ -191,8 +310,10 @@ function score(s) {
     const base = isNull ? value : BASE[s.game];
     value = isNull ? value : Math.ceil(s.bid.value / base) * base;
   }
-  const delta = won ? value : -2 * value;
+  const kx = s.kontra === 2 ? 4 : s.kontra === 1 ? 2 : 1; // kontra doubles, re doubles again
+  const delta = (won ? value : -2 * value) * kx;
   s.scores[d] += delta;
+  if (kx > 1) detail += ` · ${s.kontra === 2 ? 'kontra and re' : 'kontra'} × ${kx}`;
   s.result = { won, value, delta, declPts, detail, overbid };
   log(s, `${who(s, d)} ${won ? (d === 0 ? 'win' : 'wins') : (d === 0 ? 'lose' : 'loses')} ${GNAME[s.game]}${isNull ? '' : ` with ${declPts} points`}: ${delta > 0 ? '+' : ''}${delta}.`);
   s.turn = null;
@@ -258,7 +379,37 @@ function aiAfterWin(s, p) {
   return declare(s, p, (choice ?? bestGame(s.hands[p])).g);
 }
 
+/** Ramsch: duck under the trick and unload points on it; when forced to win, win with a strong low-point card. */
+function aiPlayRamsch(s, p) {
+  const L = legal(s, p);
+  const P = (c) => power(c, 'G');
+  const t = s.trick;
+  if (!t.length) return L.slice().sort((a, b) => P(a) - P(b) || points(a) - points(b))[0].id;
+  const wins = (c) => winnerIdx([...t, { seat: p, card: c }], 'G') === t.length;
+  const under = L.filter((c) => !wins(c));
+  if (under.length) return under.sort((a, b) => points(b) - points(a) || P(b) - P(a))[0].id;
+  return L.slice().sort((a, b) => points(a) - points(b) || P(b) - P(a))[0].id;
+}
+
+function aiKontra(s, p) {
+  if (canKontra(s, p) && s.game !== 'null' && s.game !== 'ouvert' && strength(s.hands[p], s.game) >= 8) return kontra(s, p);
+  if (canRe(s, p) && strength(s.hands[p], s.game) >= 10) return re(s, p);
+  return s;
+}
+
+function aiPush(s, p) {
+  if (s.phase === 'grandOffer') return grandOffer(s, p, strength(s.hands[p], 'G') >= 10.5);
+  if (s.phase === 'push') {
+    // Pick up the skat to unload points, unless the hand is already harmless.
+    const load = s.hands[p].filter((c) => c.rank !== 'J').reduce((t, c) => t + points(c), 0);
+    return pushSkat(s, p, load >= 15);
+  }
+  const dump = s.hands[p].filter((c) => c.rank !== 'J').sort((a, b) => points(b) - points(a) || power(b, 'G') - power(a, 'G')).slice(0, 2);
+  return pushDiscard(s, p, dump.map((c) => c.id));
+}
+
 function aiPlay(s, p) {
+  if (s.ramsch) return aiPlayRamsch(s, p);
   const L = legal(s, p);
   if (L.length === 1) return L[0].id;
   const isNull = s.game === 'null' || s.game === 'ouvert';
@@ -298,11 +449,18 @@ function aiPlay(s, p) {
 const RULES = `<p>Three players; 32 cards (7–A). Each gets ten, and two go face down as the <b>skat</b>. The highest bidder becomes the <b>declarer</b> and plays alone against the other two.</p>
 <h3>Bidding</h3><p>Middlehand bids to Forehand (18, 20, 22, 23…); Forehand says "yes" or passes. Then Rearhand bids to the survivor. Bid no more than the game you can play is worth.</p>
 <h3>Games</h3><ul><li><b>Suit</b> (♣ 12, ♠ 11, ♥ 10, ♦ 9) and <b>Grand</b> (24): all four jacks are top trumps (♣♠♥♦), then the trump suit A 10 K Q 9 8 7.</li><li>Value = base × (matadors "with/without" + 1, +1 hand, +1 schneider, +1 schwarz).</li><li><b>Null</b> (23; hand 35, ouvert 46, ouvert hand 59): no trumps, and the declarer must take no tricks.</li></ul>
-<h3>Winning</h3><p>Card points: A 11, 10 10, K 4, Q 3, J 2 (120 total). The declarer needs 61 including the skat. A win scores the game value; a loss costs double. If the game is worth less than the bid, the declarer loses.</p>`;
+<h3>Winning</h3><p>Card points: A 11, 10 10, K 4, Q 3, J 2 (120 total). The declarer needs 61 including the skat. A win scores the game value; a loss costs double. If the game is worth less than the bid, the declarer loses.</p>
+<p>Options: <b>Kontra</b> (a defender, before playing to the first trick) doubles the score and <b>Re</b> (the declarer's answer) doubles it again. When everyone passes you can play <b>Ramsch</b>: jacks are the only trumps, everyone plays alone, and whoever takes the most card points loses them (doubled if someone took no tricks). <b>Schieberamsch</b> first offers a grand hand, then passes the skat round; each player who leaves it doubles the stakes.</p>`;
 
 export default {
   id: 'skat', title: 'Skat', version: 1, seats: 3, rulesHTML: RULES,
-  settings: [{ key: 'deals', label: 'Game length', options: [[12, '12 deals'], [24, '24 deals'], [36, '36 deals']], default: 12 }],
+  settings: [
+    { key: 'deals', label: 'Game length', options: [[12, '12 deals'], [24, '24 deals'], [36, '36 deals']], default: 12 },
+    { key: 'kontra', label: 'Kontra and Re', options: [['no', 'Not allowed'], ['yes', 'Allowed'], ['bid18', 'Kontra only from a defender who bid']], default: 'no' },
+    { key: 'ramsch', label: 'When everyone passes', options: [['none', 'Redeal'], ['ramsch', 'Play Ramsch'], ['schieben', 'Play Schieberamsch']], default: 'none' },
+    { key: 'ramschSkat', label: 'Ramsch: the skat goes to', options: [['last', 'The last trick (and counts)'], ['loser', 'The loser (not counted)']], default: 'last' },
+    { key: 'ramschMoon', label: 'Ramsch: taking every trick', options: [['yes', 'Wins 120'], ['no', 'Loses four times the points']], default: 'yes' },
+  ],
   newGame({ names, seed, opts }) {
     return deal({ v: 1, seed, rngN: 0, names: names.slice(0, 3), opts, scores: [0, 0, 0], dealNo: 0, dealer: 2, log: [], fx: [], partners: false });
   },
@@ -323,6 +481,11 @@ export default {
       case 'discard': return discard(s, 0, a.ids ?? []);
       case 'declare': s.declCards = [...s.hands[0], ...s.skat]; return declare(s, 0, a.g);
       case 'play': return play(s, 0, a.id);
+      case 'kontra': return kontra(s, 0);
+      case 're': return re(s, 0);
+      case 'grand': return grandOffer(s, 0, a.v === 'yes');
+      case 'push': return pushSkat(s, 0, a.v === 'pick');
+      case 'pushDiscard': return pushDiscard(s, 0, a.ids ?? []);
       case 'next': return deal(s);
       case 'again': return this.newGame({ names: s.names, seed: s.seed + 1, opts: s.opts });
       default: throw new Error('Unknown action');
@@ -341,6 +504,8 @@ export default {
       if (s.phase === 'declare') s.declCards = [...s.hands[s.turn], ...s.skat];
       return aiAfterWin(s, s.turn);
     }
+    if (s.phase === 'grandOffer' || s.phase === 'push' || s.phase === 'pushDiscard') return aiPush(s, s.turn);
+    aiKontra(s, s.turn);
     return play(s, s.turn, aiPlay(s, s.turn));
   },
   view(s, ui) {
@@ -348,9 +513,22 @@ export default {
     let overlay = '', banner = '';
     const b = s.bid;
     if (s.phase === 'bid' && my) {
-      if (b.step === 'last') overlay = panel('Play at 18?', `<p>Both other players passed. You may play at 18 or pass (everyone passes: redeal).</p><div class="row">${btn('Pass', 'last', 'data-v="pass"')}${btn('Play', 'last', 'data-v="yes"', true)}</div>`);
+      if (b.step === 'last') overlay = panel('Play at 18?', `<p>Both other players passed. You may play at 18 or pass (everyone passes: ${s.opts.ramsch === 'ramsch' || s.opts.ramsch === 'schieben' ? 'Ramsch' : 'redeal'}).</p><div class="row">${btn('Pass', 'last', 'data-v="pass"')}${btn('Play', 'last', 'data-v="yes"', true)}</div>`);
       else if (b.step === 'call') overlay = panel('Your bid', `<p>${b.value ? `${who(s, b.listener)} holds ${b.value}.` : `Bid to ${who(s, b.listener)}.`}</p><div class="row">${btn('Pass', 'bid', 'data-v="pass"')}${btn(`Bid ${nextBid(b.value)}`, 'bid', 'data-v="bid"', true)}</div>`);
       else overlay = panel(`${who(s, b.caller)} bids ${b.value}`, `<p>Do you hold it?</p><div class="row">${btn('Pass', 'bid', 'data-v="pass"')}${btn('Yes', 'bid', 'data-v="yes"', true)}</div>`);
+    } else if (s.phase === 'grandOffer' && my) {
+      overlay = panel('Schieberamsch', `<p>Nobody bid. Play a grand hand game (at 18, without the skat) against the other two, or pass to Ramsch.</p><div class="row">${btn('Pass', 'grand', 'data-v="pass"', true)}${btn('Play a grand hand', 'grand', 'data-v="yes"')}</div>`);
+    } else if (s.phase === 'push' && my) {
+      overlay = panel('Push the skat?', `<p>Pick up the skat and push two cards on (no jacks), or leave it and double the stakes (now ×${s.ramschMult}).</p><div class="row">${btn('Leave it (×2)', 'push', 'data-v="leave"')}${btn('Pick up the skat', 'push', 'data-v="pick"', true)}</div>`);
+    } else if (s.phase === 'pushDiscard' && my) {
+      overlay = panel('Push two cards on', `<p>Any two cards except jacks. (${ui.selected.size}/2)</p><div class="row">${btn('Push them on', 'pushDiscard', `data-with-sel ${ui.selected.size === 2 ? '' : 'disabled'}`, true)}</div>`);
+    } else if (s.result?.ramsch && (s.phase === 'handOver' || s.phase === 'gameOver')) {
+      const r = s.result;
+      const tally = scoreTable(s.names.map((n, i) => (i === 0 ? 'You' : n)), [['Card points', ...r.pts], ['This deal', ...r.delta.map((d) => (d > 0 ? `+${d}` : d))], ['Score', ...s.scores.map((v) => `<b>${v}</b>`)]]);
+      overlay = panel(s.phase === 'gameOver' ? (s.scores[0] === Math.max(...s.scores) ? 'You win!' : `${s.names[s.scores.indexOf(Math.max(...s.scores))]} wins`) : gameName(s),
+        `<div class="verdict ${r.delta[0] < 0 ? 'bad' : 'good'}">${r.delta[0] < 0 ? 'You took the most points' : r.delta[0] > 0 ? 'You took every trick!' : `${r.losers.map((p) => who(s, p)).join(' and ')} took the most points`}</div>
+        <p>${r.detail}. The skat went to ${who(s, r.skatTo)}${s.opts.ramschSkat === 'loser' ? ' and didn’t count' : ''}.</p>${tally}
+        <div class="row" style="justify-content:flex-end">${s.phase === 'gameOver' ? btn('Play again', 'again', '', true) : btn('Next deal', 'next', '', true)}</div>`);
     } else if (s.phase === 'skat' && my) {
       overlay = panel(`You won the bid at ${s.bid.value}`, '<p>Pick up the skat (then bury two cards), or play a hand game for an extra multiplier.</p>' + `<div class="row">${btn('Play hand', 'hand')}${btn('Pick up the skat', 'skat', '', true)}</div>`);
     } else if (s.phase === 'discard' && my) {
@@ -369,22 +547,26 @@ export default {
         <p>${r.detail}${s.game === 'null' || s.game === 'ouvert' ? '' : `<br>Declarer's card points: ${r.declPts} (incl. skat)`}</p>${tally}
         <div class="row" style="justify-content:flex-end">${s.phase === 'gameOver' ? btn('Play again', 'again', '', true) : btn('Next deal', 'next', '', true)}</div>`);
     } else if (s.phase === 'trickDone') banner = `${who(s, s.winner)} ${s.winner === 0 ? 'take' : 'takes'} it`;
-    else if (s.phase === 'play') banner = my ? (s.trick.length ? 'Follow suit (jacks are trump)' : 'Your lead') : `${who(s, s.turn)} to play`;
+    else if (s.phase === 'play') banner = my ? (s.trick.length ? 'Follow suit (jacks are trump)' : s.ramsch ? 'Your lead: take as few points as you can' : 'Your lead') : `${who(s, s.turn)} to play`;
     else if (s.turn !== null) banner = `${who(s, s.turn)} is thinking…`;
+    const calls = canKontra(s, 0) ? btn('Kontra!', 'kontra') : canRe(s, 0) ? btn('Re!', 're') : '';
     const ouvertShow = s.game === 'ouvert' && s.trickNo >= 1 && s.declarer !== 0;
-    const role = (i) => (s.declarer === i ? `Declarer${s.game ? ` · ${GNAME[s.game]}` : ''}` : i === s.F ? 'Forehand' : i === s.M ? 'Middlehand' : 'Rearhand');
+    const seatRole = (i) => (i === s.F ? 'Forehand' : i === s.M ? 'Middlehand' : 'Rearhand');
+    const said = (i) => (s.kontra && (i === s.kontraBy || (s.kontra === 2 && i === s.declarer)) ? ` · ${i === s.declarer ? 'Re' : 'Kontra'}` : '');
+    const role = (i) => (s.ramsch ? `${s.tricks[i]} trick${s.tricks[i] === 1 ? '' : 's'}` : s.declarer === i ? `Declarer${s.game ? ` · ${GNAME[s.game]}` : ''}${said(i)}` : `${seatRole(i)}${said(i)}`);
     const declPts = s.declarer !== null ? s.taken[s.declarer].reduce((t, c) => t + points(c), 0) : 0;
     return {
       subtitle: `Deal ${s.dealNo} of ${s.opts.deals}${s.bid.value ? ` · bid ${s.bid.value}` : ''}`,
       scores: s.names.map((n, i) => ({ label: i === 0 ? 'You' : n, value: s.scores[i], us: i === 0 })),
       seats: [0, 1, 2].map((i) => ({ seat: i, pos: POS3[i], name: s.names[i], mine: i === 0, turn: s.turn === i, dealer: s.dealer === i, count: i && !(ouvertShow && i === s.declarer) ? s.hands[i].length : 0, faceUp: ouvertShow && i === s.declarer ? s.hands[i] : null, tag: role(i) })),
       hand: s.phase === 'discard' && my ? { cards: s.hands[0], legal: s.hands[0].map((c) => c.id), mode: 'select', maxSelect: 2 }
+        : s.phase === 'pushDiscard' && my ? { cards: s.hands[0], legal: s.hands[0].filter((c) => c.rank !== 'J').map((c) => c.id), mode: 'select', maxSelect: 2 }
         : { cards: s.hands[0], legal: s.phase === 'play' && my ? legal(s, 0).map((c) => c.id) : null },
-      center: trickHTML(s.trick.map((x) => ({ pos: POS3[x.seat], card: x.card })), s.phase === 'trickDone' ? POS3[s.winner] : null),
+      center: trickHTML(s.trick.map((x) => ({ pos: POS3[x.seat], card: x.card })), s.phase === 'trickDone' ? POS3[s.winner] : null) + (calls ? `<div class="hand-actions">${calls}</div>` : ''),
       banner, overlay,
       // Suit games show their suit (the jacks rank above it); in a grand only the jacks are trump; null has none.
-      trump: 'CSHD'.includes(s.game ?? 'x') ? { suit: s.game } : s.game === 'G' ? { suit: 'J', caption: 'Grand: jacks only' } : null,
-      side: [{ title: 'Game', html: s.game ? `<div class="big">${GNAME[s.game]}${s.hand ? ' · hand' : ''}</div><div>Declarer: ${who(s, s.declarer)} · bid ${s.bid.value}</div>${s.game !== 'null' && s.game !== 'ouvert' ? `<div>Declarer has ${declPts} card points</div>` : ''}` : `<div>Bidding: ${s.bid.value || 'none yet'}</div>` }],
+      trump: 'CSHD'.includes(s.game ?? 'x') ? { suit: s.game } : s.game === 'G' ? { suit: 'J', caption: s.ramsch ? 'Ramsch: jacks only' : 'Grand: jacks only' } : null,
+      side: [{ title: 'Game', html: s.ramsch ? `<div class="big">${gameName(s)}${s.ramschMult > 1 ? ` ×${s.ramschMult}` : ''}</div><div>Everyone for themselves: take the fewest card points.</div>` : s.game ? `<div class="big">${GNAME[s.game]}${s.hand ? ' · hand' : ''}</div><div>Declarer: ${who(s, s.declarer)} · bid ${s.bid.value}</div>${s.game !== 'null' && s.game !== 'ouvert' ? `<div>Declarer has ${declPts} card points</div>` : ''}` : `<div>Bidding: ${s.bid.value || 'none yet'}</div>` }],
     };
   },
 };

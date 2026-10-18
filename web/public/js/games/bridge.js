@@ -1,4 +1,5 @@
-// Rubber Bridge. You (South) partner North. When your side declares you play both hands.
+// Contract Bridge with Rubber or Chicago (four-deal) scoring. You (South) partner North. When your side
+// declares you play both hands (or, by option, sit out as dummy while North declares).
 // The bidding AI uses a simplified natural (Standard American style) system.
 import { deck, shuffle, sortCards, hi, rngOf, SYM } from '../core/cards.js';
 import { clone, log, fx, who, trickWinner, followSuit, followPlay, seatsVM, must, POS4 } from './lib/common.js';
@@ -31,7 +32,15 @@ function deal(s) {
   return s;
 }
 
-const vul = (s, t) => s.games[t] >= 1;
+const chicago = (s) => s.opts.scoring === 'chicago';
+/** Deal 1–4 of a Chicago round (a passed-out deal is redealt under the same number). */
+const chicagoDeal = (s) => ((s.dealNo - 1) % 4) + 1;
+// Rubber: a side with a game is vulnerable. Chicago: nobody on deal 1, the dealer's side on 2 and 3, both on 4.
+function vul(s, t) {
+  if (!chicago(s)) return s.games[t] >= 1;
+  const k = chicagoDeal(s);
+  return k === 4 || (k > 1 && team(s.dealer) === t);
+}
 const lastBid = (s) => [...s.auction].reverse().find((c) => c.type === 'bid');
 
 export function legalCalls(s, p) {
@@ -79,8 +88,13 @@ function finishAuction(s) {
   return s;
 }
 
-/** Who controls seat p's cards: the human controls South, and North too whenever our side declares. */
-export const controller = (s, p) => (p === 0 || (p === 2 && team(s.declarer) === 0 && s.phase !== 'auction') ? 0 : p);
+/** Who controls seat p's cards: the human controls South, and North too whenever our side declares,
+ *  unless the "sit out" option lets North declare alone (then North plays both of our hands). */
+export function controller(s, p) {
+  const ours = s.phase !== 'auction' && s.declarer !== null && team(s.declarer) === 0;
+  if (ours && s.declarer === 2 && s.opts.dummy === 'sitout') return p === 0 || p === 2 ? 2 : p;
+  return p === 0 || (p === 2 && ours) ? 0 : p;
+}
 const legal = (s, p) => followSuit(s.hands[p], s.trick);
 
 function play(s, p, id) {
@@ -139,18 +153,23 @@ function score(s) {
     res.above[1 - dt] += pen; res.notes.push(`Down ${down}: ${pen} to the defenders`);
   }
   s.above = s.above.map((x, t) => x + res.above[t]);
-  // Game?
+  // Game? (Any game wipes out both sides' part-scores.)
   if (s.below[dt] >= 100) {
     s.games[dt]++; s.belowHistory.push([...s.below]); s.below = [0, 0];
     res.notes.push(`${dt === 0 ? 'We' : 'They'} win a game`);
-  }
+    if (chicago(s)) { const b = v ? 500 : 300; s.above[dt] += b; res.notes.push(`Game bonus: ${b}`); }
+  } else if (chicago(s) && took >= need && chicagoDeal(s) === 4) { s.above[dt] += 100; res.notes.push('Part-score on the fourth deal: 100'); }
   s.result = res;
   s.turn = null;
-  if (s.games[dt] === 2) {
+  const total = (t) => s.above[t] + s.belowHistory.reduce((a, b) => a + b[t], 0) + s.below[t];
+  if (chicago(s) && chicagoDeal(s) === 4) {
+    s.rubberTotals = [total(0), total(1)];
+    s.phase = 'gameOver';
+    fx(s, s.rubberTotals[0] > s.rubberTotals[1] ? 'win' : 'lose');
+  } else if (!chicago(s) && s.games[dt] === 2) {
     const bonus = s.games[1 - dt] === 0 ? 700 : 500;
     s.above[dt] += bonus;
     res.notes.push(`Rubber bonus: ${bonus}`);
-    const total = (t) => s.above[t] + s.belowHistory.reduce((a, b) => a + b[t], 0) + s.below[t];
     s.rubberTotals = [total(0), total(1)];
     s.phase = 'gameOver';
     fx(s, s.rubberTotals[0] > s.rubberTotals[1] ? 'win' : 'lose');
@@ -265,10 +284,15 @@ const RULES = `<p>You sit South with your partner across the table at North, aga
 <h3>The auction</h3><p>Starting with the dealer, players bid a number of tricks over six (1 to 7) and a trump suit or no-trump (♣ < ♦ < ♥ < ♠ < NT), or pass, double, or redouble. Three passes after a bid end the auction. The last bid is the contract.</p>
 <h3>Play</h3><p>The player left of the declarer leads, then the declarer's partner (dummy) lays their cards face up. When your side declares, you play both your hand and your partner's. Follow suit if you can.</p>
 <h3>Scoring (rubber)</h3><p>Tricks bid and made score below the line (♣♦ 20, ♥♠ 30, NT 40 then 30). 100 below the line wins a game, and two games win the rubber (bonus 700, or 500 if the rubber went three games). Overtricks, slams, doubled contracts and penalties score above the line. Vulnerable sides (with a game) score bigger bonuses and penalties.</p>
+<p><b>Chicago</b> (an option) plays exactly four deals instead: vulnerability is set by the deal number, each game made earns 300 (500 vulnerable), and a part-score made on the fourth deal earns 100.</p>
 <p>The computer bids with a simplified natural system (Standard American style).</p>`;
 
 export default {
   id: 'bridge', title: 'Bridge', version: 1, seats: 4, rulesHTML: RULES,
+  settings: [
+    { key: 'scoring', label: 'Scoring', options: [['rubber', 'Rubber bridge'], ['chicago', 'Chicago (four deals)']], default: 'rubber' },
+    { key: 'dummy', label: 'When your partner declares', options: [['play', 'You play both hands'], ['sitout', 'Sit out as dummy']], default: 'play' },
+  ],
   newGame({ names, seed, opts }) {
     return deal({ v: 1, seed, rngN: 0, names: names.slice(0, 4), opts, dealNo: 0, dealer: 3, games: [0, 0], below: [0, 0], above: [0, 0], belowHistory: [], log: [], fx: [] });
   },
@@ -318,18 +342,21 @@ export default {
     } else if (s.phase === 'handOver' || s.phase === 'gameOver') {
       const r = s.result;
       const made = r.took >= r.need;
-      const title = s.phase === 'gameOver' ? (s.rubberTotals[0] > s.rubberTotals[1] ? 'You win the rubber!' : 'They win the rubber') : `${s.contract.level}${SNAME[s.contract.strain]} by ${who(s, s.declarer)}: ${made ? 'made' : 'set'}`;
+      const unit = chicago(s) ? 'round' : 'rubber';
+      const [us, them] = s.rubberTotals ?? [0, 0];
+      const title = s.phase === 'gameOver' ? (us > them ? `You win the ${unit}!` : us === them ? `The ${unit} is a tie` : `They win the ${unit}`) : `${s.contract.level}${SNAME[s.contract.strain]} by ${who(s, s.declarer)}: ${made ? 'made' : 'set'}`;
       overlay = panel(title, `<div class="verdict ${(r.dt === 0) === made ? 'good' : 'bad'}">${r.took} tricks (needed ${r.need})</div><p>${r.notes.join('<br>')}</p>
-        ${scoreTable(['We', 'They'], [['Above the line', s.above[0], s.above[1]], ['Below (this game)', s.below[0], s.below[1]], ['Games', s.games[0], s.games[1]], ...(s.rubberTotals ? [['Rubber total', `<b>${s.rubberTotals[0]}</b>`, `<b>${s.rubberTotals[1]}</b>`]] : [])])}
-        <div class="row" style="justify-content:flex-end">${s.phase === 'gameOver' ? btn('New rubber', 'again', '', true) : btn('Next deal', 'next', '', true)}</div>`);
+        ${scoreTable(['We', 'They'], [['Above the line', s.above[0], s.above[1]], ['Below (this game)', s.below[0], s.below[1]], ['Games', s.games[0], s.games[1]], ...(s.rubberTotals ? [[chicago(s) ? 'Round total' : 'Rubber total', `<b>${s.rubberTotals[0]}</b>`, `<b>${s.rubberTotals[1]}</b>`]] : [])])}
+        <div class="row" style="justify-content:flex-end">${s.phase === 'gameOver' ? btn(chicago(s) ? 'New round' : 'New rubber', 'again', '', true) : btn('Next deal', 'next', '', true)}</div>`);
     } else if (s.phase === 'trickDone') banner = `${who(s, s.winner)} ${s.winner === 0 ? 'win' : 'wins'} the trick`;
     else if (s.phase === 'auction') banner = `${who(s, s.turn)} is bidding…`;
     else if (controller(s, s.turn) === 0) banner = s.turn === 2 ? `Play from ${s.names[2]}’s hand (dummy)` : 'Your turn';
+    else if (s.turn === 0) banner = `${s.names[2]} plays from your hand (you are dummy)`;
     else banner = `${who(s, s.turn)} to play`;
     const showDummy = s.phase !== 'auction' && s.leadMade && s.dummy !== null;
     const humanTurnOn = (p) => (s.phase === 'play' && s.turn === p && controller(s, p) === 0);
     const seats = seatsVM(s, 4, (i) => {
-      const faceUp = (i === s.dummy && showDummy) || (i === 2 && ourDecl && s.phase !== 'auction') ? s.hands[i] : null;
+      const faceUp = (i === s.dummy && i !== 0 && showDummy) || (i === 2 && ourDecl && s.phase !== 'auction' && controller(s, 2) === 0) ? s.hands[i] : null;
       return { faceUp, faceUpWidth: 40, faceUpLabel: i === s.dummy ? 'Dummy' : 'Declarer', playable: faceUp && humanTurnOn(i) ? legal(s, i).map((c) => c.id) : null,
         count: faceUp ? 0 : i ? s.hands[i].length : 0, tag: i === s.declarer ? 'Declarer' : i === s.dummy ? 'Dummy' : '' };
     });
@@ -341,7 +368,7 @@ export default {
     if (row.some(Boolean)) rows.push(row);
     const auctionHTML = `<table class="score auction"><thead><tr>${header.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((x) => `<td>${x}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
     return {
-      subtitle: `Deal ${s.dealNo} · rubber bridge${s.contract ? ` · ${s.contract.level}${SNAME[s.contract.strain]}${s.contract.doubled ? (s.contract.doubled === 2 ? 'XX' : 'X') : ''} by ${who(s, s.declarer)}` : ''}`,
+      subtitle: `${chicago(s) ? `Chicago · deal ${chicagoDeal(s)} of 4` : `Deal ${s.dealNo} · rubber bridge`}${s.contract ? ` · ${s.contract.level}${SNAME[s.contract.strain]}${s.contract.doubled ? (s.contract.doubled === 2 ? 'XX' : 'X') : ''} by ${who(s, s.declarer)}` : ''}`,
       scores: [{ label: 'We', value: `${s.games[0]} games · ${s.above[0] + s.below[0]}`, us: true }, { label: 'They', value: `${s.games[1]} games · ${s.above[1] + s.below[1]}` }],
       seats,
       hand: { cards: s.hands[0], legal: humanTurnOn(0) ? legal(s, 0).map((c) => c.id) : null },

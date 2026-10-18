@@ -43,7 +43,8 @@ function setTrump(s, seat, suit, alone) {
 
 function startPlay(s) {
   s.phase = 'play';
-  s.turn = next(s, s.dealer);
+  // The player left of the dealer leads (skipping a partner who sits out), or by option left of a lone player.
+  s.turn = next(s, s.alone && s.opts.aloneLead === 'loner' ? s.maker : s.dealer);
   if (s.turn === s.sitOut) s.turn = next(s, s.turn);
 }
 
@@ -193,7 +194,7 @@ function aiPlay(s, seat) {
 }
 
 const RULES = `<p>Partners sit across. The deck is 9 through ace (24 cards); everyone gets five.</p>
-<h3>Making trump</h3><p>A card is turned up. In turn, each player may <b>order it up</b> (that suit becomes trump and the dealer takes the card, discarding one) or pass. If all pass, players may <b>name</b> another suit. The maker may <b>go alone</b>; their partner sits out.</p>
+<h3>Making trump</h3><p>A card is turned up. In turn, each player may <b>order it up</b> (that suit becomes trump and the dealer takes the card, discarding one) or pass. If all pass, players may <b>name</b> another suit. The maker may <b>go alone</b>; their partner sits out. The player left of the dealer leads first (or, by option, the player left of a lone player).</p>
 <h3>Trump ranking</h3><p>Jack of trump (right bower), then the other jack of the same color (left bower, which counts as trump), then A K Q 10 9.</p>
 <h3>Scoring</h3><p>Makers taking 3–4 tricks: 1 point; all 5: 2 points (4 if alone). If the makers fail they are <b>euchred</b>: 2 points to the defenders.</p>`;
 
@@ -202,6 +203,7 @@ export default {
   settings: [
     { key: 'target', label: 'Points to win', options: [[5, '5'], [7, '7'], [10, '10']], default: 10 },
     { key: 'stick', label: 'Stick the dealer', options: [['no', 'No: redeal if all pass'], ['yes', 'Yes: dealer must name trump']], default: 'no' },
+    { key: 'aloneLead', label: 'When someone goes alone, the first lead is', options: [['dealer', 'Left of the dealer'], ['loner', 'Left of the lone player']], default: 'dealer' },
   ],
   newGame({ names, seed, opts }) {
     return deal({ v: 1, seed, rngN: 0, names: names.slice(0, 4), opts, scores: [0, 0], handNo: 0, dealer: 3, log: [], fx: [] });
