@@ -101,7 +101,7 @@ table.cz-stats { font-size: 14px; white-space: nowrap; }
 .cz-plate { position: relative; aspect-ratio: 600 / 146; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: linear-gradient(#E2C27A, #C9A24A); border: 2px solid #1B1B1B; }
 .cz-plate.art-ok { background: none; border-color: transparent; }
 .cz-plate > img { position: absolute; inset: -2px; width: calc(100% + 4px); height: calc(100% + 4px); display: block; }
-.cz-plate > span { position: relative; padding: 0 16%; text-align: center; font-family: var(--font-display); font-size: 16px; line-height: 1.1; color: #3A2A12; text-shadow: 0 1px 0 rgba(255,240,200,.5); }
+.cz-plate > span { position: relative; padding: 0 11%; white-space: nowrap; text-align: center; font-family: var(--font-display); font-size: 16px; line-height: 1.1; color: #3A2A12; text-shadow: 0 1px 0 rgba(255,240,200,.5); }
 .cz-plate small { display: block; font-family: var(--font-ui); font-size: 11px; font-weight: 600; }
 
 /* ---------- layouts drawn in SVG (js/casino/svg.js) ---------- */
@@ -116,6 +116,10 @@ table.cz-stats { font-size: 14px; white-space: nowrap; }
 .cz-rail-base { fill: none; stroke: #6B2424; }
 .cz-rail-leather { fill: none; stroke: url(#cz-leather); }
 .cz-rail-shine { fill: none; stroke: rgba(255,235,220,.08); }
+.cz-discard { fill: #6B2424; stroke: #F3ECDA; stroke-width: 1.5; }
+.cz-discard-in { fill: none; stroke: rgba(226,194,122,.7); stroke-width: 1; }
+/* a table never pushes the bet bar off the screen: the drawing scales down to the height left */
+.cz-stage > .cz-svg, .cz-keno > .cz-svg { max-height: max(240px, calc(100vh - 372px)); }
 .cz-crest-fb { fill: #C9A24A; stroke: #1B1B1B; stroke-width: 2; }
 .cz-crest-tx { fill: #2A1E0E; }
 .cz-slot { fill: none; stroke: var(--cz-line); stroke-width: 2; stroke-dasharray: 6 5; }

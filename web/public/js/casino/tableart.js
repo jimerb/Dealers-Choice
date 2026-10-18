@@ -5,7 +5,7 @@ import { ART, svgArt, tilePattern } from './art.js';
 import { rect, text, circle, die } from './svg.js';
 
 /** Room above a half-moon table's straight (dealer's) edge for the crest. */
-export const CREST_TOP = 170;
+export const CREST_TOP = 148;
 const CREST_RATIO = 900 / 413; // the built crest picture
 
 /**
@@ -32,7 +32,7 @@ export function crest(cx, y, w, name) {
 }
 
 /** The crest for a half-moon table whose straight edge is at y = 30, sitting above that edge. */
-export const tableCrest = (name, w = 340) => crest(500, 22 - w / CREST_RATIO, w, name);
+export const tableCrest = (name, w = 300) => crest(500, 22 - w / CREST_RATIO, w, name);
 
 /** The dealer's shoe, centred at (cx, cy), its mouth turned toward the dealer's spot (left). */
 export function shoe(cx = 875, cy = 80) {
@@ -40,10 +40,15 @@ export function shoe(cx = 875, cy = 80) {
   return svgArt(ART.shoe, cx - 38, cy - 72, 76, 144, fallback, { attrs: `transform="rotate(90 ${cx} ${cy})"` });
 }
 
-/** The discard tray, centred at (cx, cy), open toward the dealer (right). */
-export function discardTray(cx = 115, cy = 80) {
+/** The discard tray, centred at (cx, cy), open toward the dealer (right), with a few used cards
+ *  lying face down in it (`cards`: how many backs show; 0 for an empty tray). */
+export function discardTray(cx = 115, cy = 80, cards = 3) {
   const fallback = rect(cx - 45, cy - 35, 90, 70, { r: 8 }) + text(cx, cy, 'Discards', { size: 16 });
-  return svgArt(ART.tray, cx - 30, cy - 44, 60, 88, fallback, { attrs: `transform="rotate(-90 ${cx} ${cy})"` });
+  const backs = Array.from({ length: cards }, (_, i) => {
+    const x = cx - 31 + i * 2.5, y = cy - 21 - i * 1.5;
+    return `<rect x="${x}" y="${y}" width="58" height="40" rx="4" class="cz-discard"/><rect x="${x + 4}" y="${y + 4}" width="50" height="32" rx="2" class="cz-discard-in"/>`;
+  }).join('');
+  return `${svgArt(ART.tray, cx - 30, cy - 44, 60, 88, fallback, { attrs: `transform="rotate(-90 ${cx} ${cy})"` })}<g class="cz-discards" pointer-events="none">${backs}</g>`;
 }
 
 /** A die face showing v pips, top-left at (x, y), s wide (the picture's die fills 78% of its canvas). */

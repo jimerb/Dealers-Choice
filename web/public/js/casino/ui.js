@@ -409,7 +409,7 @@ function showHall() {
   const { hall } = bank.get();
   const plate = (txt, sub = '') => `<li class="cz-plate">${imgArt(ART.hallPlate)}<span>${txt}${sub ? `<small>${sub}</small>` : ''}</span></li>`;
   const rows = hall.length
-    ? hall.map((h, i) => plate(`${i + 1}. ${esc(h.name)}`, `${esc(h.date)}${h.hands ? ` · ${Number(h.hands).toLocaleString('en-US')} hands` : ''}`)).join('')
+    ? hall.map((h, i) => plate(`${i + 1}. ${esc(h.name)}`, `${esc(new Date(`${h.date}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }))}${h.hands ? ` · ${Number(h.hands).toLocaleString('en-US')} hands` : ''}`)).join('')
     : plate('Your name here');
   dialog('Hall of Fame', `<div class="cz-hall-board"><ol class="cz-plates">${rows}</ol></div>
     ${hall.length ? '' : '<p class="muted">No names yet. A billion dollars gets you on the wall.</p>'}`, [{ label: 'Close', primary: true }]);
