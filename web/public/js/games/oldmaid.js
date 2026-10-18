@@ -75,11 +75,23 @@ function draw(s, seat, idx) {
   return advance(s, seat);
 }
 
-const RULES = `<p>One queen has been taken out of the deck, so one queen can never be paired: that card is the <b>Old Maid</b>.</p>
-<p>Pairs (two cards of the same rank) are set aside automatically. On your turn, draw a face-down card from the player on your right. Players drop out when their hands are empty. Whoever is left holding the Old Maid loses.</p>`;
+const HOWTO = {
+  goal: 'Don’t be the one left holding the <b>Old Maid</b>.',
+  deal: 'One queen is taken out of the deck, so one of the other queens can never be paired: that card is the Old Maid. The rest of the deck is dealt out to four players, and any pairs (two cards of the same rank) are set aside automatically.',
+  play: [
+    'On your turn, draw a face-down card from the player on your right (the next player who still has cards).',
+    'If it pairs with a card in your hand, the pair is set aside for you.',
+    'Then the next player draws from you, and so on around the table.',
+    'Players whose hands run out are safe and drop out.',
+  ],
+  score: 'When everyone else is out, the last player still holding a card has the Old Maid and loses. Everyone else wins.',
+  options: 'Old Maid has no extra options: New game deals a fresh game.',
+  controls: 'On your turn, {click} one of the face-down cards in the highlighted player’s hand to draw it.',
+  tip: 'It’s all luck, so just enjoy it. The card you drew last is shown on the table, so you can see what you got.',
+};
 
 export default {
-  id: 'oldmaid', title: 'Old Maid', version: 1, seats: 4, rulesHTML: RULES,
+  id: 'oldmaid', title: 'Old Maid', version: 1, seats: 4, howto: HOWTO,
   newGame,
   actor: (s) => (s.phase === 'gameOver' ? null : s.turn),
   delay: () => 1000,

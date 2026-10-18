@@ -216,12 +216,30 @@ function aiBet(s, p) {
   return 'fold';
 }
 
-const RULES = `<p>Five-card draw, no wild cards, fixed limit. Everyone antes, gets five cards, and bets. Then each player may discard up to three cards and draw replacements, and there's a second, bigger round of betting. The best hand at the showdown wins the pot.</p>
-<h3>Betting</h3><p>Check or bet when nobody has bet; otherwise fold, call, or raise. Bets are ${SMALL} before the draw and ${BIG} after, with at most ${MAX_RAISES} raises per round.</p>
-<h3>Hands, high to low</h3><p>Straight flush, four of a kind, full house, flush, straight, three of a kind, two pair, one pair, high card.</p>`;
+const HOWTO = {
+  goal: 'Win chips with the best five-card hand, or by betting until everyone else folds.',
+  deal: `Two to six players, each starting with ${START} chips. Everyone antes ${ANTE} chips and gets five cards face down. The deal moves to the left each hand.`,
+  play: [
+    `<b>First betting round</b>, starting left of the dealer: when nobody has bet yet you may <b>check</b> or <b>bet</b>; once someone has bet, <b>fold</b>, <b>call</b> or <b>raise</b>. Bets and raises are ${SMALL} chips, with no more than ${MAX_RAISES} raises in a round.`,
+    '<b>The draw</b>: everyone still in may throw away up to three cards and draw replacements, or keep all five (<b>stand pat</b>).',
+    `<b>Second betting round</b>: the same, but bets and raises are ${BIG} chips.`,
+    '<b>Showdown</b>: the best hand among the players who haven’t folded wins the pot, and equal hands split it. A player who runs out of chips is <b>all in</b> and can win only as much as they put in from each other player.',
+  ],
+  fig: { cards: 'KS KH · 4C 4D · 9S', caption: 'Two pair, kings and fours.' },
+  score: [
+    'Hands from best to worst: straight flush, four of a kind, full house, flush, straight, three of a kind, two pair, one pair, high card. There are no wild cards, and an ace can be low in A-2-3-4-5.',
+    'The game ends when you run out of chips, when one player has them all, or after the number of hands you chose. The most chips wins.',
+  ],
+  options: {
+    players: 'two to six players at the table, counting you.',
+    hands: 'play until one player has all the chips, or stop after 25 or 50 hands.',
+  },
+  controls: 'When it’s your turn to bet, {click} Fold, Check, Call, Bet or Raise. At the draw, {click} up to three cards to replace, then {click} Draw (it says Stand pat when nothing is selected).',
+  tip: 'Fold weak hands early: it only costs the ante. Watch how many cards each player draws; standing pat usually means a strong hand, or a bluff.',
+};
 
 export default {
-  id: 'poker', title: 'Poker', version: 1, rulesHTML: RULES,
+  id: 'poker', title: 'Poker', version: 1, howto: HOWTO,
   settings: [
     { key: 'players', label: 'Players', options: [[2, '2 players'], [3, '3 players'], [4, '4 players'], [5, '5 players'], [6, '6 players']], default: 6 },
     { key: 'hands', label: 'Game ends', options: [[0, 'When one player has all the money'], [25, 'After 25 hands'], [50, 'After 50 hands']], default: 25 },

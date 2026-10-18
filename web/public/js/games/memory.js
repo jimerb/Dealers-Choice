@@ -167,13 +167,35 @@ function aiPick(s) {
   return pool[Math.floor(rng() * pool.length)];
 }
 
-const RULES = `<p>Cards are dealt face down in a grid. Turn over two cards: if they match (same rank and same color, like 9♥ and 9♦) they're removed; if not, they turn back over.</p>
-<h3>Scoring (solo)</h3><p>Each pair, each run of three pairs in a row, and each miss changes your score. Bigger grids multiply everything.</p>
-<h3>Two players</h3><p>Take turns against a computer opponent. A match lets you go again; whoever finds the most pairs wins.</p>
-<p>Options: an easy deck matches by rank alone and a hard deck uses both colors of every rank (harder decks score more); wild jokers turn up the other card's match and take all three; two players can race to a number of pairs over several boards and peek at each board first.</p>`;
+const HOWTO = {
+  goal: 'Find every matching pair. Play on your own for a score, or race a computer opponent.',
+  deal: 'The cards are laid face down in a grid (4 × 6 by default). With the medium deck a pair is two cards of the same rank and color, like 9♥ and 9♦.',
+  play: [
+    'Turn over two cards. If they match, they’re taken off the board; if not, they turn face down again after a moment.',
+    'Remember where you saw each card: knowing where a card’s partner lies is how you make matches.',
+    'Against an opponent you take turns. A match lets you go again; a miss passes the turn.',
+    'A wild <b>joker</b> (if you play with them) matches anything: turn one up with another card and that card’s partner turns over too, and all three leave the board.',
+  ],
+  fig: { cards: '9H 9D · 9H 9S', caption: 'A pair on the medium deck, and a near miss: same rank, different color.' },
+  score: [
+    'On your own, every pair adds to your score, every three pairs in a row without a miss earns a bonus, and every miss takes a little off. Bigger grids and harder decks make everything count for more.',
+    'Against an opponent, whoever finds more pairs on the board wins (or, in a race, the first to the number of pairs you picked).',
+  ],
+  options: {
+    mode: 'play on your own, or take turns against a computer opponent.',
+    size: '4 × 4 (8 pairs), 4 × 6 (12 pairs) or 6 × 6 (18 pairs).',
+    deck: 'Easy matches by rank alone, Medium needs the same rank and color, and Hard deals all four cards of a rank, so every card has look-alikes.',
+    wild: 'none, or two wild jokers in place of one pair.',
+    race: 'with an opponent: the most pairs on one board wins, or race to 10, 15 or 20 pairs over as many boards as it takes.',
+    peek: 'with an opponent: show every card face up for a few seconds before each board.',
+    skill: 'how well your opponent remembers the cards it has seen.',
+  },
+  controls: '{Click} a face-down card to turn it over, then {click} a second one.',
+  tip: 'Start each turn with a card you haven’t seen yet. If it matches one you remember, go and get it; if not, you’ve still learned something.',
+};
 
 export default {
-  id: 'memory', title: 'Memory Match', version: 1, seats: 2, rulesHTML: RULES,
+  id: 'memory', title: 'Memory Match', version: 1, seats: 2, howto: HOWTO,
   settings: [
     { key: 'mode', label: 'Players', options: [['solo', 'Just me'], ['two', 'Me vs an opponent']], default: 'solo' },
     { key: 'size', label: 'Grid', options: [[16, '4 × 4 (8 pairs)'], [24, '4 × 6 (12 pairs)'], [36, '6 × 6 (18 pairs)']], default: 24 },

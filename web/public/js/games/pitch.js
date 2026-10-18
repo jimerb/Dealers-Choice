@@ -148,13 +148,29 @@ function aiPlay(s, seat) {
   return (losers.length ? losers : L).slice().sort((a, b) => hi(a) - hi(b))[0].id;
 }
 
-const RULES = `<p>Four players, each for themselves; six cards each. One round of bidding: 2, 3, 4 or <b>Smudge</b> (all four points and all six tricks). The highest bidder, the <b>pitcher</b>, leads, and that first card sets trump.</p>
-<h3>Play</h3><p>Follow suit or trump; you may always trump. Highest trump wins, otherwise the highest card of the suit led.</p>
-<h3>Points</h3><ul><li><b>High</b>: whoever wins the highest trump played.</li><li><b>Low</b>: whoever wins the lowest trump played.</li><li><b>Jack</b>: whoever wins the jack of trump (if it was dealt).</li><li><b>Game</b>: most card points taken (10=10, A=4, K=3, Q=2, J=1); a tie scores nobody.</li></ul>
-<p>If the pitcher misses the bid, they lose the bid amount. Points are counted in the order High, Low, Jack, Game, and the first player to reach the target wins.</p>`;
+const HOWTO = {
+  goal: 'Be the first to the winning score (11 by default) by taking the points for High, Low, Jack and Game.',
+  deal: 'Four players, each for themselves. Each gets six cards; the rest of the deck isn’t used that hand.',
+  play: [
+    '<b>Bidding</b> goes once around, starting left of the dealer: bid 2, 3, 4 or <b>Smudge</b> (all four points and all six tricks), or pass. Each bid must be higher than the last. If everyone passes, the cards are redealt.',
+    'The high bidder, the <b>pitcher</b>, leads first, and the suit of that card becomes <b>trump</b>.',
+    'If you can follow suit, you must play either that suit or a trump: you may always trump. If you can’t follow, play anything.',
+    'The highest trump wins the trick, or else the highest card of the suit led. The winner leads next.',
+  ],
+  score: [
+    '<b>High</b>: 1 point for taking the highest trump in play. <b>Low</b>: 1 for taking the lowest trump in play. <b>Jack</b>: 1 for taking the jack of trump, if it was dealt. <b>Game</b>: 1 for the most card points in your tricks (10s are 10, aces 4, kings 3, queens 2, jacks 1); a tie gives it to nobody.',
+    'The pitcher must win at least as many points as the bid. Otherwise they’re <b>set back</b>: they lose the bid amount and score nothing that hand. A Smudge that’s made is worth 5.',
+    'Points are counted in order: High, Low, Jack, Game. The first player to reach the winning score wins, even if someone else would have passed it later in the count.',
+  ],
+  options: {
+    target: 'play to 7, 11 or 21 points.',
+  },
+  controls: 'When it’s your bid, {click} Pass or a bid. To play, {click} a highlighted card.',
+  tip: 'Bid on a long suit with the ace or a very low card in it: High and Low are the points you can count on.',
+};
 
 export default {
-  id: 'pitch', title: 'Pitch', version: 1, seats: 4, rulesHTML: RULES,
+  id: 'pitch', title: 'Pitch', version: 1, seats: 4, howto: HOWTO,
   settings: [{ key: 'target', label: 'Winning score', options: [[7, '7'], [11, '11'], [21, '21']], default: 11 }],
   newGame({ names, seed, opts }) {
     return deal({ v: 1, seed, rngN: 0, names: names.slice(0, 4), opts, scores: [0, 0, 0, 0], handNo: 0, dealer: 3, log: [], fx: [], partners: false });
