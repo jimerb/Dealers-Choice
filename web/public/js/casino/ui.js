@@ -70,7 +70,7 @@ function paintBank() {
   const top = $('cz-bank');
   top.style.setProperty('--tier', t.color);
   top.innerHTML = `<span class="cz-pill-chip" aria-hidden="true"></span>Bank <b>${money(s.bank)}</b>${s.loan ? ` <small>loan ${money(s.loan)}</small>` : ''}`;
-  if (!current) renderBankPanel();
+  if (!current) { renderBankPanel(); refreshStakes(); }
   else paintRack();
 }
 
@@ -80,6 +80,7 @@ const EVENT_TEXT = {
   hall: (e) => `Hall of Fame! ${e.entry.name} reached ${money(e.entry.bank)}. The bank starts over at $5,000.`,
   loan: (e) => `${money(e.amount)} loan added to your bank.`,
   reset: () => 'Bank reset to $5,000.',
+  corrupt: () => 'Your casino bank couldn\'t be read, so it was reset to $5,000.',
 };
 const announce = (events) => { for (const e of events) if (EVENT_TEXT[e.type]) toast(EVENT_TEXT[e.type](e), e.type === 'upgrade' || e.type === 'hall'); };
 bank.subscribe((_, events) => {
@@ -87,6 +88,7 @@ bank.subscribe((_, events) => {
   paintBank();
   announce(events);
 });
+announce(bank.drainNotices());
 /** Keep showing the bank as it is now until the returned function is called (a game settles at
  *  once but reveals the result after its animation). */
 function holdBank() {
@@ -134,10 +136,28 @@ function renderBankPanel() {
   el.innerHTML = `<div class="cz-bank-main"><span class="cz-bank-chip" aria-hidden="true"></span>
       <div><span class="cz-bank-label">Your bank</span><b class="cz-bank-amt">${money(s.bank)}</b>${tierBadge(t)}<span class="cz-bank-next">${next}</span></div></div>
     <p class="cz-bank-loan">${loanLine}${bank.sessionNet ? ` This visit: <b>${bank.sessionNet > 0 ? '+' : ''}${money(bank.sessionNet)}</b>.` : ''}</p>
-    <div class="row">${bank.loanEligible() ? `<button class="btn sm primary" type="button" data-bank="loan">Take a ${money(bank.loanAmount())} loan</button>` : ''}
+    <div class="row"><button class="btn sm${bank.loanEligible() ? ' primary' : ''}" type="button" data-bank="loan">Loan desk</button>
       <button class="btn sm" type="button" data-bank="stats">Stats</button>
       <button class="btn sm" type="button" data-bank="reset">Reset to $5,000</button></div>
     ${s.hall.length ? `<p class="cz-hall">Hall of Fame: ${s.hall.map((h) => `${esc(h.name)} (${esc(h.date)})`).join(', ')}</p>` : ''}`;
+}
+
+const coverable = (s) => bank.balance >= s.min;
+/** The stakes to show picked on a tile: the saved one if the bank covers it, else the first it does. */
+const pickStakes = (g, saved) => { const st = stakesById(g, saved); return coverable(st) ? st : stakesFor(g).find(coverable) ?? st; };
+const stakeButton = (s, on) => {
+  const ok = coverable(s);
+  return `<button type="button" role="radio" aria-checked="${on}" data-stakes="${s.id}" ${ok ? '' : 'disabled'}
+    title="${ok ? stakesLabel(s) : `${stakesLabel(s)}: your bank can't cover the ${money(s.min)} ${s.denom ? 'credit' : 'minimum'}`}">${stakesShort(s)}</button>`;
+};
+/** After the bank changes on the chooser: re-check which stakes it can cover. */
+function refreshStakes() {
+  chooser.querySelectorAll('.cz-tile[data-game]').forEach((tile) => {
+    const g = gameById(tile.dataset.game);
+    const st = pickStakes(g, readStakes()[g.id]);
+    tile.querySelector('.cz-stakes').innerHTML = stakesFor(g).map((s) => stakeButton(s, s.id === st.id)).join('');
+    tile.querySelector('.cz-sit').href = `casino.html?g=${g.id}&s=${st.id}`;
+  });
 }
 
 function renderChooser() {
@@ -147,12 +167,11 @@ function renderChooser() {
     <div class="cz-bankpanel" id="cz-bankpanel"></div>
     ${CASINO.map((grp, gi) => `<div class="group cz-group-${gi}"><div class="group-head"><h3>${grp.title}</h3><span>${grp.blurb}</span></div><div class="tiles">${grp.games.map((g) => {
       const mod = MODULES[g.id];
-      const st = stakesById(g, saved[g.id]);
+      const st = pickStakes(g, saved[g.id]);
       return `<div class="tile cz-tile${mod.ready ? ' ready' : ''}" data-game="${g.id}">
-        <div class="cz-tile-art"><svg viewBox="0 0 64 64" aria-hidden="true">${ICONS[g.icon]}</svg><span class="tile-badge">${mod.ready ? 'Open now' : 'Being built'}</span></div>
-        <div class="tile-body"><b>${esc(g.name)}</b><span>${esc(g.blurb)}</span>
-          <div class="cz-stakes" role="radiogroup" aria-label="${g.machine ? 'Denomination' : 'Table limits'} for ${esc(g.name)}">${stakesFor(g).map((s) =>
-            `<button type="button" role="radio" aria-checked="${s.id === st.id}" data-stakes="${s.id}" title="${stakesLabel(s)}">${stakesShort(s)}</button>`).join('')}</div>
+        <div class="cz-tile-art" style="--felt:${g.felt}"><svg viewBox="0 0 64 64" aria-hidden="true">${ICONS[g.icon]}</svg><span class="tile-badge">${mod.ready ? 'Open now' : 'Being built'}</span></div>
+        <div class="tile-body"><b>${esc(g.name)}</b>${g.subtitle ? `<span class="cz-tile-sub">${esc(g.subtitle)}</span>` : ''}<span>${esc(g.blurb)}</span>
+          <div class="cz-stakes" style="--n:${stakesFor(g).length}" role="radiogroup" aria-label="${g.machine ? 'Denomination' : 'Table limits'} for ${esc(g.name)}">${stakesFor(g).map((s) => stakeButton(s, s.id === st.id)).join('')}</div>
           <a class="btn sm${mod.ready ? ' primary' : ''} cz-sit" href="casino.html?g=${g.id}&s=${st.id}" data-open="${g.id}">${mod.ready ? 'Sit down' : 'Look at the table'}</a>
         </div></div>`;
     }).join('')}</div></div>`).join('')}`;
@@ -171,10 +190,10 @@ chooser.addEventListener('click', (e) => {
     return;
   }
   const open = e.target.closest('[data-open]');
-  if (open) { e.preventDefault(); openGame(open.dataset.open, readStakes()[open.dataset.open], { push: true }); return; }
+  if (open) { e.preventDefault(); openGame(open.dataset.open, pickStakes(gameById(open.dataset.open), readStakes()[open.dataset.open]).id, { push: true }); return; }
   const b = e.target.closest('[data-bank]');
   if (b) {
-    if (b.dataset.bank === 'loan') bank.takeLoan();
+    if (b.dataset.bank === 'loan') loanDesk();
     if (b.dataset.bank === 'stats') showStats();
     if (b.dataset.bank === 'reset') confirmReset();
   }
@@ -325,17 +344,33 @@ function checkBroke() {
     : bank.loanEligible() ? `The loan desk will lend you ${money(bank.loanAmount())} at your ${TIERS[s.tier].name} tier.`
       : 'Loans are offered when the bank drops under $1,000; a table with lower limits may suit you.';
   dialog('Out of chips', `<p>The minimum here is <b>${money(need)}</b> and your bank has <b>${money(bank.balance)}</b>.</p><p>${why}</p>`, [
-    { label: bank.loanEligible() ? `Take a ${money(bank.loanAmount())} loan` : 'Take a loan', primary: true, disabled: !bank.loanEligible(), run: () => { bank.takeLoan(); } },
-    { label: 'Reset to $5,000', run: () => bank.reset() },
+    { label: bank.loanEligible() ? `Take a ${money(bank.loanAmount())} loan` : 'Take a loan', primary: true, disabled: !bank.loanEligible(), run: () => loanDesk({ back: checkBroke }) },
+    { label: 'Reset to $5,000', run: () => confirmReset({ back: checkBroke }) },
     { label: 'Leave the table', run: () => showChooser() },
   ]);
   return true;
 }
 
-function confirmReset() {
+/** `back` runs when the player backs out (the broke dialog reopens itself that way). */
+function confirmReset({ back } = {}) {
   dialog('Reset your bank?', `<p>Your bank goes back to <b>$5,000</b> on the Brass tier. Any loan and all your casino stats are cleared. The Hall of Fame is kept.</p>`, [
-    { label: 'Cancel' },
+    { label: 'Cancel', run: back },
     { label: 'Reset to $5,000', primary: true, run: () => bank.reset() },
+  ]);
+}
+
+/** The loan desk: what you can borrow and on what terms, or what you owe. */
+function loanDesk({ back } = {}) {
+  const s = bank.get();
+  const t = TIERS[s.tier];
+  const head = `<p>Bank <b>${money(s.bank)}</b> · ${tierBadge(t)}</p>`;
+  const terms = `It's repaid automatically once your bank reaches ${money(t.next)}. While a loan is out, your tier can't go up.`;
+  if (s.loan) return dialog('Loan desk', `${head}<p>You owe <b>${money(s.loan)}</b>. ${terms}</p>`, [{ label: 'Close', primary: true, run: back }]);
+  if (!bank.loanEligible()) return dialog('Loan desk', `${head}<p>Loans are for balances under $1,000.</p>`, [{ label: 'Close', primary: true, run: back }]);
+  const amount = bank.loanAmount();
+  dialog('Loan desk', `${head}<p>We can lend you <b>${money(amount)}</b>.</p><p>${terms}</p>`, [
+    { label: 'Not now', run: back },
+    { label: `Take ${money(amount)}`, primary: true, run: () => bank.takeLoan() },
   ]);
 }
 

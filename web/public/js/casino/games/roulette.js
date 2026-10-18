@@ -11,8 +11,9 @@ import { howtoSections } from '../stub.js';
 // ------------------------------------------------------------------ layout geometry
 // The table is laid out in (u, v) units: u runs along the layout (0 and 00, twelve columns of
 // numbers, then the 2-to-1 boxes), v across it (three rows of numbers, the dozens, the even-money
-// boxes). Wide screens draw u left to right; phones turn it to run top to bottom, outside bets on
-// the left, so the numbers stay big enough to tap. Text never rotates.
+// boxes). Wide screens draw u left to right; phones turn it to run top to bottom (1, 2, 3 across,
+// 0 and 00 on top, outside bets in a column on the right), so the numbers stay big enough to tap.
+// Text never rotates.
 const U = 14, V = 4.6;
 const EVEN = [['low', '1–18'], ['even', 'EVEN'], ['red', ''], ['black', ''], ['odd', 'ODD'], ['high', '19–36']];
 
@@ -33,7 +34,7 @@ export function areas() {
 
 const GEO = {
   wide: { sx: 68, sy: 68, w: U * 68, h: V * 68, place: (a, g) => ({ x: a.u * g.sx, y: a.v * g.sy, w: a.du * g.sx, h: a.dv * g.sy }) },
-  tall: { sx: 72, sy: 48, w: V * 72, h: U * 48, place: (a, g) => ({ x: (V - a.v - a.dv) * g.sx, y: a.u * g.sy, w: a.dv * g.sx, h: a.du * g.sy }) },
+  tall: { sx: 72, sy: 48, w: V * 72, h: U * 48, place: (a, g) => ({ x: (a.v >= 3 ? a.v : 3 - a.v - a.dv) * g.sx, y: a.u * g.sy, w: a.dv * g.sx, h: a.du * g.sy }) },
 };
 
 /** The betting layout as SVG. bets: { key: dollars }; hit: the last winning pocket to ring. */
@@ -68,7 +69,7 @@ export function wheelSVG() {
     const [x2, y2] = polar(C, C, 62, a1), [x3, y3] = polar(C, C, 62, a0);
     const f = (v) => v.toFixed(2);
     return `<path d="M${f(x0)} ${f(y0)} A96 96 0 0 1 ${f(x1)} ${f(y1)} L${f(x2)} ${f(y2)} A62 62 0 0 0 ${f(x3)} ${f(y3)} Z" class="cz-pocket ${colorOf(p)}"/>
-      <text x="${C}" y="${C - 85}" font-size="9" font-weight="700" text-anchor="middle" dominant-baseline="central" class="cz-wheel-tx" transform="rotate(${(i * step).toFixed(2)} ${C} ${C})">${p}</text>`;
+      <text x="${C}" y="${C - 85}" font-size="9" font-weight="700" text-anchor="middle" dominant-baseline="central" class="cz-wheel-tx" transform="rotate(${(i * step).toFixed(2)} ${C} ${C})${i * step > 90 && i * step < 270 ? ` rotate(180 ${C} ${C - 85})` : ''}">${p}</text>`;
   }).join('');
   return `<svg viewBox="0 0 200 200" aria-hidden="true" class="cz-wheel-svg"><circle cx="${C}" cy="${C}" r="99" class="cz-wheel-rim"/>${pockets}
     <circle cx="${C}" cy="${C}" r="60" class="cz-wheel-cone"/><circle cx="${C}" cy="${C}" r="16" class="cz-wheel-hub"/></svg>`;

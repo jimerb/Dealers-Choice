@@ -21,41 +21,44 @@ export const stakesShort = (s) => (s.denom ? fmt(s.denom) : `${fmt(s.min)}–${s
 
 /** Chip denominations on the rack. */
 export const CHIPS = [1, 5, 25, 100, 500, 1000, 5000, 25000];
-/** Chips that have art in assets/art/tokens/chip-<value>.webp (the rest draw a placeholder disc). */
-export const CHIP_ART = new Set([1, 5, 25, 100, 500, 1000]);
+/** Chips that have art in assets/art/tokens/chip-<value>.webp (any other value draws a plain disc). */
+export const CHIP_ART = new Set(CHIPS);
 
-/** The chips worth offering at a table: from the largest chip not above the minimum, up to the maximum. */
+/** The chips worth offering at a table: from the largest chip not above the minimum up to the
+ *  first chip at or above the maximum (every chip at a no-limit table). */
 export function rackFor(stakes) {
   if (stakes.denom) return [stakes.denom];
   const low = Math.max(...CHIPS.filter((c) => c <= stakes.min));
-  return CHIPS.filter((c) => c >= low && (stakes.max == null || c <= stakes.max));
+  const high = stakes.max == null ? Infinity : (CHIPS.find((c) => c >= stakes.max) ?? Infinity);
+  return CHIPS.filter((c) => c >= low && c <= high);
 }
 
+// `felt` is each game's tile colour in the chooser.
 export const CASINO = [
   {
     id: 'table', title: 'Table games', blurb: 'Pick your limits and buy in',
     games: [
-      { id: 'blackjack', name: 'Blackjack', blurb: 'Beat the dealer to 21 without going over. Blackjack pays 3 to 2.', action: 'Deal', icon: 'cards' },
-      { id: 'roulette', name: 'Roulette', blurb: 'Double-zero wheel. Straight up pays 35 to 1, red or black pays even.', action: 'Spin', icon: 'wheel' },
-      { id: 'craps', name: 'Craps', blurb: 'Pass line, come, field and place bets on two dice.', action: 'Roll', icon: 'dice' },
-      { id: 'baccarat', name: 'Baccarat', blurb: 'Bet on Player, Banker or a Tie; the cards play themselves.', action: 'Deal', icon: 'cards' },
-      { id: 'three-card-poker', name: 'Three Card Poker', blurb: 'Ante and play against the dealer, with a Pair Plus side bet.', action: 'Deal', icon: 'cards' },
-      { id: 'let-it-ride', name: 'Let It Ride', blurb: 'Three bets, two community cards. Pull back a bet or let it ride.', action: 'Deal', icon: 'cards' },
-      { id: 'caribbean-stud', name: 'Caribbean Stud', blurb: 'Five-card stud against the dealer, who must qualify with ace-king.', action: 'Deal', icon: 'cards' },
-      { id: 'pai-gow-poker', name: 'Pai Gow Poker', blurb: 'Split seven cards into a high hand of five and a low hand of two.', action: 'Deal', icon: 'cards' },
+      { id: 'blackjack', felt: '#1E5A46', name: 'Blackjack', blurb: 'Beat the dealer to 21 without going over. Blackjack pays 3 to 2.', action: 'Deal', icon: 'cards' },
+      { id: 'roulette', felt: '#6B2E2E', name: 'Roulette', blurb: 'Double-zero wheel. Straight up pays 35 to 1, red or black pays even.', action: 'Spin', icon: 'wheel' },
+      { id: 'craps', felt: '#2E5E3A', name: 'Craps', blurb: 'Pass line, come, field and place bets on two dice.', action: 'Roll', icon: 'dice' },
+      { id: 'baccarat', felt: '#4A2E5E', name: 'Baccarat', blurb: 'Bet on Player, Banker or a Tie; the cards play themselves.', action: 'Deal', icon: 'cards' },
+      { id: 'three-card-poker', felt: '#24506B', name: 'Three Card Poker', blurb: 'Ante and play against the dealer, with a Pair Plus side bet.', action: 'Deal', icon: 'cards' },
+      { id: 'let-it-ride', felt: '#5A4A24', name: 'Let It Ride', blurb: 'Three bets, two community cards. Pull back a bet or let it ride.', action: 'Deal', icon: 'cards' },
+      { id: 'caribbean-stud', felt: '#1F5560', name: 'Caribbean Stud', blurb: 'Five-card stud against the dealer, who must qualify with ace-king.', action: 'Deal', icon: 'cards' },
+      { id: 'pai-gow-poker', felt: '#6B4A24', name: 'Pai Gow Poker', blurb: 'Split seven cards into a high hand of five and a low hand of two.', action: 'Deal', icon: 'cards' },
     ],
   },
   {
     id: 'machines', title: 'Machines', blurb: 'Choose a denomination',
     games: [
-      { id: 'video-poker', name: 'Video Poker', blurb: 'Jacks or Better: hold, draw, and get paid on the pay table.', action: 'Deal', icon: 'cards', machine: true },
-      { id: 'slots', name: 'Slots', blurb: 'Three reels, one pay line. Line up the symbols.', action: 'Spin', icon: 'reels', machine: true },
+      { id: 'video-poker', felt: '#2A3F6B', name: 'Video Poker', blurb: 'Jacks or Better: hold, draw, and get paid on the pay table.', action: 'Deal', icon: 'cards', machine: true },
+      { id: 'slots', felt: '#5E3A54', name: 'Slots', subtitle: 'Brass Crown', blurb: 'Three reels, one pay line. Crowns are wild; three crowns pay the top award.', action: 'Spin', icon: 'reels', machine: true },
     ],
   },
   {
     id: 'lounge', title: 'Lounge', blurb: 'Take it easy',
     games: [
-      { id: 'keno', name: 'Keno', blurb: 'Mark up to ten numbers of 80 and watch twenty come up.', action: 'Play', icon: 'keno', machine: true },
+      { id: 'keno', felt: '#3F5A2A', name: 'Keno', blurb: 'Mark up to ten numbers of 80 and watch twenty come up.', action: 'Play', icon: 'keno', machine: true },
     ],
   },
 ];

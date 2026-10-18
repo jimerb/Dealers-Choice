@@ -1,6 +1,5 @@
-// Casino chips: the rack's buttons and chips drawn on a layout. Chips with art use
-// assets/art/tokens/chip-<value>.webp; $5,000 and $25,000 have no art yet and draw a plain
-// placeholder disc (TODO art: chip-5000.webp, chip-25000.webp, then add them to CHIP_ART).
+// Casino chips: the rack's buttons and chips drawn on a layout, from
+// assets/art/tokens/chip-<value>.webp (a value without art would draw a plain disc).
 import { CHIPS, CHIP_ART } from './catalog.js';
 
 const ART = 'assets/art/tokens';

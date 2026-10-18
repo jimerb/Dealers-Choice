@@ -2,7 +2,7 @@
 // every layout draws (as an SVG string, no browser) with its key labels.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync } from 'node:fs';
+import { readdirSync, existsSync } from 'node:fs';
 import { CASINO, ALL_GAMES, TABLE_STAKES, MACHINE_STAKES, stakesFor, stakesById, stakesLabel, rackFor, gameById } from '../public/js/casino/catalog.js';
 import { MODULES } from '../public/js/casino/games/index.js';
 import { layout as rouletteLayout, areas } from '../public/js/casino/games/roulette.js';
@@ -25,10 +25,20 @@ test('stakes: four table limits, three machine denominations', () => {
 
 test('the chip rack fits the table limits', () => {
   assert.deepEqual(rackFor(TABLE_STAKES[0]), [5, 25, 100, 500, 1000]);
-  assert.deepEqual(rackFor(TABLE_STAKES[1]), [5, 25, 100, 500, 1000]);
-  assert.deepEqual(rackFor(TABLE_STAKES[2]), [25, 100, 500, 1000]);
+  assert.deepEqual(rackFor(TABLE_STAKES[1]), [5, 25, 100, 500, 1000, 5000], 'up to the first chip at or above the max');
+  assert.deepEqual(rackFor(TABLE_STAKES[2]), [25, 100, 500, 1000, 5000]);
   assert.deepEqual(rackFor(TABLE_STAKES[3]), [100, 500, 1000, 5000, 25000]);
   assert.deepEqual(rackFor(MACHINE_STAKES[2]), [25]);
+});
+
+test('every game has a tile colour, and Slots is the Brass Crown machine', () => {
+  for (const g of ALL_GAMES) assert.match(g.felt, /^#[0-9A-F]{6}$/i, g.id);
+  assert.equal(gameById('roulette').felt, '#6B2E2E');
+  assert.equal(gameById('slots').subtitle, 'Brass Crown');
+});
+
+test('every chip on any rack has art', () => {
+  for (const s of [...TABLE_STAKES, ...MACHINE_STAKES]) for (const c of rackFor(s)) assert.ok(existsSync(new URL(`../public/assets/art/tokens/chip-${c}.webp`, import.meta.url)), `chip-${c}`);
 });
 
 test('every game has a module with the shared interface', () => {
@@ -52,6 +62,7 @@ test('every game has a module with the shared interface', () => {
 test('layouts carry their key labels as live text', () => {
   const has = (id, ...labels) => { const s = MODULES[id].layout(); for (const l of labels) assert.ok(s.includes(l), `${id}: ${l}`); };
   has('blackjack', 'BLACKJACK PAYS 3 TO 2', 'INSURANCE PAYS 2 TO 1');
+  assert.equal((MODULES.blackjack.layout().match(/data-spot=/g) ?? []).length, 1, 'one player spot');
   has('craps', 'PASS LINE', 'DON&#39;T PASS BAR', 'COME', 'FIELD', 'SIX', 'NINE', 'Any craps', 'Hard 8');
   has('baccarat', 'PLAYER', 'BANKER', 'TIE PAYS 8 TO 1');
   has('three-card-poker', 'PAIR PLUS', 'ANTE', 'PLAY');
@@ -59,8 +70,16 @@ test('layouts carry their key labels as live text', () => {
   has('caribbean-stud', 'ANTE', 'BET');
   has('pai-gow-poker', 'HIGH', 'LOW');
   has('video-poker', 'Royal flush', 'HOLD', 'CREDITS');
-  has('slots', 'PAYS', 'CREDITS');
+  has('slots', 'BRASS CROWN', 'Crown Crown Crown', 'Any one cherry', 'CREDITS');
   has('keno', '>80<', 'Ticket');
+});
+
+test('roulette on phones: 1, 2, 3 left to right, 0 left of 00, outside bets on the right', () => {
+  const s = rouletteLayout({ tall: true });
+  const x = (key) => Number(s.match(new RegExp(`data-bet="${key}"[^>]*>\\s*<rect x="([\\d.]+)"`))[1]);
+  assert.ok(x('n:1') < x('n:2') && x('n:2') < x('n:3'));
+  assert.ok(x('n:0') < x('n:00'));
+  assert.ok(x('dozen:1') > x('n:3') && x('red') > x('dozen:1'));
 });
 
 test('roulette layout: 0, 00, 1-36, columns, dozens and even-money boxes, both ways round', () => {
@@ -70,7 +89,7 @@ test('roulette layout: 0, 00, 1-36, columns, dozens and even-money boxes, both w
     for (const n of ['0', '00', '1', '18', '36']) assert.ok(s.includes(`data-bet="n:${n}"`));
     for (const k of ['col:1', 'dozen:3', 'low', 'even', 'red', 'black', 'odd', 'high']) assert.ok(s.includes(`data-bet="${k}"`), k);
     assert.ok(s.includes('chip-25.webp'), 'a $25 stack shows the $25 chip');
-    assert.ok(s.includes('cz-chip-ph ph-5000'), 'a $5,000 stack shows the placeholder chip');
+    assert.ok(s.includes('chip-5000.webp'), 'a $5,000 stack shows the $5,000 chip');
     assert.ok(s.includes('class="cz-bet hit" data-bet="n:17"'), 'the last winning number is ringed');
   }
 });

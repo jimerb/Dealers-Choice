@@ -25,15 +25,15 @@
 .cz-hall { flex-basis: 100%; margin: 0; font-size: 13px; color: var(--brass-2); }
 
 .cz-tile .tile-body { gap: 6px; flex: 1 1 auto; }
-.cz-tile-art { position: relative; aspect-ratio: 16 / 7; display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at 50% 40%, #1C6B52 0%, #134A39 60%, #0E3529 100%); border-bottom: 1px solid var(--line); }
+.cz-tile-art { position: relative; aspect-ratio: 16 / 7; display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at 50% 40%, color-mix(in srgb, var(--felt, #1E5A46) 82%, white) 0%, var(--felt, #1E5A46) 55%, color-mix(in srgb, var(--felt, #1E5A46) 60%, black) 100%); border-bottom: 1px solid var(--line); }
+.cz-tile-sub { color: var(--brass-2) !important; font-weight: 600; margin-top: -4px; }
 .cz-tile-art svg { width: 64px; height: 64px; fill: none; stroke: var(--brass-2); stroke-width: 2.5; stroke-linecap: round; }
 .cz-tile-art svg .f { fill: var(--brass-2); }
-.cz-group-1 .cz-tile-art { background: radial-gradient(ellipse at 50% 40%, #2C5E80 0%, #1E4560 60%, #142F42 100%); }
-.cz-group-2 .cz-tile-art { background: radial-gradient(ellipse at 50% 40%, #7A4470 0%, #5A3152 60%, #3C2037 100%); }
 .cz-group-0 .group-head h3, .cz-group-1 .group-head h3, .cz-group-2 .group-head h3 { color: var(--brass-2); }
-.cz-stakes { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 2px; }
-.cz-stakes button { min-height: 34px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--line-2); background: transparent; color: var(--ink-2); font-weight: 600; font-size: 13px; cursor: pointer; white-space: nowrap; }
-.cz-stakes button:hover { border-color: var(--brass); }
+.cz-stakes { display: grid; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); gap: 5px; margin: 6px 0 2px; }
+.cz-stakes button { min-height: 34px; min-width: 0; padding: 0 4px; border-radius: 999px; border: 1px solid var(--line-2); background: transparent; color: var(--ink-2); font-weight: 600; font-size: 12.5px; letter-spacing: -.2px; cursor: pointer; white-space: nowrap; }
+.cz-stakes button:hover:not([disabled]) { border-color: var(--brass); }
+.cz-stakes button[disabled] { opacity: .4; cursor: not-allowed; text-decoration: line-through; }
 .cz-stakes button[aria-checked="true"] { background: var(--brass); border-color: var(--brass); color: var(--on-brass); }
 .cz-sit { align-self: flex-start; margin-top: auto; }
 .tile.cz-tile:hover { transform: none; } /* the tile isn't a link: its buttons are */
@@ -53,8 +53,8 @@
 .cz-chip.ph { background: radial-gradient(circle, var(--card-paper) 0 50%, var(--ph) 52% 100%); box-shadow: inset 0 0 0 4px rgba(255,255,255,.0); }
 .cz-chip.ph::after { content: ''; position: absolute; inset: 3px; border-radius: 50%; border: 4px dashed rgba(255,255,255,.6); }
 .cz-chip.ph[aria-checked="true"] { box-shadow: 0 0 0 3px var(--brass-2), 0 6px 12px rgba(0,0,0,.45); }
-.ph-5000 { --ph: #6B3A8E; }
-.ph-25000 { --ph: #B5662B; }
+.ph-5000 { --ph: #5E3A54; }
+.ph-25000 { --ph: #C4CBD1; }
 .cz-betinfo { font-size: 15px; color: var(--ink-2); white-space: nowrap; }
 .cz-betinfo b { color: var(--brass-2); font-size: 18px; margin-left: 4px; }
 .cz-betbtns { display: flex; gap: 8px; margin-left: auto; align-items: center; }
@@ -172,5 +172,5 @@ table.cz-stats { font-size: 14px; white-space: nowrap; }
   .cz-pill-chip { width: 22px; height: 22px; }
 }
 @media (pointer: coarse) {
-  .cz-stakes button { min-height: 40px; padding: 0 12px; }
+  .cz-stakes button { min-height: 40px; }
 }
