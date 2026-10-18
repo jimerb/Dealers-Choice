@@ -92,3 +92,18 @@
   .poker-grid { --card-w: min(84px, calc((100cqw - 120px - 5 * 8px) / 5)); }
   .clock { --card-w: 64px; }
 }
+
+/* The featured Klondike card at the top of the parlor. */
+.sol-feature { display: grid; gap: 6px; margin: 18px 0 8px; padding: 22px 24px; border-radius: 20px; border: 2px solid var(--brass-2); text-decoration: none; color: var(--ink); background: linear-gradient(135deg, #1F6E57 0%, #0F3B30 75%); box-shadow: 0 10px 30px rgba(0,0,0,.35); transition: transform .15s ease; }
+.sol-feature:hover { transform: translateY(-2px); color: var(--ink); }
+.sol-feature-eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--brass-2); }
+.sol-feature b { font-family: var(--font-display); font-weight: 400; font-size: clamp(28px, 4vw, 40px); line-height: 1.1; }
+.sol-feature > span:not(.sol-feature-eyebrow):not(.sol-feature-go) { color: var(--ink-2); font-size: 15px; }
+.sol-feature-go { justify-self: start; margin-top: 6px; padding: 8px 14px; border-radius: 999px; background: var(--brass-2); color: var(--on-brass); font-weight: 700; font-size: 14px; }
+
+/* Each section of the parlor has its own shade, so the groups stand apart. */
+.sol-group-0 .sol-tile { background: linear-gradient(160deg, #1F6E57 0%, var(--panel) 70%); }
+.sol-group-1 .sol-tile { background: linear-gradient(160deg, #2D6A5C 0%, var(--panel) 70%); }
+.sol-group-2 .sol-tile { background: linear-gradient(160deg, #24506B 0%, var(--panel) 70%); }
+.sol-group-3 .sol-tile { background: linear-gradient(160deg, #6B3A5E 0%, var(--panel) 70%); }
+.sol-group-0 .group-head h3, .sol-group-1 .group-head h3, .sol-group-2 .group-head h3, .sol-group-3 .group-head h3 { color: var(--brass-2); }

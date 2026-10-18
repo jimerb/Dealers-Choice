@@ -82,7 +82,13 @@ function renderChooser() {
   chooser.innerHTML = `<div class="section-head" style="margin-top:8px"><h2>Solitaire parlor</h2><span style="color:var(--ink-3)">${SOLITAIRE.reduce((t, g) => t + g.games.length, 0)} layouts</span></div>
     <img class="sol-banner" src="assets/art/lobby/solitaire-banner.webp" width="1536" height="480" alt="" decoding="async">
     <p class="sol-intro">Pick a layout to deal. On the table, click or tap a card, then the spot where it should go; double-click it, or tap it a second time, to send it home. Every layout has a <b>How to play</b> guide with its rules.</p>
-    ${SOLITAIRE.map((g) => `<div class="group"><div class="group-head"><h3>${g.title}</h3></div><div class="tiles">${g.games.map(([name, id]) => {
+    <a class="sol-feature" href="solitaire.html?v=klondike">
+      <span class="sol-feature-eyebrow">Start here · the classic</span>
+      <b>Klondike</b>
+      <span>${esc(info('klondike').blurb)} The game that came with Windows.</span>
+      <span class="sol-feature-go">Play Klondike →</span>
+    </a>
+    ${SOLITAIRE.map((g, i) => `<div class="group sol-group-${i}"><div class="group-head"><h3>${g.title}</h3></div><div class="tiles">${g.games.map(([name, id]) => {
       const v = info(id);
       return `<a class="tile ready sol-tile" href="solitaire.html?v=${id}" data-v="${id}"><div class="tile-body"><b>${esc(name)}</b><span>${esc(v.blurb)}</span>
         ${stats[id] ? `<span style="color:var(--brass-2)">Won ${stats[id].won} of ${stats[id].played}</span>` : ''}</div></a>`;
