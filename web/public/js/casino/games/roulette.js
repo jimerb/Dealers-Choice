@@ -2,7 +2,7 @@
 // dozens, the columns or the even-money boxes; Spin; winnings go to the bank.
 // Rules live in ../engines/roulette.js (no DOM). Left to do: split / street / corner / line bets on
 // the lines between numbers, a ball animation, La Partage-style options, wheel and ball art.
-import { WHEEL, colorOf, settle, checkLimits, spin, betName, total, isBetKey } from '../engines/roulette.js';
+import { WHEEL, colorOf, playSpin, betName, total, isBetKey } from '../engines/roulette.js';
 import { svg, rect, text, path, esc, polar } from '../svg.js';
 import { chipSVG } from '../chips.js';
 import { money } from '../../core/bank.js';
@@ -77,14 +77,17 @@ export function wheelSVG() {
 // ------------------------------------------------------------------ the table
 const TALL = '(max-width: 640px)';
 let root = null, ctx = null, mq = null;
-let bets = {}, last = null, spinning = false, timer = null, pending = null, hit = null, history = [], turn = 0;
+let bets = {}, last = null, spinning = false, timer = null, pending = null, release = null, hit = null, history = [], turn = 0;
 
 const spinMs = () => (matchMedia('(prefers-reduced-motion: reduce)').matches ? 300 : 2600);
 
 function draw() {
   if (!root) return;
   const tall = mq?.matches ?? false;
+  // Redrawing replaces the cells: keep keyboard focus on the same bet.
+  const focused = root.ownerDocument.activeElement?.closest?.('[data-bet]')?.dataset.bet;
   root.querySelector('.cz-rl-grid').innerHTML = layout({ tall, bets, hit });
+  if (focused) root.querySelector(`[data-bet="${focused}"]`)?.focus({ preventScroll: true });
   root.querySelector('.cz-rl-history').innerHTML = history.length
     ? `<span class="cz-rl-hlabel">Last spins</span>${history.map((p) => `<span class="cz-rl-ball ${colorOf(p)}">${p}</span>`).join('')}`
     : '<span class="cz-rl-hlabel">Place your chips, then spin</span>';
@@ -121,16 +124,16 @@ function place(key, sign = 1) {
 
 function action() {
   if (spinning) return;
-  const err = checkLimits(bets, ctx.stakes);
-  if (err) { ctx.play('error'); return ctx.message(err); }
-  const wager = total(bets);
-  if (!ctx.bank.debit(wager, { game: 'roulette' })) { ctx.play('error'); return ctx.message('The bank can\'t cover those bets.'); }
+  // Settled now (bank debited, hand recorded, winnings paid); the wheel only reveals the result.
+  release = ctx.holdBank(); // the bank display keeps the pre-spin figure until the ball lands
+  const r = playSpin(ctx.bank, bets, ctx.stakes);
+  if (r.error) { release(); release = null; ctx.play('error'); return ctx.message(r.error); }
   spinning = true;
-  const pocket = spin();
-  pending = { pocket, placed: { ...bets } };
+  pending = r;
+  last = { ...bets };
   // turn the wheel so the winning pocket stops under the marker at the top
   const step = 360 / WHEEL.length;
-  const target = -WHEEL.indexOf(pocket) * step;
+  const target = -WHEEL.indexOf(r.pocket) * step;
   turn += 360 * 4 + ((((target - turn) % 360) + 360) % 360);
   const wheel = root.querySelector('.cz-wheel-spin');
   wheel.style.transitionDuration = `${spinMs()}ms`;
@@ -139,25 +142,22 @@ function action() {
   ctx.message('No more bets…');
   ctx.play('shuffle');
   sync();
-  timer = setTimeout(finish, spinMs());
+  timer = setTimeout(reveal, spinMs());
 }
 
-function finish() {
+/** The ball has landed: show what playSpin() already settled. */
+function reveal() {
   clearTimeout(timer);
-  if (!pending) return;
-  const { pocket, placed } = pending;
+  const r = pending;
   pending = null;
-  const r = settle(placed, pocket);
-  if (r.returned) ctx.bank.credit(r.returned, { game: 'roulette' });
-  ctx.bank.recordHand('roulette', r.net);
   spinning = false;
-  last = placed;
+  release?.(); release = null;
+  if (!r || !root) return;
   bets = {};
-  hit = pocket;
-  history = [pocket, ...history].slice(0, 12);
-  if (!root) return; // left the table mid-spin: the money is settled, nothing to draw
+  hit = r.pocket;
+  history = [r.pocket, ...history].slice(0, 12);
   root.querySelector('.cz-rl-ball-dot').hidden = false;
-  const name = `${pocket} ${colorOf(pocket) === 'green' ? 'green' : colorOf(pocket)}`;
+  const name = `${r.pocket} ${colorOf(r.pocket)}`;
   if (r.net > 0) { ctx.play('win'); ctx.message(`${name}. You win ${money(r.net)} (${money(r.returned)} back from ${money(r.wagered)} bet).`); }
   else if (r.returned) { ctx.play('chips'); ctx.message(`${name}. ${money(r.returned)} back from ${money(r.wagered)} bet.`); }
   else { ctx.play('lose'); ctx.message(`${name}. The house takes ${money(r.wagered)}.`); }
@@ -212,7 +212,10 @@ export default {
     ctx.message(`Place your chips: ${ctx.stakesText}. Then Spin.`);
   },
   unmount() {
-    if (pending) finish(); // leaving mid-spin still pays out
+    // Anything spinning was settled when Spin was pressed: just drop the reveal.
+    clearTimeout(timer);
+    pending = null; spinning = false;
+    release?.(); release = null;
     mq?.removeEventListener('change', onResize);
     if (root) { root.removeEventListener('click', onClick); root.removeEventListener('contextmenu', onContext); root.removeEventListener('keydown', onKey); root.innerHTML = ''; }
     root = null; bets = {};

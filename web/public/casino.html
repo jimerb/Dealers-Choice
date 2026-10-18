@@ -24,6 +24,7 @@
     <div class="table-top">
       <button class="btn sm" type="button" data-cmd="menu">← All casino games</button>
       <h1 id="cz-title">Casino</h1>
+      <span class="sub cz-subtitle" id="cz-subtitle"></span>
       <span class="sub" id="cz-stakes"></span>
       <span class="spacer"></span>
       <span class="cz-bank-top" id="cz-bank"></span>
@@ -35,7 +36,7 @@
     </div>
     <div class="felt cz-felt" id="cz-felt" aria-label="Casino table"></div>
     <div class="cz-dock">
-    <p class="cz-msg" id="cz-msg" role="status" aria-live="polite"></p>
+    <p class="cz-msg" id="cz-msg" role="status" aria-live="polite" tabindex="-1"></p>
     <div class="cz-betbar">
       <div class="cz-rack" id="cz-rack" role="radiogroup" aria-label="Chip to bet"></div>
       <div class="cz-betinfo">Bet <b id="cz-total">$0</b></div>

@@ -1,7 +1,8 @@
 // Roulette rules engine: pockets, colours, bet wins, payouts, limits and the random spin.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { POCKETS, WHEEL, RED, colorOf, wins, payout, settle, checkLimits, randomInt, spin, isBetKey, betName, columnOf } from '../public/js/casino/engines/roulette.js';
+import { POCKETS, WHEEL, RED, colorOf, wins, payout, settle, checkLimits, randomInt, spin, isBetKey, betName, columnOf, playSpin } from '../public/js/casino/engines/roulette.js';
+import { createBank, KEY, HALL_OF_FAME_AT } from '../public/js/core/bank.js';
 
 test('38 pockets: 0, 00 and 1-36, each once on the wheel', () => {
   assert.equal(POCKETS.length, 38);
@@ -64,13 +65,48 @@ test('settle adds up a mixed layout', () => {
   assert.deepEqual(settle({ red: 5 }, '0'), { wagered: 5, returned: 0, net: -5, winners: [] });
 });
 
-test('table limits: total at least the minimum, no single bet over the maximum', () => {
+test('table limits: each outside bet and the inside total reach the minimum; no spot over the maximum', () => {
   const t = { min: 5, max: 1000 };
   assert.match(checkLimits({}, t), /Place a bet/);
-  assert.match(checkLimits({ red: 1, 'n:3': 1 }, t), /minimum is \$5/);
-  assert.equal(checkLimits({ red: 1, 'n:3': 4 }, t), null);
+  assert.match(checkLimits({ 'n:3': 4 }, t), /numbers must add up to at least the table minimum of \$5/);
+  assert.equal(checkLimits({ 'n:3': 1, 'n:4': 4 }, t), null, 'inside bets count together');
+  assert.match(checkLimits({ red: 4, 'n:3': 10 }, t), /Each outside bet .*Red has \$4/);
+  assert.equal(checkLimits({ red: 5, black: 5 }, t), null);
+  assert.equal(checkLimits({ red: 5 }, t), null, 'no inside bets is fine');
   assert.match(checkLimits({ red: 1500 }, t), /most on one bet is \$1,000/);
   assert.equal(checkLimits({ red: 1_000_000 }, { min: 100, max: null }), null);
+});
+
+const memStorage = () => { const m = new Map(); return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, String(v)) }; };
+
+test('playSpin settles everything before returning, so a reload mid-spin keeps the payout', () => {
+  const storage = memStorage();
+  const bank = createBank({ storage, win: null });
+  const r = playSpin(bank, { 'n:17': 10, black: 5 }, { min: 5, max: 1000 }, { pocket: '17' });
+  assert.equal(r.returned, 360 + 10);
+  assert.equal(bank.balance, 5000 - 15 + 370);
+  // a fresh page reads the same storage (the animation never finished)
+  const reloaded = createBank({ storage, win: null });
+  assert.equal(reloaded.balance, 5355);
+  assert.deepEqual(reloaded.get().stats.roulette, { hands: 1, wagered: 15, won: 370, net: 355, biggest: 355 });
+});
+
+test('playSpin refuses bets outside the limits or beyond the bank without touching it', () => {
+  const bank = createBank({ storage: memStorage(), win: null });
+  assert.match(playSpin(bank, { red: 2 }, { min: 5, max: 1000 }).error, /outside bet/);
+  assert.match(playSpin(bank, { red: 6000 }, { min: 5, max: null }).error, /can't cover/);
+  assert.equal(bank.balance, 5000);
+  assert.deepEqual(bank.get().stats, {});
+});
+
+test('a spin that reaches the Hall of Fame leaves nothing in the fresh stats', () => {
+  const storage = memStorage();
+  storage.setItem(KEY, JSON.stringify({ v: 1, bank: HALL_OF_FAME_AT - 1000, tier: 5, loan: 0, stats: {}, hall: [] }));
+  const bank = createBank({ storage, win: null });
+  playSpin(bank, { 'n:7': 1000 }, { min: 100, max: null }, { pocket: '7' });
+  assert.equal(bank.balance, 5000);
+  assert.equal(bank.get().hall.length, 1);
+  assert.deepEqual(bank.get().stats, {});
 });
 
 test('bet keys and names', () => {
@@ -88,6 +124,12 @@ test('randomInt rejects values that would bias the result', () => {
   let i = 0;
   assert.equal(randomInt(38, (a) => { a[0] = seq[i++]; }), 39 % 38);
   assert.equal(i, 3);
+});
+
+test('randomInt needs a count from 1 to 2^32', () => {
+  assert.throws(() => randomInt(0), RangeError);
+  assert.throws(() => randomInt(1.5), RangeError);
+  assert.equal(randomInt(1), 0);
 });
 
 test('spin lands on every pocket, roughly evenly', () => {

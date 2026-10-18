@@ -144,6 +144,11 @@ table.cz-stats { font-size: 14px; white-space: nowrap; }
 .cz-roulette.tall { max-width: 380px; }
 .cz-felt[data-game] { touch-action: manipulation; }
 
+/* the header pill gives way to the table's own bank display on narrow screens */
+@media (max-width: 719px) { body.cz-playing .cz-pill { display: none; } }
+.cz-subtitle:empty { display: none; }
+.cz-msg:focus { outline: none; }
+
 /* ---------- phones ---------- */
 @media (max-width: 640px) {
   .felt.cz-felt { padding: 10px 8px; border-radius: 18px; }

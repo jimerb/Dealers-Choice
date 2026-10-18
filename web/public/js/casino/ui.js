@@ -50,6 +50,8 @@ const felt = $('cz-felt');
 
 let current = null; // { game, mod, stakes }
 let chip = 0;
+let held = null;       // while a result is still being revealed: the bank as it was, shown instead
+let heldEvents = [];   // bank news (tier up, loan repaid ...) waiting for the reveal
 
 // ------------------------------------------------------------------ bank pill (site header)
 const pill = document.createElement('a');
@@ -61,7 +63,7 @@ document.querySelector('.site-header .who')?.prepend(pill);
 const tierBadge = (t) => `<span class="cz-tier" style="--tier:${t.color}"><span class="cz-tier-dot" aria-hidden="true"></span>${t.name}</span>`;
 
 function paintBank() {
-  const s = bank.get();
+  const s = held ?? bank.get();
   const t = TIERS[s.tier];
   pill.style.setProperty('--tier', t.color);
   pill.innerHTML = `<span class="cz-pill-chip" aria-hidden="true"></span><span class="visually-hidden">Bank, ${t.name} tier: </span><b>${money(s.bank)}</b>`;
@@ -79,10 +81,26 @@ const EVENT_TEXT = {
   loan: (e) => `${money(e.amount)} loan added to your bank.`,
   reset: () => 'Bank reset to $5,000.',
 };
+const announce = (events) => { for (const e of events) if (EVENT_TEXT[e.type]) toast(EVENT_TEXT[e.type](e), e.type === 'upgrade' || e.type === 'hall'); };
 bank.subscribe((_, events) => {
+  if (held) { heldEvents.push(...events); return; }
   paintBank();
-  for (const e of events) if (EVENT_TEXT[e.type]) toast(EVENT_TEXT[e.type](e), e.type === 'upgrade' || e.type === 'hall');
+  announce(events);
 });
+/** Keep showing the bank as it is now until the returned function is called (a game settles at
+ *  once but reveals the result after its animation). */
+function holdBank() {
+  held = structuredClone(bank.get());
+  heldEvents = [];
+  let done = false;
+  return () => {
+    if (done) return;
+    done = true;
+    held = null;
+    paintBank();
+    announce(heldEvents.splice(0));
+  };
+}
 
 function toast(msg, big = false) {
   const t = document.createElement('div');
@@ -153,7 +171,7 @@ chooser.addEventListener('click', (e) => {
     return;
   }
   const open = e.target.closest('[data-open]');
-  if (open) { e.preventDefault(); openGame(open.dataset.open, readStakes()[open.dataset.open]); return; }
+  if (open) { e.preventDefault(); openGame(open.dataset.open, readStakes()[open.dataset.open], { push: true }); return; }
   const b = e.target.closest('[data-bank]');
   if (b) {
     if (b.dataset.bank === 'loan') bank.takeLoan();
@@ -163,17 +181,28 @@ chooser.addEventListener('click', (e) => {
 });
 
 // ------------------------------------------------------------------ game shell
-function openGame(id, stakesId) {
+/** Keep the address in step: the screen's own history, and the site shell's address bar. */
+function syncShell() {
+  try { if (window.top !== window) window.top.history.replaceState(window.top.history.state, '', location.pathname + location.search); } catch { /* other origin */ }
+}
+function setAddress(url, push) {
+  if (push) history.pushState({ cz: true }, '', url); else history.replaceState(history.state, '', url);
+  syncShell();
+}
+
+function openGame(id, stakesId, { push = false } = {}) {
   const game = gameById(id);
   if (!game) return;
   closeGame();
   const stakes = stakesById(game, stakesId);
   saveStakes(id, stakes.id);
   current = { game, stakes, mod: MODULES[id] };
-  history.replaceState(null, '', `casino.html?g=${id}&s=${stakes.id}`);
+  setAddress(`casino.html?g=${id}&s=${stakes.id}`, push);
+  document.body.classList.add('cz-playing');
   chooser.hidden = true;
   room.hidden = false;
   $('cz-title').textContent = game.name;
+  $('cz-subtitle').textContent = game.subtitle ?? '';
   $('cz-stakes').textContent = game.machine ? `${stakesLabel(stakes)}` : `Table limits ${stakesLabel(stakes)}`;
   $('cz-action').textContent = game.action;
   document.title = `${game.name} · Casino · Dealers Choice`;
@@ -190,14 +219,19 @@ function openGame(id, stakesId) {
 
 function closeGame() {
   if (!current) return;
-  current.mod.unmount();
-  current = null;
+  const { mod } = current;
+  current = null; // first, so nothing the game does while unmounting can reach the shell
+  mod.unmount();
+  held = null;
+  if (heldEvents.length) announce(heldEvents.splice(0));
   delete room.dataset.game;
+  document.body.classList.remove('cz-playing');
+  if (dlg.open) dlg.close();
 }
 
-function showChooser() {
+function showChooser({ address = true } = {}) {
   closeGame();
-  history.replaceState(null, '', 'casino.html');
+  if (address) setAddress('casino.html', false);
   document.title = 'Casino · Dealers Choice';
   room.hidden = true;
   chooser.hidden = false;
@@ -213,13 +247,27 @@ function makeCtx() {
     play,
     message: (t) => { $('cz-msg').textContent = t; },
     setTotal: (n) => { $('cz-total').textContent = money(n); },
-    setButtons: ({ action, clear, rebet }) => {
-      if (action !== undefined) $('cz-action').disabled = !action;
-      if (clear !== undefined) $('cz-clear').disabled = !clear;
-      if (rebet !== undefined) $('cz-rebet').disabled = !rebet;
-    },
+    setButtons,
     checkBroke,
+    holdBank,
   };
+}
+
+// A button that gets disabled while it has focus (Spin, mid-spin) would drop focus to the page:
+// park it on the message line, then hand it back to the first useful button once one is enabled.
+let focusParked = false;
+function setButtons({ action, clear, rebet }) {
+  const set = (id, on) => {
+    if (on === undefined) return;
+    const b = $(id);
+    if (!on && document.activeElement === b) { $('cz-msg').focus({ preventScroll: true }); focusParked = true; }
+    b.disabled = !on;
+  };
+  set('cz-action', action); set('cz-clear', clear); set('cz-rebet', rebet);
+  if (focusParked && document.activeElement === $('cz-msg')) {
+    const next = ['cz-action', 'cz-rebet'].map($).find((b) => !b.disabled);
+    if (next) { next.focus({ preventScroll: true }); focusParked = false; }
+  } else focusParked = false;
 }
 
 function paintRack() {
@@ -239,7 +287,10 @@ room.addEventListener('click', (e) => {
   const b = e.target.closest('[data-cmd]');
   if (!b || !current) return;
   const c = b.dataset.cmd;
-  if (c === 'menu') return showChooser();
+  if (c === 'menu') {
+    if (history.state?.cz) return history.back(); // popstate shows the chooser
+    return showChooser();
+  }
   if (c === 'rules') return showRules();
   if (c === 'options') return showOptions();
   if (c === 'stats') return showStats();
@@ -266,7 +317,7 @@ function dialog(title, body, buttons) {
 
 /** Can the bank cover the table minimum? If not, offer a loan, a reset, or the way out. */
 function checkBroke() {
-  if (!current) return false;
+  if (!current || room.hidden) return false;
   const need = current.stakes.min;
   if (bank.balance >= need) return false;
   const s = bank.get();
@@ -323,3 +374,12 @@ const deep = params.get('g') || location.hash.slice(1);
 renderChooser();
 paintBank();
 if (gameById(deep)) openGame(deep, params.get('s') ?? readStakes()[deep]);
+
+// Back and forward between the chooser and a table.
+window.addEventListener('popstate', () => {
+  syncShell();
+  const p = new URLSearchParams(location.search);
+  const id = p.get('g');
+  if (gameById(id)) { if (current?.game.id !== id || current?.stakes.id !== p.get('s')) openGame(id, p.get('s')); }
+  else if (current) showChooser({ address: false });
+});

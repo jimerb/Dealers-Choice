@@ -77,21 +77,29 @@ export function settle(bets, pocket) {
   return { wagered, returned, net: returned - wagered, winners };
 }
 
+const isInside = (key) => key.startsWith('n:');
+const usd = (n) => `$${n.toLocaleString('en-US')}`;
+
 /**
- * Table limits: the whole layout must hold at least the table minimum, and no single bet may go
- * over the maximum (max null = no limit). Returns an error message, or null when the bets are fine.
+ * Table limits: every outside bet (dozen, column, even money) must be at least the table minimum,
+ * the inside bets (numbers) must add up to at least the minimum, and no single spot may go over the
+ * maximum (max null = no limit). Returns an error message, or null when the bets are fine.
  */
 export function checkLimits(bets, { min, max }) {
-  const sum = total(bets);
-  if (sum === 0) return 'Place a bet first.';
-  if (sum < min) return `The table minimum is $${min.toLocaleString('en-US')}.`;
-  if (max != null && Object.values(bets).some((v) => v > max)) return `The most on one bet is $${max.toLocaleString('en-US')}.`;
+  const placed = Object.entries(bets).filter(([, v]) => v > 0);
+  if (!placed.length) return 'Place a bet first.';
+  const small = placed.find(([k, v]) => !isInside(k) && v < min);
+  if (small) return `Each outside bet must be at least the table minimum of ${usd(min)} (${betName(small[0])} has ${usd(small[1])}).`;
+  const inside = placed.filter(([k]) => isInside(k)).reduce((t, [, v]) => t + v, 0);
+  if (inside > 0 && inside < min) return `Your bets on numbers must add up to at least the table minimum of ${usd(min)}.`;
+  if (max != null && placed.some(([, v]) => v > max)) return `The most on one bet is ${usd(max)}.`;
   return null;
 }
 
 /** A fair whole number in [0, n) from crypto.getRandomValues (rejection sampling, no modulo bias).
  *  `fill` stands in for crypto.getRandomValues in tests. */
 export function randomInt(n, fill = (a) => globalThis.crypto.getRandomValues(a)) {
+  if (!Number.isInteger(n) || n < 1 || n > 0x1_0000_0000) throw new RangeError(`randomInt: ${n} is not a count from 1 to 2^32`);
   const limit = Math.floor(0x1_0000_0000 / n) * n;
   const buf = new Uint32Array(1);
   for (;;) {
@@ -102,3 +110,21 @@ export function randomInt(n, fill = (a) => globalThis.crypto.getRandomValues(a))
 
 /** Spin: the pocket the ball lands in. */
 export const spin = (fill) => WHEEL[randomInt(WHEEL.length, fill)];
+
+/**
+ * One whole spin against a bank, settled at once: checks the limits, takes the wager, picks the
+ * pocket, records the hand and pays the winnings, all before any animation starts, so a reload or
+ * leaving the table mid-spin can never lose a payout. `bank` is the shared bank (or anything with
+ * the same debit / credit / recordHand). The hand is recorded before the payout so a payout that
+ * reaches the Hall of Fame (which clears the stats) does not leave this hand in the new stats.
+ * Returns { error } or { pocket, wagered, returned, net, winners }.
+ */
+export function playSpin(bank, bets, limits, { game = 'roulette', pocket = spin() } = {}) {
+  const error = checkLimits(bets, limits);
+  if (error) return { error };
+  const r = settle(bets, pocket);
+  if (!bank.debit(r.wagered, { game })) return { error: 'The bank can\'t cover those bets.' };
+  bank.recordHand(game, r.net);
+  if (r.returned) bank.credit(r.returned, { game });
+  return { pocket, ...r };
+}
