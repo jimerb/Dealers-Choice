@@ -30,7 +30,11 @@ const LOGO = `<img class="brand-mark" src="${LOGO_SRC}-64.webp" srcset="${LOGO_S
 const SPEAKER = (muted) => `<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
   <path d="M4 9h4l5-4v14l-5-4H4z"/>${muted ? '<path d="M17 9l5 6M22 9l-5 6"/>' : '<path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>'}</svg>`;
 
-const TABLE_LABEL = { 'felt-green': 'Green felt', 'felt-oxblood': 'Oxblood felt', 'felt-midnight': 'Midnight felt', walnut: 'Walnut', linen: 'Linen', slate: 'Slate', felt: 'Green felt' };
+// On a touch screen the settings dialog opens on its title, not the name box, so the on-screen
+// keyboard doesn't pop up over the dialog until the player taps the box.
+const touchFirst = () => window.matchMedia?.('(pointer: coarse)').matches ?? false;
+
+const TABLE_LABEL ={ 'felt-green': 'Green felt', 'felt-oxblood': 'Oxblood felt', 'felt-midnight': 'Midnight felt', walnut: 'Walnut', linen: 'Linen', slate: 'Slate', felt: 'Green felt' };
 const tableLabel = (t) => TABLE_LABEL[t] ?? t.replace(/-/g, ' ').replace(/^./, (ch) => ch.toUpperCase());
 
 export function mountChrome(active) {
@@ -100,7 +104,7 @@ export function mountChrome(active) {
     const avNow = dlg.querySelector('input[name=avatar]:checked')?.value ?? playerAvatarId();
     const initial = esc((nameNow || 'Guest').slice(0, 1).toUpperCase());
     dlg.innerHTML = `<form id="settings-form">
-      <h2 id="settings-title">Table settings</h2>
+      <h2 id="settings-title"${touchFirst() ? ' tabindex="-1" autofocus' : ''}>Table settings</h2>
       <div class="field"><label for="set-name">Your name</label><input id="set-name" type="text" maxlength="20" autocomplete="nickname" placeholder="Guest" value="${esc(nameNow)}"></div>
       <fieldset class="field"><legend>Your picture</legend><div class="portrait-pick">
         <label class="portrait-opt" title="No picture"><input type="radio" name="avatar" value="" ${avNow ? '' : 'checked'}><span class="avatar">${initial}</span><span class="visually-hidden">No picture (show my initial)</span></label>
