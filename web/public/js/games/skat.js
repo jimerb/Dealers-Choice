@@ -553,7 +553,7 @@ export default {
     const ouvertShow = s.game === 'ouvert' && s.trickNo >= 1 && s.declarer !== 0;
     const seatRole = (i) => (i === s.F ? 'Forehand' : i === s.M ? 'Middlehand' : 'Rearhand');
     const said = (i) => (s.kontra && (i === s.kontraBy || (s.kontra === 2 && i === s.declarer)) ? ` · ${i === s.declarer ? 'Re' : 'Kontra'}` : '');
-    const role = (i) => (s.ramsch ? `${seatRole(i)} · ${s.tricks[i]} tricks` : s.declarer === i ? `Declarer${s.game ? ` · ${GNAME[s.game]}` : ''}${said(i)}` : `${seatRole(i)}${said(i)}`);
+    const role = (i) => (s.ramsch ? `${s.tricks[i]} trick${s.tricks[i] === 1 ? '' : 's'}` : s.declarer === i ? `Declarer${s.game ? ` · ${GNAME[s.game]}` : ''}${said(i)}` : `${seatRole(i)}${said(i)}`);
     const declPts = s.declarer !== null ? s.taken[s.declarer].reduce((t, c) => t + points(c), 0) : 0;
     return {
       subtitle: `Deal ${s.dealNo} of ${s.opts.deals}${s.bid.value ? ` · bid ${s.bid.value}` : ''}`,

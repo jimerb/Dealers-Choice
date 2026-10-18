@@ -8,7 +8,7 @@ import { cardHTML, backHTML } from '../skin.js';
 const GRIDS = { 16: [4, 4], 24: [4, 6], 36: [6, 6] };
 const FACTOR = { 16: 5, 24: 8, 36: 12 };
 const DECK_FACTOR = { easy: 0.75, medium: 1, hard: 1.4 }; // harder decks score more per pair
-const DECK_NAME = { easy: 'Easy deck', medium: 'Medium deck', hard: 'Hard deck' };
+const DECK_NAME = { easy: 'easy deck', medium: 'medium deck', hard: 'hard deck' };
 const isJoker = (c) => c.rank === 'JK';
 // Easy decks pair by rank alone; the others need the same rank and color (9♥ + 9♦).
 const keyOf = (s, c) => (isJoker(c) ? 'JK' : s.opts.deck === 'easy' ? c.rank : `${c.rank}${isRed(c.suit) ? 'r' : 'b'}`);
@@ -218,7 +218,7 @@ export default {
         : panel('Board cleared!', `${scoreTable(['Count'], [['Pairs', s.matched[0]], ['3-in-a-row bonuses', s.bonuses], ['Misses', s.misses], ['Score', `<b>${s.score}</b>`]])}<div class="row" style="justify-content:flex-end">${btn('Play again', 'again', '', true)}</div>`);
     }
     const race = raceTo(s);
-    const extras = [s.opts.deck && s.opts.deck !== 'medium' ? DECK_NAME[s.opts.deck] : '', s.opts.wild === 'jokers' ? 'wild jokers' : '', race ? `first to ${race} pairs · board ${s.board ?? 1}` : ''].filter(Boolean);
+    const extras = [s.opts.deck && s.opts.deck !== 'medium' ? DECK_NAME[s.opts.deck] : '', s.opts.wild === 'jokers' ? 'jokers' : '', race ? `race to ${race} · board ${s.board ?? 1}` : ''].filter(Boolean);
     return {
       subtitle: `${rows} × ${cols} grid${extras.length ? ` · ${extras.join(' · ')}` : ''}`,
       scores: two(s) ? [{ label: 'You', value: `${s.matched[0]} pairs`, us: true }, { label: opp, value: `${s.matched[1]} pairs` }] : [{ label: 'Pairs', value: s.matched[0], us: true }, { label: 'Misses', value: s.misses }],

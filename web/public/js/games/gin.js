@@ -199,7 +199,7 @@ function nextGame(s) {
 function matchLabel(s) {
   const m = s.match && matchRule(s.opts.match);
   if (!m) return '';
-  return m.kind === 'points' ? ` · match to ${m.n}: ${s.match.points[0]}–${s.match.points[1]}` : ` · first to ${m.n} games: ${s.match.games[0]}–${s.match.games[1]}`;
+  return m.kind === 'points' ? ` · match to ${m.n}: ${s.match.points[0]}–${s.match.points[1]}` : ` · games ${s.match.games[0]}–${s.match.games[1]} (to ${m.n})`;
 }
 
 function aiTurn(s, p) {
