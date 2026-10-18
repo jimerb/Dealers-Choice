@@ -116,8 +116,6 @@ table.score small { color: var(--ink-3); font-size: 12px; }
 .variant-opt span { display: flex; flex-direction: column; gap: 2px; }
 .variant-opt small { color: var(--ink-3); font-size: 13px; }
 .newgame-warn { color: #F0B7A0; font-size: 14px; margin: 4px 0 8px; }
-.rules-body details { border-top: 1px solid var(--line); padding: 4px 0; }
-.rules-body summary { cursor: pointer; font-weight: 700; color: var(--ink); padding: 6px 0; }
 @media (max-width: 760px) {
   .stock-pile { --card-w: 34px; gap: 4px; }
   .stock-count { font-size: 11px; }
@@ -164,9 +162,6 @@ table.score small { color: var(--ink-3); font-size: 12px; }
 .pile-btn[disabled] { cursor: default; }
 .pile-btn:not([disabled]) .card { box-shadow: 0 0 0 3px var(--brass-2); }
 .empty-slot { width: var(--card-w); aspect-ratio: 5 / 7; border-radius: calc(var(--card-w) * .06); border: 2px dashed var(--mark, rgba(244,239,227,.35)); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--ink-3); }
-.rules-body { max-height: 60vh; overflow: auto; color: var(--ink-2); font-size: 15px; }
-.rules-body h3 { color: var(--ink); font-size: 16px; margin: 14px 0 4px; }
-.rules-body p, .rules-body ul { margin: 0 0 8px; }
 
 @media (max-width: 760px) {
   .table-page { padding: 12px 12px 28px; }
@@ -286,3 +281,54 @@ table.auction td, table.auction th { text-align: center !important; }
 .felt[data-tone="light"] .trump-plaque figcaption { text-shadow: 0 1px 1px rgba(255,255,255,.55); }
 .felt[data-tone="light"] .red-suit, .felt[data-tone="light"] .arcade-time.low { color: var(--card-red); }
 .felt[data-tone="light"] :where(.plate, .card-panel, .pot, .bj-hand) .red-suit { color: #F08A80; }
+
+/* ---------- touch screens, phones and short landscape screens ---------- */
+.felt { touch-action: manipulation; }
+/* a hover lift would stick to a card after a tap: only the tap itself moves a card */
+@media (hover: none) {
+  .hand .slot.legal:hover { transform: translateY(-14px); }
+  .hand .slot[data-act="select"].legal:not(.selected):hover { transform: none; }
+}
+@media (pointer: coarse) {
+  .bid-btn { min-height: 40px; }
+  /* tablets: a bidding or meld panel joins the flow (as on phones), so it never covers the hand
+     you are bidding on or gets clipped by the felt */
+  .center > .overlay { position: static; width: 100%; }
+  .center:has(> .overlay) > .trick { display: none; }
+  .center:has(> .overlay):has(> .banner) { padding-bottom: 34px; }
+}
+@media (max-width: 760px) {
+  .table-page { padding: 10px 8px 24px; }
+  .table-top { gap: 8px 10px; margin-bottom: 10px; }
+  .table-top h1 { font-size: 22px; }
+  .table-top .sub { font-size: 13px; }
+  .score-chip { padding: 6px 10px; font-size: 14px; }
+  /* a bidding, meld or results panel takes the felt's full width; the side seats step below it
+     (just their plates: the stacks of backs would only push your hand further down) */
+  .felt.generic:has(> .center > .overlay) { grid-template-areas: "top top top" "center center center" "west . east" "south south south"; grid-template-rows: auto auto auto auto; }
+  .felt.generic.with-board:has(> .center > .overlay) { grid-template-areas: "top top top" "board board board" "center center center" "west . east" "south south south"; grid-template-rows: auto auto auto auto auto; }
+  .felt:not(.generic):has(> .center > .overlay) { grid-template-areas: "north north north" "center center center" "west . east" "south south south"; grid-template-rows: auto auto auto auto; }
+  .felt:has(> .center > .overlay) :is(.area-west, .area-east, .seat.west, .seat.east) .backs.vertical { display: none; }
+  .felt:has(> .center > .overlay) > .center { min-height: 0; }
+  .center > .overlay > .card-panel { width: 100%; }
+}
+/* landscape phones: the screen is short, so the table drops its tall minimums and the trick shrinks */
+@media (max-height: 500px) and (min-width: 561px) {
+  .table-page { padding-top: 8px; }
+  .table-top { margin-bottom: 8px; }
+  .table-top h1 { font-size: 22px; }
+  .felt { min-height: 0; grid-template-rows: auto minmax(200px, 1fr) auto; padding: 10px 14px; }
+  .felt.generic { grid-template-rows: auto minmax(200px, 1fr) auto; }
+  .felt.with-board { grid-template-rows: auto auto minmax(160px, 1fr) auto; }
+  .center { min-height: 200px; }
+  .trick { height: 220px; --card-w: 58px; }
+  .trick.two { height: 200px; }
+  .hand { --card-w: clamp(50px, 6.4vw, 64px); padding-top: 22px; }
+  .backs { --card-w: 26px; }
+  .score-chip { padding: 6px 10px; font-size: 14px; }
+  /* panels join the flow so the felt grows to fit them instead of clipping them (as on phones) */
+  .center > .overlay { position: static; width: 100%; }
+  .center:has(> .overlay) > .trick { display: none; }
+  .center:has(> .overlay):has(> .banner) { padding-bottom: 34px; }
+  .felt:has(> .center > .overlay) > .center { min-height: 0; }
+}
