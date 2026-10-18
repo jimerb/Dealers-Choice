@@ -2,19 +2,33 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Dealers Choice</title>
 <meta name="description" content="Dealers Choice: classic card games in your browser.">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/art/brand/logo-mark-32.png">
 <link rel="icon" type="image/png" sizes="64x64" href="assets/art/brand/logo-mark-64.png">
 <link rel="icon" type="image/png" sizes="512x512" href="assets/art/brand/logo-mark-512.png">
 <link rel="apple-touch-icon" href="assets/art/brand/logo-mark-180.png">
+<!-- Added to a home screen: opens full screen, under a status bar in the header's colour. -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0B1E18">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Dealers Choice">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <!-- Site shell: owns the background music and shows every screen in a full-window frame, so the
      music plays straight through moving between the lobby and the games. Screens are ordinary
-     pages (lobby.html, play.html, ...); js/frame.js sends any screen opened on its own back here. -->
+     pages (lobby.html, play.html, ...); js/frame.js sends any screen opened on its own back here.
+     The frame stays clear of notches, rounded corners and the home indicator (the screens inside
+     it see no safe-area insets of their own), and the screen scrolls inside the frame. -->
 <style>
-  html, body { margin: 0; height: 100%; background: #0E241D; overflow: hidden; }
-  #screen { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: #0E241D; }
+  html, body { margin: 0; height: 100%; background: #0B1E18; overflow: hidden; overscroll-behavior: none; }
+  #screen {
+    position: fixed; border: 0; display: block; background: #0E241D;
+    left: env(safe-area-inset-left, 0px); top: env(safe-area-inset-top, 0px);
+    width: calc(100% - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+    height: calc(100% - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  }
 </style>
 <script>
   // A link to "/" followed inside the frame would nest a second shell: show the lobby instead.
