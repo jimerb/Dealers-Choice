@@ -217,15 +217,34 @@ function aiTurn(s, p) {
   return discard(s, p, b.c.id, canKnock && !waitForGin);
 }
 
-const RULES = `<p>Two players, ten cards each. Form <b>melds</b>: sets (3–4 of a rank) or runs (3+ in sequence in one suit; aces are low). Unmatched cards are <b>deadwood</b> (face cards 10, aces 1).</p>
-<h3>Your turn</h3><p>Draw from the stock or take the top discard, then discard one card. At the start of a hand the non-dealer may take the upcard first, then the dealer.</p>
-<h3>Knocking</h3><p>If your deadwood after discarding is 10 or less you may <b>knock</b>. Your opponent can lay off cards on your melds. Lower deadwood wins the difference. If the opponent ties or beats you it's an <b>undercut</b> (+25 to them). <b>Gin</b> (no deadwood) earns 25 plus the opponent's deadwood.</p>
-<h3>Oklahoma Gin</h3><p>The knock limit is the first upcard's value (an ace means gin only), and if it's a spade, the hand counts double.</p>
-<p>First to 100 wins, with a 100-point game bonus and 25 per hand won. A shutout doubles it.</p>
-<p>A longer match (an option) is won by the first to a points total over several games, or to a number of games won.</p>`;
+const HOWTO = {
+  goal: 'Arrange your cards into melds and be the first to 100 points.',
+  deal: 'Two players, ten cards each. The next card is turned up to start the discard pile (the <b>upcard</b>) and the rest is the stock. The deal alternates.',
+  play: [
+    'First the non-dealer may take the upcard or pass, then the dealer gets the same choice. If both pass, the non-dealer draws from the stock.',
+    'On each turn after that, draw the top card of the stock or the top discard, then discard one card.',
+    '<b>Melds</b> are sets (three or four cards of a rank) or runs (three or more in a row in one suit; aces are low). Cards not in melds are <b>deadwood</b>: face cards count 10, aces 1, others their number. Your hand is always arranged for the lowest deadwood.',
+    'When your deadwood after discarding is 10 or less, you may <b>knock</b> to end the hand. Your opponent then lays off any cards that fit your melds.',
+    'If the stock gets down to two cards, the hand is a draw.',
+  ],
+  fig: { cards: '7H 7S 7C · 4D 5D 6D', caption: 'A set and a run: no deadwood.' },
+  score: [
+    'After a knock, the lower deadwood wins the difference between the two counts.',
+    'If your opponent ties or beats your count, that’s an <b>undercut</b>: they score the difference plus 25.',
+    '<b>Gin</b> (no deadwood at all) scores 25 plus your opponent’s deadwood, and they can’t lay off.',
+    'The first to 100 wins the game, with a 100 bonus plus 25 for each hand won; the loser’s score and hand bonuses are taken off. If the loser didn’t win a hand (a <b>shutout</b>), the winner’s points are doubled.',
+  ],
+  options: {
+    type: 'Gin Rummy, or Oklahoma Gin: each hand’s knock limit is the value of the first upcard (face cards 10; an ace means only gin ends the hand), and when that card is a spade, the hand scores double.',
+    match: 'one game to 100, or a match: the first to 300, 500 or 1,000 points over several games, or the first to win 3, 5 or 7 games.',
+    skill: 'Intermediate knocks as soon as it can; Expert sometimes holds out for gin.',
+  },
+  controls: 'Use Take it or Pass for the first upcard. To draw, {click} the stock or the discard pile. Then {click} a card to select it (the deadwood you’d have left is shown) and {click} Discard, or Knock to end the hand (it says Gin! when you have no deadwood).',
+  tip: 'Watch which discards your opponent picks up, and don’t hand them cards for those melds. Dump high deadwood early to keep your count low.',
+};
 
 export default {
-  id: 'gin', title: 'Gin Rummy', version: 1, seats: 2, rulesHTML: RULES,
+  id: 'gin', title: 'Gin Rummy', version: 1, seats: 2, howto: HOWTO,
   settings: [
     { key: 'type', label: 'Game type', options: [['gin', 'Gin Rummy'], ['oklahoma', 'Oklahoma Gin']], default: 'gin' },
     { key: 'match', label: 'Match', options: [['game', 'One game to 100'], ['p300', 'First to 300 points'], ['p500', 'First to 500 points'], ['p1000', 'First to 1,000 points'], ['g3', 'First to win 3 games'], ['g5', 'First to win 5 games'], ['g7', 'First to win 7 games']], default: 'game' },

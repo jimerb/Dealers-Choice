@@ -193,13 +193,32 @@ function aiPlay(s, seat) {
   return L.slice().sort((a, b) => P(a) - P(b))[0].id;
 }
 
-const RULES = `<p>Partners sit across. The deck is 9 through ace (24 cards); everyone gets five.</p>
-<h3>Making trump</h3><p>A card is turned up. In turn, each player may <b>order it up</b> (that suit becomes trump and the dealer takes the card, discarding one) or pass. If all pass, players may <b>name</b> another suit. The maker may <b>go alone</b>; their partner sits out. The player left of the dealer leads first (or, by option, the player left of a lone player).</p>
-<h3>Trump ranking</h3><p>Jack of trump (right bower), then the other jack of the same color (left bower, which counts as trump), then A K Q 10 9.</p>
-<h3>Scoring</h3><p>Makers taking 3–4 tricks: 1 point; all 5: 2 points (4 if alone). If the makers fail they are <b>euchred</b>: 2 points to the defenders.</p>`;
+const HOWTO = {
+  goal: 'Win at least 3 of the 5 tricks when your side picks trump, and be the first side to the target score (10 by default).',
+  deal: 'Four players in two partnerships, partners across from each other. The deck has 24 cards (9 through ace in each suit). Each player gets five cards, and the next card is turned face up.',
+  play: [
+    '<b>Making trump, round 1</b>: starting left of the dealer, each player may <b>order it up</b> (the turned card’s suit becomes trump, and the dealer picks up that card and discards one) or pass.',
+    '<b>Round 2</b>: if all four pass, the card is turned down and each player may <b>name</b> any other suit as trump, or pass. If everyone passes again, the cards are redealt.',
+    'Whoever makes trump may <b>go alone</b>: their partner sits the hand out, and only three play.',
+    '<b>Trump ranks</b>: the jack of trump (the <b>right bower</b>) is highest, then the other jack of the same color (the <b>left bower</b>, which counts as a trump, not as its own suit), then A K Q 10 9.',
+    'The player left of the dealer leads. Follow suit if you can (the left bower follows trump); otherwise play anything. The highest trump wins, or else the highest card of the suit led.',
+  ],
+  fig: { cards: 'JH JD AH', caption: 'With hearts trump: right bower, left bower, then the ace.' },
+  score: [
+    'The side that made trump scores 1 point for 3 or 4 tricks and 2 for all five (a <b>march</b>). A lone player who takes all five scores 4.',
+    'If the makers take fewer than 3 tricks they’re <b>euchred</b>, and the other side scores 2.',
+  ],
+  options: {
+    target: 'play to 5, 7 or 10 points.',
+    stick: 'with No, the cards are redealt when everyone passes twice. With Yes (stick the dealer), the dealer must name trump in round 2.',
+    aloneLead: 'left of the dealer as usual, or left of the player going alone.',
+  },
+  controls: 'When it’s your call, {click} Pass, Order it up (Pick it up when you’re the dealer) or …and go alone. In round 2, {click} a suit to name it, checking Go alone first if you want to. After picking up, {click} the card to bury and then Discard. To play, {click} a highlighted card.',
+  tip: 'Order it up with two or three trumps, ideally including a bower. Making trump without help from your hand usually gets you euchred.',
+};
 
 export default {
-  id: 'euchre', title: 'Euchre', version: 1, seats: 4, rulesHTML: RULES,
+  id: 'euchre', title: 'Euchre', version: 1, seats: 4, howto: HOWTO,
   settings: [
     { key: 'target', label: 'Points to win', options: [[5, '5'], [7, '7'], [10, '10']], default: 10 },
     { key: 'stick', label: 'Stick the dealer', options: [['no', 'No: redeal if all pass'], ['yes', 'Yes: dealer must name trump']], default: 'no' },

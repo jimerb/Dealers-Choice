@@ -110,11 +110,26 @@ function aiChoice(s, seat) {
   return { target, rank };
 }
 
-const RULES = `<p>Collect <b>books</b>: all four cards of a rank. On your turn, choose a card in your hand, then ask another player for that rank.</p>
-<ul><li>If they have any, they hand them all over and you go again.</li><li>If not: <b>Go fish!</b> Draw one card. If it's the rank you asked for, go again.</li><li>Run out of cards? Draw five more.</li></ul><p>When all 13 books are made, the most books wins.</p>`;
+const HOWTO = {
+  goal: 'Collect the most <b>books</b>: all four cards of one rank.',
+  deal: 'Four players, five cards each; the rest of the deck is the pond. Any book you’re dealt is laid down at once. You go first.',
+  play: [
+    'On your turn, pick a rank you hold and ask another player for it.',
+    'If they have any, they hand over all of them and you ask again.',
+    'If not, <b>Go fish!</b> Draw a card from the pond. If it’s the rank you asked for, you go again; otherwise the turn passes to the left.',
+    'As soon as you hold all four of a rank, the book is laid down for you.',
+    'If your hand runs out, you draw five more cards (while the pond lasts).',
+  ],
+  score: 'The game ends when all 13 books are made. The player with the most books wins, and a tie shares the win.',
+  options: {
+    skill: 'how much the computer players remember about who asked for what: Beginner forgets, Intermediate remembers a little, and Expert remembers the last few asks.',
+  },
+  controls: '{Click} a card in your hand to choose its rank, then {click} the Ask button beside the player you want to ask.',
+  tip: 'Watch the table talk: when someone asks for a rank, they’re holding it. Ask them for it as soon as you get one too.',
+};
 
 export default {
-  id: 'gofish', title: 'Go Fish', version: 1, seats: 4, rulesHTML: RULES,
+  id: 'gofish', title: 'Go Fish', version: 1, seats: 4, howto: HOWTO,
   settings: [{ key: 'skill', label: 'Computer players', options: [['beginner', 'Beginner (forgetful)'], ['intermediate', 'Intermediate'], ['expert', 'Expert (remembers asks)']], default: 'intermediate' }],
   newGame,
   actor: (s) => (s.phase === 'gameOver' ? null : s.turn),

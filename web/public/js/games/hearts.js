@@ -146,12 +146,34 @@ function aiPlay(s, seat) {
   return sorted[0].id;
 }
 
-const RULES = `<p>Four players, no partners. Pass three cards (left, right, across, then hold), then play 13 tricks. Follow suit if you can; the highest card of the suit led wins.</p>
-<h3>Points</h3><p>Each heart is 1 point and the Q♠ is 13. Hearts can't be led until one has been played. Take all 26 and you <b>shoot the moon</b>: everyone else gets 26 instead.</p>
-<h3>Winning</h3><p>When someone reaches the target score, the lowest score wins.</p>`;
+const HOWTO = {
+  goal: 'Take as few points as you can. When someone reaches the end score (100 by default), the lowest score wins.',
+  deal: 'Four players, each for themselves, with 13 cards each.',
+  play: [
+    'Before each hand, choose three cards to <b>pass</b>: to the left, then the right, then across, and every fourth hand there’s no pass.',
+    'Whoever holds the 2♣ leads it to the first trick. Follow suit if you can; otherwise play anything. There are no trumps: the highest card of the suit led wins the trick and leads next.',
+    'You can’t lead a heart until hearts are <b>broken</b> (a heart has been played), unless you hold nothing else. Playing the Q♠ breaks hearts too (an option can change this).',
+    'On the first trick you can’t play a heart or the Q♠ if you have any other card you could play (an option can allow it).',
+  ],
+  fig: { cards: 'QS · 2H 7H KH', caption: 'The Q♠ is 13 points, and every heart is 1.' },
+  score: [
+    'Each heart you take is 1 point and the <b>Q♠</b> is 13.',
+    'Take all 13 hearts and the Q♠ and you <b>shoot the moon</b>: you score nothing and everyone else gets 26.',
+    'When someone reaches the end score, the lowest total wins.',
+  ],
+  options: {
+    passing: 'left, right, across and hold in turn; always to the left; or no passing.',
+    firstLead: 'the holder of the 2♣ leads it, or the player left of the dealer leads any card (but not a heart until hearts are broken).',
+    qsBreaks: 'whether playing the Q♠ counts as breaking hearts.',
+    pointsFirst: 'whether hearts and the Q♠ may be played on the first trick.',
+    target: 'the game ends when someone reaches 50 or 100 points.',
+  },
+  controls: 'To pass, {click} three cards to select them, then {click} Pass cards. To play, {click} a highlighted card; dimmed cards can’t be played right now.',
+  tip: 'Pass the A♠ and K♠ unless you have several low spades to protect them; otherwise they can catch the Q♠.',
+};
 
 export default {
-  id: 'hearts', title: 'Hearts', version: 1, seats: 4, rulesHTML: RULES,
+  id: 'hearts', title: 'Hearts', version: 1, seats: 4, howto: HOWTO,
   settings: [
     { key: 'passing', label: 'Passing', options: [['rotate', 'Left, right, across, hold'], ['left', 'Always left'], ['none', 'No passing']], default: 'rotate' },
     { key: 'firstLead', label: 'First lead', options: [['2c', 'Two of clubs'], ['left', 'Left of dealer']], default: '2c' },
