@@ -1,6 +1,7 @@
 // Pinochle table: renders engine state for every variant, paces the computer players, saves progress locally.
 import * as P from './engine.js';
 import * as AI from './ai.js';
+import { variantTip } from '../../core/tip.js';
 import { cardHTML, backHTML, cardName, paintFelt, preloadSkin } from '../../skin.js';
 import { mountChrome, esc, playerName, playerAvatar, avatarHTML } from '../../header.js';
 import { play } from '../../core/sound.js';
@@ -370,6 +371,7 @@ dlg.querySelector('form').addEventListener('submit', (e) => {
 dlg.addEventListener('cancel', () => { pendingSwitch = null; syncUrl(); });
 
 document.getElementById('btn-new').addEventListener('click', () => openNewGame());
+variantTip('pinochle', 'This game has variants. Choose <b>New game</b> to play Two-Handed, Double-Pack, Partnership or Cutthroat.');
 window.addEventListener('dc:settings', () => {
   state = { ...state, names: [playerName(), ...state.names.slice(1)] };
   save(); render();

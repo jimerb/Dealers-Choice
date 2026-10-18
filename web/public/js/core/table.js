@@ -15,6 +15,7 @@
 // View model extras: vm.board (HTML for a full-width row above the center, e.g. the cribbage board),
 // vm.trump ({ suit, caption? }: the trump plaque in the felt's corner; see core/pieces.js).
 // Engines may set state.fx = ['card', ...] (sound event names) on transitions.
+import { variantTip } from './tip.js';
 import { cardHTML, backHTML, cardName, paintFelt, preloadSkin } from '../skin.js';
 import { mountChrome, esc, playerName, playerAvatar, avatarHTML } from '../header.js';
 import { play } from './sound.js';
@@ -182,6 +183,7 @@ export function mountTable(game) {
 
   // -------- top bar buttons
   document.getElementById('btn-new').addEventListener('click', () => openSettings(true));
+  if (game.settings?.length) variantTip(game.id, 'This game has options. Choose <b>New game</b> to change the rules or the number of players.');
   function openSettings() {
     const d = document.getElementById('game-settings');
     const o = readOpts();

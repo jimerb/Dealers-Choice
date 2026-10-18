@@ -333,3 +333,7 @@ table.auction td, table.auction th { text-align: center !important; }
   .felt:has(> .center > .overlay) > .center { min-height: 0; }
   .memory-grid { --card-w: 46px !important; gap: 6px; padding: 4px; } /* beats the inline size: the whole grid fits the screen's height */
 }
+
+/* One-time note about variants and options (js/core/tip.js). */
+.variant-tip { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 0 12px; padding: 10px 14px; border-radius: 12px; background: rgba(226,194,122,.12); border: 1px solid var(--brass); color: var(--ink-2); font-size: 14px; }
+.variant-tip .btn { flex: none; }
