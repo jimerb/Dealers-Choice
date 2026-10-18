@@ -6,17 +6,28 @@
 .cz-bank-top b, .cz-pill b { font-weight: 700; }
 .cz-bank-top small { color: var(--ink-3); font-size: 12px; }
 /* a chip in the tier's colour: cream face, coloured rim with white edge spots */
-.cz-pill-chip, .cz-bank-chip { flex: none; width: 26px; height: 26px; border-radius: 50%; background: radial-gradient(circle, var(--card-paper) 0 40%, var(--tier, var(--brass)) 42% 100%); box-shadow: inset 0 0 0 3px rgba(255,255,255,.0), 0 1px 3px rgba(0,0,0,.5); position: relative; }
-.cz-pill-chip::after, .cz-bank-chip::after { content: ''; position: absolute; inset: 2px; border-radius: 50%; border: 3px dashed rgba(255,255,255,.65); }
+.cz-pill-chip { flex: none; width: 26px; height: 26px; border-radius: 50%; background: radial-gradient(circle, var(--card-paper) 0 40%, var(--tier, var(--brass)) 42% 100%); box-shadow: inset 0 0 0 3px rgba(255,255,255,.0), 0 1px 3px rgba(0,0,0,.5); position: relative; }
+.cz-pill-chip::after { content: ''; position: absolute; inset: 2px; border-radius: 50%; border: 3px dashed rgba(255,255,255,.65); }
 .cz-tier { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 6px; border-radius: 999px; background: rgba(8,24,19,.6); border: 1px solid var(--tier); font-size: 13px; font-weight: 700; color: var(--ink); vertical-align: middle; }
-.cz-tier-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--tier); box-shadow: 0 0 0 1px rgba(255,255,255,.5); }
+.cz-tier-dot { position: relative; width: 12px; height: 12px; border-radius: 50%; background: var(--tier); box-shadow: 0 0 0 1px rgba(255,255,255,.5); }
+.cz-tier-dot.art-ok { width: 18px; height: 18px; margin: -3px 0; background: none; box-shadow: none; }
+/* tier medallions over the code-drawn chips: the picture's disc fills 85% of its square */
+.cz-pill-chip > img, .cz-tier-dot > img, .cz-toast-medal > img { position: absolute; inset: -9%; width: 118%; height: 118%; display: block; }
+.cz-pill-chip.art-ok, .cz-toast-medal.art-ok { background: none; box-shadow: 0 1px 3px rgba(0,0,0,.45); }
+.cz-pill-chip.art-ok::after { display: none; }
+/* the tier card: a coloured card stands in until (or unless) the picture loads */
+.cz-card { position: relative; flex: none; width: 210px; aspect-ratio: 640 / 404; border-radius: 11px; background: linear-gradient(135deg, color-mix(in srgb, var(--tier) 80%, white), var(--tier)); box-shadow: 0 8px 18px rgba(0,0,0,.4); color: var(--tier-ink, #1B1B1B); overflow: hidden; }
+.cz-card.art-ok { background: none; }
+.cz-card > img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.cz-card-tier, .cz-card-name { position: absolute; left: 8%; right: 8%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cz-card-tier { bottom: 30%; font-family: var(--font-display); font-size: 22px; line-height: 1; }
+.cz-card-name { bottom: 13%; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; opacity: .85; }
 
 /* ---------- chooser ---------- */
+.cz-banner { display: block; width: 100%; height: clamp(110px, 18vw, 240px); object-fit: contain; margin: 8px 0 4px; border-radius: 20px; border: 1px solid var(--line); background: #17604A; }
 .cz-intro { margin: 8px 0 0; max-width: 760px; color: var(--ink-2); font-size: 15px; }
 .cz-bankpanel { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between; margin: 18px 0 8px; padding: 18px 22px; border-radius: 20px; border: 2px solid var(--tier, var(--brass-2)); background: linear-gradient(135deg, #1F6E57 0%, #0F3B30 75%); box-shadow: 0 10px 30px rgba(0,0,0,.35); }
 .cz-bank-main { display: flex; gap: 14px; align-items: center; }
-.cz-bank-chip { width: 56px; height: 56px; }
-.cz-bank-chip::after { border-width: 5px; inset: 3px; }
 .cz-bank-label { display: block; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--brass-2); }
 .cz-bank-amt { display: block; font-family: var(--font-display); font-weight: 400; font-size: clamp(28px, 4vw, 38px); line-height: 1.1; margin-bottom: 4px; }
 .cz-bank-next { font-size: 13px; color: var(--ink-3); margin-left: 8px; }
@@ -25,7 +36,7 @@
 .cz-hall { flex-basis: 100%; margin: 0; font-size: 13px; color: var(--brass-2); }
 
 .cz-tile .tile-body { gap: 6px; flex: 1 1 auto; }
-.cz-tile-art { position: relative; aspect-ratio: 16 / 7; display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at 50% 40%, color-mix(in srgb, var(--felt, #1E5A46) 82%, white) 0%, var(--felt, #1E5A46) 55%, color-mix(in srgb, var(--felt, #1E5A46) 60%, black) 100%); border-bottom: 1px solid var(--line); }
+.cz-tile-art { position: relative; display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at 50% 40%, color-mix(in srgb, var(--felt, #1E5A46) 82%, white) 0%, var(--felt, #1E5A46) 55%, color-mix(in srgb, var(--felt, #1E5A46) 60%, black) 100%); border-bottom: 1px solid var(--line); }
 .cz-tile-sub { color: var(--brass-2) !important; font-weight: 600; margin-top: -4px; }
 .cz-tile-art svg { width: 64px; height: 64px; fill: none; stroke: var(--brass-2); stroke-width: 2.5; stroke-linecap: round; }
 .cz-tile-art svg .f { fill: var(--brass-2); }
@@ -77,20 +88,45 @@ table.cz-stats { font-size: 14px; white-space: nowrap; }
 .cz-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 50; background: var(--panel); border: 1px solid var(--brass); color: var(--ink); padding: 12px 18px; border-radius: 14px; box-shadow: 0 16px 40px rgba(0,0,0,.5); font-weight: 600; width: max-content; max-width: calc(100vw - 32px); transition: opacity .4s ease; }
 .cz-toast.big { background: var(--brass-2); color: var(--on-brass); font-size: 17px; }
 .cz-toast.out { opacity: 0; }
+.cz-toast.medal { display: flex; align-items: center; gap: 12px; }
+.cz-toast-medal { position: relative; flex: none; width: 44px; height: 44px; border-radius: 50%; background: var(--panel); }
+
+/* loan desk picture; Hall of Fame board and plates (code engraves the names) */
+.cz-dlg-art { margin: -4px 0 14px; }
+.cz-dlg-art:empty { display: none; }
+.cz-dlg-art img { display: block; width: 100%; aspect-ratio: 16 / 10; border-radius: 12px; border: 1px solid var(--line); }
+.cz-hall-board { padding: 16px; border: 30px solid #4F3B2A; border-image: url(../assets/art/casino/bank/hall-board.webp) 100 fill / 30px stretch; background: #6B4A2E; }
+.cz-hall-board + p { margin-top: 12px; }
+.cz-plates { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+.cz-plate { position: relative; aspect-ratio: 600 / 146; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: linear-gradient(#E2C27A, #C9A24A); border: 2px solid #1B1B1B; }
+.cz-plate.art-ok { background: none; border-color: transparent; }
+.cz-plate > img { position: absolute; inset: -2px; width: calc(100% + 4px); height: calc(100% + 4px); display: block; }
+.cz-plate > span { position: relative; padding: 0 16%; text-align: center; font-family: var(--font-display); font-size: 16px; line-height: 1.1; color: #3A2A12; text-shadow: 0 1px 0 rgba(255,240,200,.5); }
+.cz-plate small { display: block; font-family: var(--font-ui); font-size: 11px; font-weight: 600; }
 
 /* ---------- layouts drawn in SVG (js/casino/svg.js) ---------- */
 .cz-svg { display: block; width: 100%; height: auto; max-width: 1000px; margin: 0 auto; font-family: var(--font-ui); overflow: visible; }
 .cz-svg.cz-machine { max-width: 520px; }
+.cz-svg.cz-cab { max-width: 460px; }
 .cz-ln { fill: none; stroke: var(--cz-line); stroke-width: 2; }
 .cz-area { fill: rgba(255,255,255,.03); stroke: var(--cz-line); stroke-width: 2; }
 .cz-rail { fill: rgba(0,0,0,.06); stroke: var(--brass); stroke-width: 6; }
+/* the padded leather rail (js/casino/tableart.js): solid oxblood under the leather picture */
+.cz-rail-edge { fill: none; stroke: #2A0E0E; }
+.cz-rail-base { fill: none; stroke: #6B2424; }
+.cz-rail-leather { fill: none; stroke: url(#cz-leather); }
+.cz-rail-shine { fill: none; stroke: rgba(255,235,220,.08); }
+.cz-crest-fb { fill: #C9A24A; stroke: #1B1B1B; stroke-width: 2; }
+.cz-crest-tx { fill: #2A1E0E; }
 .cz-slot { fill: none; stroke: var(--cz-line); stroke-width: 2; stroke-dasharray: 6 5; }
 .cz-tx { fill: var(--ink); }
 .cz-tx.dim { fill: var(--ink-3); }
 .cz-die { fill: #B3261E; stroke: rgba(0,0,0,.35); stroke-width: 1; }
 .cz-pip { fill: #FBF8F0; }
-.cz-puck { fill: #1B1B1B; stroke: #FBF8F0; stroke-width: 2; }
+.cz-puck { fill: #1B1B1B; stroke: #C9A24A; stroke-width: 3; }
+.cz-puck.on { fill: #FBF8F0; }
 .cz-puck-tx { fill: #FBF8F0; }
+.cz-puck-tx.on { fill: #1B1B1B; }
 /* machines keep their own dark cabinet on any table */
 .cz-cabinet { fill: #18261F; stroke: var(--brass); stroke-width: 4; }
 .cz-mscreen { fill: #0A1511; stroke: #3C6B5A; stroke-width: 2; }
@@ -98,10 +134,33 @@ table.cz-stats { font-size: 14px; white-space: nowrap; }
 .cz-mbtn { fill: #3A2A12; stroke: var(--brass); stroke-width: 2; }
 .cz-mtx { fill: #E2C27A; }
 .cz-mtx.dim { fill: #A9C2B7; }
+.cz-mtx.hot { fill: #FBF8F0; }
+.cz-mscreen.blue { fill: #14204A; stroke: #2E4A8A; }
+.cz-mbtn.hot { fill: #B3261E; }
+.cz-mbtn-tx { fill: #FBF8F0; }
+.cz-reel { fill: #F3ECDA; }
+.cz-reel-blank { fill: rgba(27,27,27,.16); }
+.cz-reel-tx { fill: #1B1B1B; }
+.cz-reel-shade { pointer-events: none; }
 .cz-payline { stroke: #C8463C; stroke-width: 3; fill: none; }
 .cz-lever { fill: #9AA3A8; }
 .cz-lever-knob { fill: #B3261E; stroke: #FBF8F0; stroke-width: 2; }
 .cz-kcell { fill: rgba(255,255,255,.04); stroke: var(--cz-line); stroke-width: 1.5; }
+/* keno: the board's window, the blower and the ticket keep their own colours on any table */
+.cz-keno { flex: 1 1 auto; width: 100%; display: flex; flex-wrap: wrap; gap: 14px 20px; justify-content: center; align-items: flex-start; }
+.cz-keno .cz-keno-board { flex: 1 1 520px; width: auto; min-width: 0; max-width: 780px; margin: 0; }
+.cz-keno .cz-keno-side { flex: 0 1 300px; width: auto; min-width: 0; max-width: 320px; margin: 0; }
+.cz-kframe { fill: #4F3B2A; stroke: #C9A24A; stroke-width: 6; }
+.cz-kpanel { fill: #0E1F18; }
+.cz-keno-board .cz-kcell { fill: rgba(243,236,218,.05); stroke: rgba(226,194,122,.4); }
+.cz-ktx { fill: #F3ECDA; }
+.cz-kglass { fill: #2C3E66; stroke: #C9A24A; stroke-width: 6; }
+.cz-kball { fill: #FBF8F0; stroke: #1B1B1B; stroke-width: 2; }
+.cz-kball-tx { fill: #1B1B1B; }
+.cz-ticket { fill: #F3ECDA; }
+.cz-ticket-paper { fill: url(#cz-kpaper); stroke: #C9A24A; stroke-width: 3; }
+.cz-ticket-tx { fill: #1B1B1B; }
+.cz-ticket-tx.dim { fill: #6B5A3E; }
 /* chips on a layout */
 .cz-chip-shadow { fill: rgba(0,0,0,.45); }
 .cz-chip-tx { fill: #1B1B1B; }
@@ -109,19 +168,29 @@ table.cz-stats { font-size: 14px; white-space: nowrap; }
 
 /* ---------- roulette ---------- */
 .cz-rl { display: flex; flex-wrap: wrap; gap: 18px 24px; align-items: center; justify-content: center; }
-.cz-rl-wheel { position: relative; width: 230px; flex: none; }
-.cz-wheel-spin { transition: transform 2.6s cubic-bezier(.12,.7,.18,1); }
-.cz-wheel-svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 8px 16px rgba(0,0,0,.45)); }
-.cz-wheel-rim { fill: #5A3A1E; stroke: var(--brass); stroke-width: 2; }
-.cz-pocket { stroke: rgba(226,194,122,.7); stroke-width: .6; }
+.cz-rl-wheel { position: relative; width: 300px; aspect-ratio: 1; flex: none; filter: drop-shadow(0 8px 16px rgba(0,0,0,.45)); }
+.cz-wheel-layer { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.cz-wheel-spin { position: absolute; inset: 0; will-change: transform; }
+.cz-wheel-rim { fill: #5A3A1E; stroke: var(--brass); stroke-width: 6; }
+.cz-wheel-track { fill: #E2D8BE; }
+.cz-wheel-well { fill: #2A1C10; }
+.cz-pocket { stroke: none; }
 .cz-pocket.red { fill: #A3271F; }
 .cz-pocket.black { fill: #1B1B1B; }
 .cz-pocket.green { fill: #0F6B45; }
+.cz-pocket-floor { fill: none; stroke: rgba(0,0,0,.3); }
+.cz-fret { fill: none; stroke: #C9A24A; stroke-width: 3; }
+.cz-fret-ring { fill: none; stroke: #C9A24A; stroke-width: 2.5; }
 .cz-wheel-tx { fill: #F4EFE3; font-family: var(--font-ui); }
-.cz-wheel-cone { fill: #6B4523; stroke: var(--brass); stroke-width: 1.5; }
+.cz-wheel-cone { fill: #6B4523; stroke: var(--brass); stroke-width: 4; }
 .cz-wheel-hub { fill: var(--brass); }
 .cz-wheel-marker { position: absolute; left: 50%; top: -10px; transform: translateX(-50%); border: 9px solid transparent; border-top: 14px solid var(--brass-2); filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)); }
-.cz-rl-ball-dot { position: absolute; left: 50%; top: 13.5%; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff, #cfcfcf); box-shadow: 0 1px 3px rgba(0,0,0,.6); }
+/* the ball rides an orbit turned by code; its distance from the centre is its `top` */
+.cz-rl-orbit { position: absolute; inset: 0; pointer-events: none; will-change: transform; }
+.cz-rl-orbit[hidden] { display: none; }
+.cz-rl-pearl { position: absolute; left: 48.34%; top: 4%; width: 3.32%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff, #cfcfcf); box-shadow: 0 1px 2px rgba(0,0,0,.6); }
+.cz-rl-pearl.art-ok { background: none; }
+.cz-rl-pearl > img { position: absolute; inset: -12.5%; width: 125%; height: 125%; display: block; }
 .cz-rl-main { flex: 1 1 560px; min-width: 0; max-width: 980px; }
 .cz-rl-history { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 30px; margin-bottom: 8px; }
 .cz-rl-hlabel { font-size: 13px; color: var(--ink-3); margin-right: 4px; }
@@ -153,7 +222,11 @@ table.cz-stats { font-size: 14px; white-space: nowrap; }
 @media (max-width: 640px) {
   .felt.cz-felt { padding: 10px 8px; border-radius: 18px; }
   .cz-rl { gap: 10px; }
-  .cz-rl-wheel { width: 150px; }
+  .cz-rl-wheel { width: 230px; }
+  .cz-card { width: 150px; }
+  .cz-card-tier { font-size: 17px; }
+  .cz-card-name { font-size: 10px; }
+  .cz-hall-board { padding: 10px; border-width: 20px; border-image-width: 20px; }
   .cz-rl-main { flex-basis: 100%; }
   .cz-rl-history { justify-content: center; }
   .cz-chip { width: 42px; height: 42px; }

@@ -11,6 +11,7 @@ import { stubGame, howtoSections } from '../stub.js';
 
 export function layout() {
   return pokerTable({
+    name: 'Caribbean Stud',
     label: 'Caribbean Stud table: dealer\'s five cards on top, Ante and Bet boxes at five seats',
     dealerCards: 5,
     dealerNote: 'Dealer qualifies with ace-king or better',

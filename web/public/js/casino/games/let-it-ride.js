@@ -11,6 +11,7 @@ import { stubGame, howtoSections } from '../stub.js';
 
 export function layout() {
   return pokerTable({
+    name: 'Let It Ride',
     label: 'Let It Ride table: two community cards on top, bets 1, 2 and $ at five seats',
     dealerCards: 2,
     dealerNote: 'Community cards',

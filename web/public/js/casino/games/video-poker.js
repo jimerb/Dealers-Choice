@@ -7,6 +7,7 @@
 //   - card faces from the site's skin (cardHTML); royal flush on 5 credits pays 4000
 //   - credits come from and return to the bank (ctx.bank); recordHand; ctx.checkBroke()
 import { svg, rect, text, cardSlot } from '../svg.js';
+import { ART, svgArt } from '../art.js';
 import { stubGame, howtoSections } from '../stub.js';
 
 const PAYS = [
@@ -16,22 +17,35 @@ const PAYS = [
   ['Jacks or better', [1, 2, 3, 4, 5]],
 ];
 
+// The cabinet picture is 800 x 1200; its windows (where the code draws) in those units:
+const TOPPER = { x: 117, y: 78, w: 566, h: 172 };  // the machine's name
+const SCREEN = { x: 102, y: 297, w: 596, h: 492 }; // pay table, cards, meters
+const DECK = { y: 828, h: 125 };                   // the plain button deck
+
 export function layout() {
-  const W = 720, H = 660;
+  const W = 800, H = 1200;
+  const S = SCREEN;
   const rows = PAYS.map(([name, p], i) => {
-    const y = 64 + i * 24;
-    return text(70, y, name, { size: 16, anchor: 'start', cls: 'cz-mtx' }) + p.map((v, c) => text(330 + c * 72, y, String(v), { size: 16, cls: 'cz-mtx' })).join('');
+    const y = S.y + 26 + i * 23;
+    return text(S.x + 22, y, name, { size: 17, anchor: 'start', cls: 'cz-mtx' }) + p.map((v, c) => text(S.x + 270 + c * 72, y, String(v), { size: 17, cls: c === 0 ? 'cz-mtx hot' : 'cz-mtx' })).join('');
   }).join('');
   const cards = [0, 1, 2, 3, 4].map((i) => {
-    const x = 120 + i * 120;
-    return `${cardSlot(x, 400, 92, { cls: 'cz-mslot' })}<g data-hold="${i}">${rect(x - 44, 488, 88, 36, { r: 6, cls: 'cz-mbtn' })}${text(x, 506, 'HOLD', { size: 15, cls: 'cz-mtx' })}</g>`;
+    const x = S.x + 70 + i * 114;
+    return `${cardSlot(x, S.y + 318, 96, { cls: 'cz-mslot' })}${text(x, S.y + 404, 'HELD', { size: 15, weight: 800, cls: 'cz-mtx dim' })}`;
   }).join('');
-  const meter = (x, label) => `${rect(x, 556, 180, 56, { r: 6, cls: 'cz-mscreen' })}${text(x + 90, 572, label, { size: 13, cls: 'cz-mtx dim' })}${text(x + 90, 594, '0', { size: 20, cls: 'cz-mtx' })}`;
-  return svg(W, H, `${rect(10, 10, W - 20, H - 20, { r: 26, cls: 'cz-cabinet' })}
-    ${rect(50, 40, W - 100, 236, { r: 8, cls: 'cz-mscreen' })}${rows}
-    ${text(W / 2, 300, 'JACKS OR BETTER', { size: 22, weight: 700, cls: 'cz-mtx' })}
-    ${cards}${meter(70, 'WIN')}${meter(270, 'BET')}${meter(470, 'CREDITS')}`,
-  { label: 'Video poker machine: pay table, five cards with Hold buttons, win, bet and credit meters', cls: 'cz-machine' });
+  const meter = (i, label) => {
+    const w = (S.w - 40) / 3, x = S.x + 20 + i * w;
+    return `${rect(x + 4, S.y + 424, w - 8, 56, { r: 6, cls: 'cz-mscreen' })}${text(x + w / 2, S.y + 440, label, { size: 13, cls: 'cz-mtx dim' })}${text(x + w / 2, S.y + 462, '0', { size: 20, weight: 700, cls: 'cz-mtx' })}`;
+  };
+  const buttons = [['HOLD', 170], ['BET ONE', 320], ['BET MAX', 470], ['DEAL', 620]].map(([label, x]) =>
+    `${rect(x - 64, DECK.y + 38, 128, 50, { r: 25, cls: label === 'DEAL' ? 'cz-mbtn hot' : 'cz-mbtn' })}${text(x, DECK.y + 63, label, { size: 17, weight: 800, cls: 'cz-mbtn-tx' })}`).join('');
+  // a code-drawn cabinet underneath: the picture covers it, and it stands in if the picture fails
+  const cabinet = rect(80, 60, 640, 1100, { r: 60, cls: 'cz-cabinet' });
+  return svg(W, H, `${cabinet}${rect(TOPPER.x, TOPPER.y, TOPPER.w, TOPPER.h, { cls: 'cz-mscreen' })}
+    ${text(W / 2, TOPPER.y + 72, 'JACKS OR BETTER', { size: 44, weight: 800, cls: 'cz-mtx' })}${text(W / 2, TOPPER.y + 124, 'Video Poker · 9/6 full pay', { size: 20, cls: 'cz-mtx dim' })}
+    ${rect(S.x, S.y, S.w, S.h, { cls: 'cz-mscreen blue' })}${rows}${cards}${meter(0, 'WIN')}${meter(1, 'BET')}${meter(2, 'CREDITS')}
+    ${svgArt(ART.vpCabinet, 0, 0, W, H)}${buttons}`,
+  { label: 'Video poker machine: pay table, five cards, win, bet and credit meters, and its buttons', cls: 'cz-machine cz-cab' });
 }
 
 export default stubGame({

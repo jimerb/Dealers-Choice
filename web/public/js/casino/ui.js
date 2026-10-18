@@ -28,14 +28,16 @@
 //   ctx.setButtons({ action, clear, rebet })  enable or disable the bet bar's buttons
 //   ctx.checkBroke() after a hand: opens the broke dialog if the bank can't cover the table
 //                    minimum; returns true when it did
-import { mountChrome, esc } from '../header.js';
+import { mountChrome, esc, playerName } from '../header.js';
 import { play } from '../core/sound.js';
 import { paintFelt } from '../skin.js';
 import { getBank, money, TIERS } from '../core/bank.js';
 import { CASINO, gameById, stakesFor, stakesById, stakesLabel, stakesShort, rackFor } from './catalog.js';
 import { chipButtonHTML } from './chips.js';
 import { MODULES } from './games/index.js';
+import { ART, TIER_INK, imgArt, watchArt } from './art.js';
 
+watchArt();
 mountChrome('casino');
 const bank = getBank();
 
@@ -60,16 +62,21 @@ pill.href = 'casino.html';
 pill.title = 'Your casino bank';
 document.querySelector('.site-header .who')?.prepend(pill);
 
-const tierBadge = (t) => `<span class="cz-tier" style="--tier:${t.color}"><span class="cz-tier-dot" aria-hidden="true"></span>${t.name}</span>`;
+const tierBadge = (t) => `<span class="cz-tier" style="--tier:${t.color}"><span class="cz-tier-dot" aria-hidden="true">${imgArt(ART.medal(t.id))}</span>${t.name}</span>`;
+/** The tier's medallion over the code-drawn chip (which stays if the picture can't load). */
+const medal = (t, cls) => `<span class="${cls}" aria-hidden="true">${imgArt(ART.medal(t.id))}</span>`;
+/** The tier's card, with the tier and the player's name written in its calm lower half. */
+const tierCard = (t) => `<span class="cz-card" style="--tier:${t.color};--tier-ink:${TIER_INK[t.id]}" aria-hidden="true">${imgArt(ART.tierCard(t.id))}
+  <span class="cz-card-tier">${t.name}</span><span class="cz-card-name">${esc(playerName())}</span></span>`;
 
 function paintBank() {
   const s = held ?? bank.get();
   const t = TIERS[s.tier];
   pill.style.setProperty('--tier', t.color);
-  pill.innerHTML = `<span class="cz-pill-chip" aria-hidden="true"></span><span class="visually-hidden">Bank, ${t.name} tier: </span><b>${money(s.bank)}</b>`;
+  pill.innerHTML = `${medal(t, 'cz-pill-chip')}<span class="visually-hidden">Bank, ${t.name} tier: </span><b>${money(s.bank)}</b>`;
   const top = $('cz-bank');
   top.style.setProperty('--tier', t.color);
-  top.innerHTML = `<span class="cz-pill-chip" aria-hidden="true"></span>Bank <b>${money(s.bank)}</b>${s.loan ? ` <small>loan ${money(s.loan)}</small>` : ''}`;
+  top.innerHTML = `${medal(t, 'cz-pill-chip')}Bank <b>${money(s.bank)}</b>${s.loan ? ` <small>loan ${money(s.loan)}</small>` : ''}`;
   if (!current) { renderBankPanel(); refreshStakes(); }
   else paintRack();
 }
@@ -82,7 +89,13 @@ const EVENT_TEXT = {
   reset: () => 'Bank reset to $5,000.',
   corrupt: () => 'Your casino bank couldn\'t be read, so it was reset to $5,000.',
 };
-const announce = (events) => { for (const e of events) if (EVENT_TEXT[e.type]) toast(EVENT_TEXT[e.type](e), e.type === 'upgrade' || e.type === 'hall'); };
+const announce = (events) => {
+  for (const e of events) {
+    if (!EVENT_TEXT[e.type]) continue;
+    const tier = e.type === 'upgrade' ? TIERS[e.to] : e.type === 'hall' ? TIERS[TIERS.length - 1] : null;
+    toast(EVENT_TEXT[e.type](e), e.type === 'upgrade' || e.type === 'hall', tier);
+  }
+};
 bank.subscribe((_, events) => {
   if (held) { heldEvents.push(...events); return; }
   paintBank();
@@ -104,11 +117,12 @@ function holdBank() {
   };
 }
 
-function toast(msg, big = false) {
+function toast(msg, big = false, tier = null) {
   const t = document.createElement('div');
-  t.className = `cz-toast${big ? ' big' : ''}`;
+  t.className = `cz-toast${big ? ' big' : ''}${tier ? ' medal' : ''}`;
   t.setAttribute('role', 'status');
-  t.textContent = msg;
+  if (tier) t.innerHTML = medal(tier, 'cz-toast-medal');
+  t.append(msg);
   document.body.append(t);
   if (big) play('win');
   setTimeout(() => t.classList.add('out'), 3200);
@@ -133,13 +147,14 @@ function renderBankPanel() {
   const loanLine = s.loan ? `Loan outstanding: <b>${money(s.loan)}</b>. It is repaid automatically once your bank reaches ${money(t.next)}.`
     : bank.loanEligible() ? `The loan desk can lend you <b>${money(bank.loanAmount())}</b>.` : `Loans are offered when the bank drops under $1,000.`;
   el.style.setProperty('--tier', t.color);
-  el.innerHTML = `<div class="cz-bank-main"><span class="cz-bank-chip" aria-hidden="true"></span>
+  el.innerHTML = `<div class="cz-bank-main">${tierCard(t)}
       <div><span class="cz-bank-label">Your bank</span><b class="cz-bank-amt">${money(s.bank)}</b>${tierBadge(t)}<span class="cz-bank-next">${next}</span></div></div>
     <p class="cz-bank-loan">${loanLine}${bank.sessionNet ? ` This visit: <b>${bank.sessionNet > 0 ? '+' : ''}${money(bank.sessionNet)}</b>.` : ''}</p>
     <div class="row"><button class="btn sm${bank.loanEligible() ? ' primary' : ''}" type="button" data-bank="loan">Loan desk</button>
       <button class="btn sm" type="button" data-bank="stats">Stats</button>
+      <button class="btn sm" type="button" data-bank="hall">Hall of Fame</button>
       <button class="btn sm" type="button" data-bank="reset">Reset to $5,000</button></div>
-    ${s.hall.length ? `<p class="cz-hall">Hall of Fame: ${s.hall.map((h) => `${esc(h.name)} (${esc(h.date)})`).join(', ')}</p>` : ''}`;
+`;
 }
 
 const coverable = (s) => bank.balance >= s.min;
@@ -163,13 +178,14 @@ function refreshStakes() {
 function renderChooser() {
   const saved = readStakes();
   chooser.innerHTML = `<div class="section-head" style="margin-top:8px"><h2>Casino</h2><span style="color:var(--ink-3)">${CASINO.reduce((n, g) => n + g.games.length, 0)} games · one bank</span></div>
+    ${imgArt(ART.banner, 'cz-banner')}
     <p class="cz-intro">One bankroll plays every table and machine. Pick your limits on a game, then sit down. Win big enough and your credit goes up a tier.</p>
     <div class="cz-bankpanel" id="cz-bankpanel"></div>
     ${CASINO.map((grp, gi) => `<div class="group cz-group-${gi}"><div class="group-head"><h3>${grp.title}</h3><span>${grp.blurb}</span></div><div class="tiles">${grp.games.map((g) => {
       const mod = MODULES[g.id];
       const st = pickStakes(g, saved[g.id]);
       return `<div class="tile cz-tile${mod.ready ? ' ready' : ''}" data-game="${g.id}">
-        <div class="cz-tile-art" style="--felt:${g.felt}"><svg viewBox="0 0 64 64" aria-hidden="true">${ICONS[g.icon]}</svg><span class="tile-badge">${mod.ready ? 'Open now' : 'Being built'}</span></div>
+        <div class="tile-art cz-tile-art" style="--felt:${g.felt}"><svg viewBox="0 0 64 64" aria-hidden="true">${ICONS[g.icon]}</svg>${imgArt(ART.tile(g.id))}<span class="tile-badge">${mod.ready ? 'Open now' : 'Being built'}</span></div>
         <div class="tile-body"><b>${esc(g.name)}</b>${g.subtitle ? `<span class="cz-tile-sub">${esc(g.subtitle)}</span>` : ''}<span>${esc(g.blurb)}</span>
           <div class="cz-stakes" style="--n:${stakesFor(g).length}" role="radiogroup" aria-label="${g.machine ? 'Denomination' : 'Table limits'} for ${esc(g.name)}">${stakesFor(g).map((s) => stakeButton(s, s.id === st.id)).join('')}</div>
           <a class="btn sm${mod.ready ? ' primary' : ''} cz-sit" href="casino.html?g=${g.id}&s=${st.id}" data-open="${g.id}">${mod.ready ? 'Sit down' : 'Look at the table'}</a>
@@ -195,6 +211,7 @@ chooser.addEventListener('click', (e) => {
   if (b) {
     if (b.dataset.bank === 'loan') loanDesk();
     if (b.dataset.bank === 'stats') showStats();
+    if (b.dataset.bank === 'hall') showHall();
     if (b.dataset.bank === 'reset') confirmReset();
   }
 });
@@ -363,7 +380,7 @@ function confirmReset({ back } = {}) {
 function loanDesk({ back } = {}) {
   const s = bank.get();
   const t = TIERS[s.tier];
-  const head = `<p>Bank <b>${money(s.bank)}</b> · ${tierBadge(t)}</p>`;
+  const head = `<div class="cz-dlg-art">${imgArt(ART.loanDesk)}</div><p>Bank <b>${money(s.bank)}</b> · ${tierBadge(t)}</p>`;
   const terms = `It's repaid automatically once your bank reaches ${money(t.next)}. While a loan is out, your tier can't go up.`;
   if (s.loan) return dialog('Loan desk', `${head}<p>You owe <b>${money(s.loan)}</b>. ${terms}</p>`, [{ label: 'Close', primary: true, run: back }]);
   if (!bank.loanEligible()) return dialog('Loan desk', `${head}<p>Loans are for balances under $1,000.</p>`, [{ label: 'Close', primary: true, run: back }]);
@@ -385,6 +402,17 @@ function showStats() {
   dialog('Casino stats', `<p>Bank <b>${money(s.bank)}</b> · ${tierBadge(t)}${s.loan ? ` · loan ${money(s.loan)}` : ''} · this visit <b>${money(bank.sessionNet)}</b></p>
     ${rows ? `<div class="cz-stats-wrap"><table class="score cz-stats"><thead><tr><th>Game</th><th>Hands</th><th>Bet</th><th>Paid</th><th>Net</th><th>Best</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="muted">No hands played yet.</p>'}`,
   [{ label: 'Close', primary: true }]);
+}
+
+/** The Hall of Fame: a walnut board with a brass plate per player who reached a billion. */
+function showHall() {
+  const { hall } = bank.get();
+  const plate = (txt, sub = '') => `<li class="cz-plate">${imgArt(ART.hallPlate)}<span>${txt}${sub ? `<small>${sub}</small>` : ''}</span></li>`;
+  const rows = hall.length
+    ? hall.map((h, i) => plate(`${i + 1}. ${esc(h.name)}`, `${esc(h.date)}${h.hands ? ` · ${Number(h.hands).toLocaleString('en-US')} hands` : ''}`)).join('')
+    : plate('Your name here');
+  dialog('Hall of Fame', `<div class="cz-hall-board"><ol class="cz-plates">${rows}</ol></div>
+    ${hall.length ? '' : '<p class="muted">No names yet. A billion dollars gets you on the wall.</p>'}`, [{ label: 'Close', primary: true }]);
 }
 
 function showOptions() {

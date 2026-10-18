@@ -5,9 +5,10 @@
 export const esc = (s) => String(s).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 const n = (v) => Math.round(v * 10) / 10;
 
-/** The outer <svg>. `label` describes the whole layout for screen readers. */
-export const svg = (w, h, body, { label = '', cls = '' } = {}) =>
-  `<svg class="cz-svg ${cls}" viewBox="0 0 ${w} ${h}" role="img"${label ? ` aria-label="${esc(label)}"` : ''} xmlns="http://www.w3.org/2000/svg">${body}</svg>`;
+/** The outer <svg>. `label` describes the whole layout for screen readers; `top` adds room above
+ *  y = 0 (a half-moon table's crest sits there). */
+export const svg = (w, h, body, { label = '', cls = '', top = 0 } = {}) =>
+  `<svg class="cz-svg ${cls}" viewBox="0 ${-top} ${w} ${h + top}" role="img"${label ? ` aria-label="${esc(label)}"` : ''} xmlns="http://www.w3.org/2000/svg">${body}</svg>`;
 
 export const rect = (x, y, w, h, { cls = 'cz-ln', r = 0, attrs = '' } = {}) =>
   `<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}"${r ? ` rx="${r}"` : ''} class="${cls}" ${attrs}/>`;
@@ -62,10 +63,11 @@ export function die(x, y, s, v) {
 }
 
 /** The usual top-down card table: a straight edge at the top (dealer), a curved rail toward the
- *  players. Returns the rail path for a w x h box; the arc's centre is (w/2, top). */
+ *  players. Returns the table outline `d` for a w x h box and `edge`, its curved side alone; the
+ *  arc's centre is (w/2, top). */
 export const tableRail = (w, h, top = 30) => {
   const r = Math.min(w / 2 - 10, h - top - 10);
-  return { cx: w / 2, cy: top, r, d: `M${w / 2 - r} ${top} H${w / 2 + r} ${arc(w / 2, top, r, 0, 180).replace(/^M[^A]+/, '')} Z` };
+  return { cx: w / 2, cy: top, r, d: `M${w / 2 - r} ${top} H${w / 2 + r} ${arc(w / 2, top, r, 0, 180).replace(/^M[^A]+/, '')} Z`, edge: arc(w / 2, top, r, 0, 180) };
 };
 
 /** Positions of `count` seats along an arc of radius r (left to right as the player sees them). */

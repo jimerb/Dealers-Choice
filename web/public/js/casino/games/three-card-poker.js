@@ -10,6 +10,7 @@ import { stubGame, howtoSections } from '../stub.js';
 
 export function layout() {
   return pokerTable({
+    name: 'Three Card Poker',
     label: 'Three Card Poker table: dealer cards on top, Pair Plus, Ante and Play spots at five seats',
     dealerCards: 3,
     dealerNote: 'Dealer plays with queen high or better',

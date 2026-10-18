@@ -6,18 +6,19 @@
 //   - Roll: two dice with crypto randomness and a roll animation (dice art optional)
 //   - field pays double on 2 and 12; place 4/10 9:5, 5/9 7:5, 6/8 7:6; propositions as marked
 //   - settle through ctx.bank, recordHand per roll that resolves a bet, ctx.checkBroke()
-import { svg, path, rect, text, die, circle } from '../svg.js';
+import { svg, path, rect, text, circle } from '../svg.js';
+import { railBand, dieFace, tumblingDie, puck } from '../tableart.js';
 import { stubGame, howtoSections } from '../stub.js';
 
 function props() {
   // the proposition box: x 30-270
   const x = 30, w = 240;
   const box = (y, h, label, pays, key, dice = []) => {
-    const d = dice.map((v, i) => die(x + 14 + i * 34, y + h / 2 - 14, 28, v)).join('');
+    const d = dice.map((v, i) => dieFace(x + 14 + i * 34, y + h / 2 - 14, 28, v)).join('');
     return `<g data-spot="${key}">${rect(x, y, w, h, { cls: 'cz-area' })}${d}${text(x + (dice.length ? 160 : w / 2), y + h / 2 - (pays ? 9 : 0), label, { size: 17 })}${pays ? text(x + (dice.length ? 160 : w / 2), y + h / 2 + 12, pays, { size: 14, cls: 'cz-tx dim' }) : ''}</g>`;
   };
   const half = (y, cx, label, pays, key, dice) => {
-    const d = dice.map((v, i) => die(cx - 30 + i * 32, y + 8, 26, v)).join('');
+    const d = dice.map((v, i) => dieFace(cx - 30 + i * 32, y + 8, 26, v)).join('');
     return `<g data-spot="${key}">${rect(cx - 60, y, 120, 70, { cls: 'cz-area' })}${d}${text(cx, y + 50, `${label} ${pays}`, { size: 14 })}</g>`;
   };
   return `${box(40, 52, 'Seven', '4 for 1', 'any7')}
@@ -38,7 +39,8 @@ export function layout() {
     ${text(L + 140, 306, 'FIELD', { size: 22, weight: 700, rotate: -90 })}
     ${[2, 3, 4, 9, 10, 11, 12].map((v, i) => { const x = L + 200 + i * 62; const dbl = v === 2 || v === 12; return (dbl ? circle(x, 296, 20) : '') + text(x, 296, String(v), { size: 24 }); }).join('')}
     ${text(L + 386, 334, '2 and 12 pay double', { size: 14, cls: 'cz-tx dim' })}</g>`;
-  return svg(W, H, `${path('M20 20 H800 Q980 20 980 280 Q980 540 800 540 H20 Z', { cls: 'cz-rail' })}
+  const tub = 'M20 20 H800 Q980 20 980 280 Q980 540 800 540 H20 Z';
+  return svg(W, H, `${railBand(tub, tub, W, H, 22)}${path(tub, { cls: 'cz-rail' })}
     ${props()}
     <g data-spot="dontcome">${rect(L, 40, 100, 100, { cls: 'cz-area' })}${text(L + 50, 76, "DON'T", { size: 15 })}${text(L + 50, 96, 'COME', { size: 15 })}${text(L + 50, 116, 'BAR ⚅⚅', { size: 13 })}</g>
     ${place}
@@ -48,7 +50,8 @@ export function layout() {
     <g data-spot="dontpass">${rect(L + 100, 362, 492, 58, { cls: 'cz-area' })}${text(L + 346, 391, "DON'T PASS BAR ⚅⚅", { size: 20 })}</g>
     <g data-spot="pass">${path(`M${L} 430 H${L + 602} V150 H${L + 652} V420 Q${L + 652} 500 ${L + 572} 500 H${L} Z`, { cls: 'cz-area' })}
       ${text(L + 300, 465, 'PASS LINE', { size: 34, weight: 700 })}${text(L + 627, 290, 'PASS LINE', { size: 24, weight: 700, rotate: 90 })}</g>
-    ${circle(L + 50, 175, 18, { cls: 'cz-puck' })}${text(L + 50, 175, 'OFF', { size: 11, cls: 'cz-puck-tx', weight: 800 })}`,
+    ${puck(L + 50, 175, 20, false)}
+    <g class="cz-thrown" aria-hidden="true">${tumblingDie(700, 519, 24, 1, 6)}${tumblingDie(742, 518, 24, 2, 1)}</g>`,
   { label: 'Craps layout: propositions on the left; place numbers, Come, Field, Don\'t Pass and Pass Line' });
 }
 

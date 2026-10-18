@@ -13,6 +13,7 @@ import { stubGame, howtoSections } from '../stub.js';
 
 export function layout() {
   return pokerTable({
+    name: 'Pai Gow Poker',
     label: 'Pai Gow Poker table: dealer\'s seven cards on top, a bet circle and High and Low boxes at five seats',
     dealerCards: 7,
     dealerNote: 'Dealer sets the house way · copies go to the dealer',

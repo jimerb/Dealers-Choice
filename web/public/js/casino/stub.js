@@ -3,13 +3,13 @@
 // module (see the interface at the top of ui.js) when the game is built.
 import { esc } from './svg.js';
 
-export function stubGame({ id, name, layout, todo, howto, options = [] }) {
+export function stubGame({ id, name, layout, stage = layout, todo, howto, options = [] }) {
   let root = null;
   return {
-    id, name, todo, howto, options, layout, ready: false,
+    id, name, todo, howto, options, layout, stage, ready: false,
     mount(el, ctx) {
       root = el;
-      el.innerHTML = `<div class="cz-stage">${layout()}</div>
+      el.innerHTML = `<div class="cz-stage">${stage()}</div>
         <details class="cz-todo"><summary>This table is still being built</summary>
         <ul>${todo.map((t) => `<li>${esc(t)}</li>`).join('')}</ul></details>`;
       ctx.setTotal(0);

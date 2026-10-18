@@ -2,10 +2,11 @@
 // every layout draws (as an SVG string, no browser) with its key labels.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync, existsSync } from 'node:fs';
+import { readdirSync, existsSync, readFileSync } from 'node:fs';
 import { CASINO, ALL_GAMES, TABLE_STAKES, MACHINE_STAKES, stakesFor, stakesById, stakesLabel, rackFor, gameById } from '../public/js/casino/catalog.js';
 import { MODULES } from '../public/js/casino/games/index.js';
-import { layout as rouletteLayout, areas } from '../public/js/casino/games/roulette.js';
+import { layout as rouletteLayout, areas, wheelHTML } from '../public/js/casino/games/roulette.js';
+import { allArt, ART, TILE_IDS } from '../public/js/casino/art.js';
 
 test('the chooser groups the eleven games in build order', () => {
   assert.deepEqual(CASINO.map((g) => g.title), ['Table games', 'Machines', 'Lounge']);
@@ -60,7 +61,7 @@ test('every game has a module with the shared interface', () => {
 });
 
 test('layouts carry their key labels as live text', () => {
-  const has = (id, ...labels) => { const s = MODULES[id].layout(); for (const l of labels) assert.ok(s.includes(l), `${id}: ${l}`); };
+  const has = (id, ...labels) => { const s = (MODULES[id].stage ?? MODULES[id].layout)(); for (const l of labels) assert.ok(s.includes(l), `${id}: ${l}`); };
   has('blackjack', 'BLACKJACK PAYS 3 TO 2', 'INSURANCE PAYS 2 TO 1');
   assert.equal((MODULES.blackjack.layout().match(/data-spot=/g) ?? []).length, 1, 'one player spot');
   has('craps', 'PASS LINE', 'DON&#39;T PASS BAR', 'COME', 'FIELD', 'SIX', 'NINE', 'Any craps', 'Hard 8');
@@ -94,3 +95,44 @@ test('roulette layout: 0, 00, 1-36, columns, dozens and even-money boxes, both w
   }
 });
 
+
+// Every picture the casino asks for is on disk: the art manifest, any literal asset path in the casino
+// scripts or stylesheet, and every path that appears in a drawn layout.
+const pub = (p) => new URL(`../public/${p}`, import.meta.url);
+function walk(dir) {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((d) => (d.isDirectory() ? walk(new URL(`${d.name}/`, dir)) : [new URL(d.name, dir)]));
+}
+
+test('every casino picture exists on disk', () => {
+  const paths = new Set(allArt());
+  for (const f of [...walk(pub('js/casino/')), pub('css/casino.css')]) {
+    const src = readFileSync(f, 'utf8');
+    for (const m of src.matchAll(/assets\/art\/[\w./-]+\.webp/g)) paths.add(m[0]);
+    assert.doesNotMatch(src.replace(/\$\{DIR\}/g, ''), /assets\/art\/casino\/[\w./-]*\$\{/, `${f.pathname}: build casino art paths with art.js`);
+  }
+  for (const m of Object.values(MODULES)) {
+    const s = (m.stage ?? m.layout)();
+    for (const h of s.matchAll(/href="(assets\/[^"]+)"/g)) paths.add(h[1]);
+  }
+  for (const h of wheelHTML().matchAll(/src="(assets\/[^"]+)"/g)) paths.add(h[1]);
+  assert.ok(paths.size >= 56, `found ${paths.size} paths`);
+  for (const p of paths) assert.ok(existsSync(pub(p)), `${p} exists`);
+  assert.deepEqual(TILE_IDS, ALL_GAMES.map((g) => g.id), 'a chooser tile for every game');
+});
+
+test('tables are dressed with the casino art over code-drawn stand-ins', () => {
+  for (const id of ['blackjack', 'baccarat', 'three-card-poker', 'let-it-ride', 'caribbean-stud', 'pai-gow-poker']) {
+    const s = MODULES[id].layout();
+    for (const p of [ART.crest, ART.shoe, ART.tray, ART.rail]) assert.ok(s.includes(p), `${id} uses ${p}`);
+    assert.ok(s.includes(`>${MODULES[id].name.toUpperCase()}<`), `${id} writes its name in the crest`);
+    assert.match(s, /class="cz-fb"/, `${id} keeps stand-ins`);
+  }
+  const craps = MODULES.craps.layout();
+  for (const p of [ART.die(6), ART.puck(false), ART.tumble(1)]) assert.ok(craps.includes(p), p);
+  assert.ok(MODULES.slots.layout().includes(ART.slotCabinet) && MODULES.video_poker === undefined);
+  assert.ok(MODULES['video-poker'].layout().includes(ART.vpCabinet));
+  assert.ok(MODULES.keno.stage().includes(ART.kenoBlower));
+  const w = wheelHTML();
+  for (const p of [ART.bowl, ART.rotor, ART.ball]) assert.ok(w.includes(p), p);
+  assert.equal((w.match(/data-pocket=/g) ?? []).length, 38, 'the code draws all 38 pockets');
+});

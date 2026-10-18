@@ -6,24 +6,24 @@
 //   - Hit / Stand / Double / Split (and re-split) buttons in the bet bar while a hand is live
 //   - dealer plays out: stands on all 17s (option: hits soft 17)
 //   - settle through ctx.bank, recordHand, ctx.checkBroke(); cosmetic co-players optional
-import { svg, path, text, arcText, spot, cardSlot, rect, tableRail } from '../svg.js';
+import { svg, path, text, arcText, spot, cardSlot, tableRail } from '../svg.js';
+import { railBand, tableCrest, shoe, discardTray, CREST_TOP } from '../tableart.js';
 import { stubGame, howtoSections } from '../stub.js';
 
 export function layout() {
   const W = 1000, H = 560;
-  const { cx, cy, r, d } = tableRail(W, H, 30);
+  const { cx, cy, r, d, edge } = tableRail(W, H, 30);
   // one player spot in v1, front and centre, with room for split hands either side
   const spotY = cy + r - 80;
   const seats = `${spot(cx, spotY, 42, 'BET', { key: 'spot:0' })}${cardSlot(cx - 28, spotY - 98, 46)}${cardSlot(cx + 28, spotY - 92, 46)}
     ${text(cx, spotY + 58, 'Your hand', { size: 15, cls: 'cz-tx dim' })}`;
-  return svg(W, H, `${path(d, { cls: 'cz-rail' })}
-    ${rect(820, 44, 110, 70, { cls: 'cz-ln', r: 8 })}${text(875, 79, 'Shoe', { size: 18 })}
-    ${rect(70, 44, 90, 70, { cls: 'cz-ln', r: 8 })}${text(115, 79, 'Discards', { size: 16 })}
+  return svg(W, H, `${railBand(edge, d, W, H)}${path(d, { cls: 'cz-rail' })}${tableCrest('Blackjack')}
+    ${shoe()}${discardTray()}
     ${cardSlot(470, 95, 48)}${cardSlot(530, 95, 48)}${text(500, 150, 'Dealer', { size: 18, cls: 'cz-tx dim' })}
     ${arcText(cx, cy, 180, 160, 20, 'BLACKJACK PAYS 3 TO 2', { size: 26 })}
     ${arcText(cx, cy, 215, 160, 20, 'Dealer must draw to 16 and stand on all 17s', { size: 17, weight: 500 })}
     ${arcText(cx, cy, 252, 150, 30, 'INSURANCE PAYS 2 TO 1', { size: 18 })}
-    ${seats}`, { label: 'Blackjack table: dealer at the top, your betting spot at the front' });
+    ${seats}`, { label: 'Blackjack table: dealer at the top, your betting spot at the front', top: CREST_TOP });
 }
 
 export default stubGame({
