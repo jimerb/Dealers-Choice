@@ -1,8 +1,8 @@
 // Generic card-table runner. A game module provides pure rules + AI + a view model; this file
-// renders it, paces computer turns, plays sounds, saves progress and handles settings/rules.
+// renders it, paces computer turns, plays sounds, saves progress and handles settings and How to play.
 //
 // Game module contract (default export):
-//   id, title, rulesHTML, settings?: [{key,label,options:[[value,label]],default}]
+//   id, title, howto (the How to play guide; see core/howto.js), settings?: [{key,label,options:[[value,label]],default}]
 //   seats?: fixed player count (newGame gets that many names; saved games are trimmed to it).
 //           Without it newGame gets MAX_SEATS names and seats as many as its settings ask for.
 //           Computer seats are filled from the cast (core/cast.js); 'again' should keep s.names.
@@ -20,6 +20,7 @@ import { mountChrome, esc, playerName, playerAvatar, avatarHTML } from '../heade
 import { play } from './sound.js';
 import { pickOpponents, castByName, renamePlaceholders } from './cast.js';
 import { trumpPlaqueHTML } from './pieces.js';
+import { howtoHTML, setupHowto } from './howto.js';
 
 const MAX_SEATS = 6;
 const pace = () => { try { return localStorage.getItem('dc.speed') === 'fast' ? 0.45 : 1; } catch { return 1; } };
@@ -70,6 +71,7 @@ export function mountTable(game) {
   save(); // save at once so a reload keeps the same opponents (new, or renamed in an old save)
   const ui = { selected: new Set() };
   let timer = null;
+  let howto = null;
 
   function set(next) {
     state = next;
@@ -83,6 +85,7 @@ export function mountTable(game) {
     if (a === null || a === 0) return;
     const ms = (game.delay?.(state) ?? (a === 'auto' ? 1200 : 750)) * pace();
     timer = setTimeout(() => {
+      if (howto?.isOpen()) return schedule(); // the table waits while you read How to play
       try { set(game.aiAct(state)); } catch (e) { console.error(e); }
     }, ms);
   }
@@ -179,12 +182,6 @@ export function mountTable(game) {
 
   // -------- top bar buttons
   document.getElementById('btn-new').addEventListener('click', () => openSettings(true));
-  document.getElementById('btn-rules').addEventListener('click', () => {
-    const d = document.getElementById('rules');
-    d.querySelector('#rules-title').textContent = `How to play ${game.title}`;
-    d.querySelector('#rules-body').innerHTML = game.rulesHTML;
-    d.showModal();
-  });
   function openSettings() {
     const d = document.getElementById('game-settings');
     const o = readOpts();
@@ -214,5 +211,6 @@ export function mountTable(game) {
   });
 
   render();
+  howto = setupHowto({ id: game.id, title: () => `How to play ${game.title}`, body: () => howtoHTML(game) });
   schedule();
 }

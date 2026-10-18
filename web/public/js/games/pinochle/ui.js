@@ -6,6 +6,8 @@ import { mountChrome, esc, playerName, playerAvatar, avatarHTML } from '../../he
 import { play } from '../../core/sound.js';
 import { pickOpponents, castByName, renamePlaceholders } from '../../core/cast.js';
 import { trumpPlaqueHTML } from '../../core/pieces.js';
+import { setupHowto } from '../../core/howto.js';
+import { pinochleHowtoHTML } from './howto.js';
 
 mountChrome('pinochle');
 preloadSkin();
@@ -36,6 +38,7 @@ else if (asked && asked !== state.variant) {
 }
 save(); // save at once so a reload keeps the same opponents (new, or renamed in an old save)
 let timer = null;
+let howto = null;
 
 /** A new game of `variant`: fresh opponents from the cast, or the same ones when playing again (`keep`). */
 function fresh(keep = null, variant = state?.variant ?? 'auction') {
@@ -88,7 +91,7 @@ function schedule() {
   else if (who !== 0) delay = { bidding: 800, trump: 1000, dix: 1000, declare: 900, play: 700 }[s.phase] ?? 800;
   else if (s.phase === 'declare' && !P.meldOptions(s, 0).length) delay = 500; // nothing to meld: draw
   else return;
-  timer = setTimeout(() => set(who === 0 ? P.endDeclare(s, 0) : AI.act(s)), delay * pace());
+  timer = setTimeout(() => (howto?.isOpen() ? schedule() : set(who === 0 ? P.endDeclare(s, 0) : AI.act(s))), delay * pace()); // waits while How to play is open
 }
 
 // ------------------------------------------------------------------ rendering
@@ -316,7 +319,6 @@ function render() {
     <div class="center">${trickHTML()}${b ? `<div class="banner" role="status">${b}</div>` : ''}${ov ? `<div class="overlay">${ov}</div>` : ''}</div>
     <div class="seat south">${handHTML()}${plate(0)}</div>`;
   document.getElementById('side').innerHTML = sidePanel();
-  document.getElementById('rules').querySelectorAll('details[data-v]').forEach((d) => { if (!d.dataset.touched) d.open = d.dataset.v === v.id; });
 }
 
 // ------------------------------------------------------------------ input
@@ -368,14 +370,13 @@ dlg.querySelector('form').addEventListener('submit', (e) => {
 dlg.addEventListener('cancel', () => { pendingSwitch = null; syncUrl(); });
 
 document.getElementById('btn-new').addEventListener('click', () => openNewGame());
-document.getElementById('btn-rules').addEventListener('click', () => document.getElementById('rules').showModal());
-document.getElementById('rules').querySelectorAll('details[data-v]').forEach((d) => d.querySelector('summary').addEventListener('click', () => { d.dataset.touched = '1'; }));
 window.addEventListener('dc:settings', () => {
   state = { ...state, names: [playerName(), ...state.names.slice(1)] };
   save(); render();
 });
 
 render();
+howto = setupHowto({ id: 'pinochle', title: () => `How to play ${V().name} Pinochle`, body: () => pinochleHowtoHTML(state.variant), auto: !pendingSwitch });
 schedule();
 if (pendingSwitch) openNewGame(pendingSwitch, { fromLink: true });
 else syncUrl();

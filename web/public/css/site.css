@@ -91,6 +91,7 @@ fieldset.field { border: 0; padding: 0; margin: 0 0 16px; }
    One layout for every game's rules: <dialog class="howto"> holding .howto-head (title + .howto-close),
    a scrolling .howto-body of .howto-section blocks (h3 + text), and a .howto-foot.
    Controls go in <dl class="howto-controls"> (mouse / touch rows); .howto-fig shows a few small cards.
+   A game with several ways to play folds each one into a <details class="howto-variant">.
    Desktop: a centred card ~640px wide. Phones and small tablets: a full-screen sheet. */
 dialog.howto { width: min(640px, calc(100vw - 32px)); max-width: none; max-height: min(88vh, 880px); padding: 0; overflow: hidden; box-shadow: 0 24px 60px rgba(0,0,0,.5); }
 dialog.howto[open] { display: flex; flex-direction: column; }
@@ -121,6 +122,13 @@ dialog.howto[open] { display: flex; flex-direction: column; }
 .howto-fig figcaption { font-size: 14px; color: var(--ink-3); }
 .howto-tip { margin: 16px 0 0; padding: 10px 14px; border-left: 3px solid var(--brass); background: rgba(201,162,74,.1); border-radius: 0 10px 10px 0; color: var(--ink-2); }
 .howto-tip b { color: var(--brass-2); }
+.howto-variant { border-bottom: 1px solid var(--line); padding-bottom: 14px; }
+.howto-variant > summary { display: flex; align-items: center; gap: 10px; min-height: 48px; padding-top: 8px; cursor: pointer; list-style: none; font-size: 18px; font-weight: 700; color: var(--ink); }
+.howto-variant > summary::-webkit-details-marker { display: none; }
+.howto-variant > summary::before { content: '▸'; color: var(--brass); transition: transform .15s; }
+.howto-variant[open] > summary::before { transform: rotate(90deg); }
+.howto-variant > summary small { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--brass-2); }
+.howto-variant:not([open]) { padding-bottom: 6px; }
 .howto-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 12px 24px 16px; border-top: 1px solid var(--line); flex: none; margin: 0; }
 .howto-foot .choice { min-height: 44px; font-size: 15px; color: var(--ink-2); cursor: pointer; }
 .howto-foot .choice input { width: 20px; height: 20px; accent-color: var(--brass); }
