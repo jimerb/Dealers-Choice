@@ -69,7 +69,8 @@ export function mountChrome(active) {
     pop.hidden = !pop.hidden;
     toggle.setAttribute('aria-expanded', String(!pop.hidden));
   });
-  document.addEventListener('click', (e) => {
+  // pointerdown, not click: iOS sends no click to the page for a tap on plain text or the felt
+  document.addEventListener('pointerdown', (e) => {
     if (!pop.hidden && !e.target.closest('.sound-ctl')) { pop.hidden = true; toggle.setAttribute('aria-expanded', 'false'); }
   });
   pop.querySelector('#vol-sfx').addEventListener('input', (e) => setVolume('sfx', e.target.value));
