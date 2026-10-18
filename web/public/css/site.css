@@ -312,3 +312,12 @@ dialog { max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overfl
 /* Your name and picture: one button that opens Table settings. */
 .who-me { display: flex; align-items: center; gap: 10px; background: none; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer; }
 .who-me:focus-visible { outline: 3px solid var(--brass-2); outline-offset: 3px; border-radius: 8px; }
+
+/* The featured Klondike card at the top of the parlor. */
+.sol-feature { display: grid; gap: 6px; margin: 18px 0 8px; padding: 22px 24px; border-radius: 20px; border: 2px solid var(--brass-2); text-decoration: none; color: var(--ink); background: linear-gradient(135deg, #1F6E57 0%, #0F3B30 75%); box-shadow: 0 10px 30px rgba(0,0,0,.35); transition: transform .15s ease; }
+.sol-feature:hover { transform: translateY(-2px); color: var(--ink); }
+.sol-feature-eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--brass-2); }
+.sol-feature b { font-family: var(--font-display); font-weight: 400; font-size: clamp(28px, 4vw, 40px); line-height: 1.1; }
+.sol-feature > span:not(.sol-feature-eyebrow):not(.sol-feature-go) { color: var(--ink-2); font-size: 15px; }
+.sol-feature-go { justify-self: start; margin-top: 6px; padding: 8px 14px; border-radius: 999px; background: var(--brass-2); color: var(--on-brass); font-weight: 700; font-size: 14px; }
+
