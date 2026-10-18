@@ -172,7 +172,6 @@ dialog.howto[open] { display: flex; flex-direction: column; }
 .eyebrow { font-size: 13px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: var(--brass-2); }
 .hero h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 5vw, 60px); line-height: 1.05; }
 .hero p { margin: 0; max-width: 540px; font-size: 18px; color: var(--ink-2); }
-.hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
 .feature { flex: 1 1 440px; min-width: 0; background: var(--ground); border: 1px solid #2D6E58; border-radius: 24px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 30px 60px rgba(0,0,0,.35); }
 /* The hero art is painted on the same green as --ground, so its edges melt into the panel. */
 .feature-art { position: relative; aspect-ratio: 16 / 10; background: var(--ground); }
