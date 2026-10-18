@@ -261,13 +261,32 @@ function aiTurn(s, p) {
   }
 }
 
-const RULES = `<p>Partners sit across. Each player gets 11 cards from two decks with jokers. <b>Jokers and 2s are wild.</b> Red 3s are set aside automatically for bonus points.</p>
-<h3>Your turn</h3><p>Draw a card, or take the whole <b>discard pile</b> if you can meld its top card right away (with two naturals of that rank when the pile is frozen by a wild card, or before your team's first meld). Then meld if you like, and discard one card.</p>
-<h3>Melds and canastas</h3><p>A meld is 3+ cards of one rank with at least two naturals and at most three wilds. Seven or more is a <b>canasta</b> (500 if natural, 300 if mixed). Your team's first melds in a turn must reach the minimum shown (50, 90 or 120 depending on your score).</p>
-<h3>Going out</h3><p>Once your team has a canasta, meld all your cards (you may discard the last one) to end the hand. Card values: joker 50, ace and 2 20, 8–K 10, 4–7 and black 3 5. Cards left in hand count against you. First team to 5,000 wins.</p>`;
+const HOWTO = {
+  goal: 'With your partner, meld cards, build canastas and go out. The first team to 5,000 points wins.',
+  deal: 'Two full decks and four jokers. Four players in two partnerships (you and the player across from you); each gets 11 cards. The next card starts the discard pile. If it’s a wild card or a red 3, the pile is <b>frozen</b> and another card is turned on top.',
+  play: [
+    '<b>Jokers and 2s are wild.</b> <b>Red 3s</b> are bonus cards: they’re laid out for your team automatically and replaced from the stock.',
+    'On your turn, draw the top card of the stock <b>or</b> take the whole discard pile, then meld if you like, then discard one card.',
+    'To take the pile you must meld its top card right away. When the pile is frozen, or your team hasn’t melded yet, that takes two natural cards of the same rank from your hand. Otherwise one natural and a wild card will do, or you can add the top card to a meld your team already has. You can’t take the pile when the top card is wild or a black 3.',
+    'A <b>meld</b> is three or more cards of one rank, with at least two natural cards and no more than three wilds. Black 3s can be melded only when you go out, and never with wild cards.',
+    'A meld of seven or more cards is a <b>canasta</b>.',
+    'Your team’s first melds of a hand must add up to a minimum: 50 points, or 15 while your score is below zero, 90 from 1,500 and 120 from 3,000.',
+    'Discarding a wild card freezes the pile.',
+    'Once your team has a canasta you can <b>go out</b> by melding all your cards (you may discard the last one), which ends the hand. If the stock runs out, the hand ends too.',
+  ],
+  score: [
+    'Card values: joker 50, ace and 2 20, 8 to king 10, 4 to 7 and black 3 5.',
+    'Each team scores the value of its melded cards, plus 500 for each natural canasta and 300 for each mixed one (with wild cards), plus 100 for each red 3 (800 for all four), plus 100 for going out, or 200 for going out <b>concealed</b> (in a single turn, before your team had melded anything and without taking the pile).',
+    'Cards left in both partners’ hands count against the team, and red 3s count against a team that hasn’t melded anything.',
+    'The first team to 5,000 wins.',
+  ],
+  options: 'Canasta has no extra options: New game deals a fresh game.',
+  controls: 'Cards in your hand are selected rather than played: {click} cards to select them, and {click} again to put one back. {Click} Draw to draw from the stock, or select matching cards and {click} Take the pile. Select three or more cards and {click} Meld selected to start a meld, or {click} one of your team’s melds to add the selected cards to it. Select one card and {click} Discard to end your turn; Undo melds takes back the melds you made this turn.',
+  tip: 'Don’t discard a rank your opponents have melded: the next player can scoop up the whole pile with it. When the pile grows big, a wild card discard freezes it.',
+};
 
 export default {
-  id: 'canasta', title: 'Canasta', version: 1, seats: 4, rulesHTML: RULES,
+  id: 'canasta', title: 'Canasta', version: 1, seats: 4, howto: HOWTO,
   newGame({ names, seed, opts }) {
     return deal({ v: 1, seed, rngN: 0, names: names.slice(0, 4), opts, scores: [0, 0], handNo: 0, dealer: 3, log: [], fx: [] });
   },

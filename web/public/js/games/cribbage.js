@@ -234,13 +234,32 @@ function aiPeg(s, p) {
   return best.c.id;
 }
 
-const RULES = `<p>Two players race to 121 points. Each player gets six cards and lays two in the dealer's <b>crib</b>. A starter card is cut (a jack gives the dealer 2 for "his heels").</p>
-<h3>Pegging</h3><p>Take turns playing cards and announcing the running count, never past 31. Score 2 for making 15 or 31, 2/6/12 for pairs/three/four of a kind, and runs of 3+. If you can't play, say "Go"; the last card under 31 earns 1.</p>
-<h3>Counting</h3><p>Then each hand (non-dealer first) and the crib are counted with the starter: fifteens 2 each, pairs 2, runs 1 per card, flush 4 (5 with the starter; the crib needs 5), and the jack of the starter's suit 1 ("his nobs").</p>
-<p>Options: count your own hand and crib (any points you miss go to your opponent, "Muggins"), and play a best-of-seven match in which a skunk (winning by more than 30) counts as two games and a double skunk (more than 60) as three.</p>`;
+const HOWTO = {
+  goal: 'Be the first to peg 121 points around the board.',
+  deal: 'Two players, six cards each. Each of you lays two cards face down in the dealer’s <b>crib</b>, an extra hand that scores for the dealer. Then a <b>starter</b> card is turned up; if it’s a jack, the dealer pegs 2 for <b>his heels</b>. The deal alternates.',
+  play: [
+    '<b>Pegging</b>: starting with the non-dealer, take turns playing a card face up and adding its value to the running <b>count</b>, which can’t go past 31. Face cards count 10 and aces 1.',
+    'You peg as you play: 2 for bringing the count to 15, 2 for exactly 31, 2 for a pair with the last card, 6 for three of a kind, 12 for four, and 1 a card for a run of three or more among the last cards played (in any order).',
+    'If you can’t play without going over 31, you say <b>Go</b> (the game says it for you) and the other player keeps playing while they can. The last card played scores 1 (or 2 for 31), and the count starts again from zero.',
+    '<b>The show</b>: when all the cards are played, the non-dealer’s hand is counted, then the dealer’s, then the crib, each together with the starter.',
+  ],
+  fig: { cards: '5H 10S · 7C 8D', caption: 'Two fifteens: 5 + 10 and 7 + 8, worth 2 each.' },
+  score: [
+    'In the show: 2 for each combination of cards adding up to 15, 2 for each pair, 1 a card for each run of three or more, 4 for a <b>flush</b> of four in your hand (5 if the starter matches too; the crib only counts a five-card flush), and 1 for holding the jack of the starter’s suit (<b>his nobs</b>).',
+    'The game ends the moment someone reaches 121, even in the middle of pegging or the show.',
+    'Winning by more than 30 points (your opponent hasn’t reached 91) is a <b>skunk</b>; by more than 60 (under 61) is a <b>double skunk</b>.',
+  ],
+  options: {
+    first: 'who deals the first hand: you, your opponent, or chosen at random.',
+    counting: 'Counted for you scores every hand automatically. Count your own (Muggins) asks you how many points your hand and crib are worth: any you miss go to your opponent, who always counts correctly.',
+    match: 'one game, or a best-of-seven match (first to four game wins) in which a skunk counts as two games and a double skunk as three.',
+  },
+  controls: 'To lay away, {click} two cards to select them, then {click} Send to crib. While pegging, {click} a highlighted card to play it. If you count your own hands, {click} the number of points your hand is worth. {Click} Next hand after the show.',
+  tip: 'Fives and pairs are gifts in a crib. Keep them for your own crib, and lay away cards that don’t go together when it’s your opponent’s.',
+};
 
 export default {
-  id: 'cribbage', title: 'Cribbage', version: 1, seats: 2, rulesHTML: RULES,
+  id: 'cribbage', title: 'Cribbage', version: 1, seats: 2, howto: HOWTO,
   settings: [
     { key: 'first', label: 'First dealer', options: [['me', 'Me'], ['north', 'Opponent'], ['random', 'Random']], default: 'random' },
     { key: 'counting', label: 'Counting hands', options: [['auto', 'Counted for you'], ['manual', 'Count your own (Muggins)']], default: 'auto' },

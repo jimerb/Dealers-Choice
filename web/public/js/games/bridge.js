@@ -280,15 +280,33 @@ function aiPlay(s, p) {
   return followPlay(L, s.trick, p, s.trump, { partnerOf: partnerOf(p) }).id;
 }
 
-const RULES = `<p>You sit South with your partner across the table at North, against the players at West and East.</p>
-<h3>The auction</h3><p>Starting with the dealer, players bid a number of tricks over six (1 to 7) and a trump suit or no-trump (♣ < ♦ < ♥ < ♠ < NT), or pass, double, or redouble. Three passes after a bid end the auction. The last bid is the contract.</p>
-<h3>Play</h3><p>The player left of the declarer leads, then the declarer's partner (dummy) lays their cards face up. When your side declares, you play both your hand and your partner's. Follow suit if you can.</p>
-<h3>Scoring (rubber)</h3><p>Tricks bid and made score below the line (♣♦ 20, ♥♠ 30, NT 40 then 30). 100 below the line wins a game, and two games win the rubber (bonus 700, or 500 if the rubber went three games). Overtricks, slams, doubled contracts and penalties score above the line. Vulnerable sides (with a game) score bigger bonuses and penalties.</p>
-<p><b>Chicago</b> (an option) plays exactly four deals instead: vulnerability is set by the deal number, each game made earns 300 (500 vulnerable), and a part-score made on the fourth deal earns 100.</p>
-<p>The computer bids with a simplified natural system (Standard American style).</p>`;
+const HOWTO = {
+  goal: 'Win the auction with your partner, then take at least as many tricks as you bid. In rubber bridge the first side to win two games wins the <b>rubber</b>.',
+  deal: 'Four players in two partnerships: you sit South with your partner North, against West and East. Each player gets 13 cards, and the deal moves left every hand.',
+  play: [
+    '<b>The auction</b> starts with the dealer. On your turn you bid, pass, <b>double</b> an opponent’s bid or <b>redouble</b> their double.',
+    'A bid names a number of tricks over six (1 to 7) and a <b>trump</b> suit or no-trump (NT). Strains rank ♣ ♦ ♥ ♠ NT, and each bid must be higher than the last one: 1♠ beats 1♥, and 2♣ beats 1NT.',
+    'Three passes after a bid end the auction, and the last bid is the <b>contract</b>. The first player on that side who named its strain is the <b>declarer</b>, and their partner is the <b>dummy</b>. If all four pass at the start, the cards are redealt.',
+    'The player left of the declarer leads. After that first card the dummy’s hand is laid face up, and the declarer plays it as well as their own.',
+    'Follow suit if you can; otherwise play any card. The highest trump wins the trick, or else the highest card of the suit led. The winner leads next.',
+    'When your side declares, you play both your hand and North’s (unless you choose to sit out).',
+  ],
+  score: [
+    'Tricks bid and made score <b>below the line</b>: 20 each in ♣ or ♦, 30 in ♥ or ♠, and in no-trump 40 for the first and 30 for each after. A double multiplies them by 2, a redouble by 4.',
+    '100 or more below the line wins a <b>game</b>, and both sides start again from zero below the line. Two games win the rubber, with a bonus of 700 (500 if the other side has a game).',
+    'Everything else scores <b>above the line</b>: overtricks, 50 for making a doubled contract (100 redoubled), slams (six: 500, or 750 vulnerable; seven: 1,000 or 1,500), and penalties to the defenders when the declarer goes down (50 a trick, 100 vulnerable, more when doubled).',
+    'A side that has won a game is <b>vulnerable</b>: its bonuses and penalties are bigger. The higher total at the end of the rubber wins.',
+  ],
+  options: {
+    scoring: 'Rubber bridge plays until one side wins two games. Chicago plays exactly four deals: nobody is vulnerable on deal 1, the dealer’s side on deals 2 and 3, and both sides on deal 4. Each game made earns 300 (500 vulnerable), a part-score made on deal 4 earns 100, and the higher total wins.',
+    dummy: 'with You play both hands, you play North’s cards whenever your side declares. With Sit out as dummy, a contract North wins is played by North alone while you watch (when you declare, you still play both hands).',
+  },
+  controls: 'During the auction, {click} a bid in the grid, or Pass, Double or Redouble. To play, {click} a highlighted card in your hand. When your side declares, North’s cards lie face up and you {click} them on North’s turn. {Click} Next deal when the hand is scored.',
+  tip: 'Your high-card points are shown when you bid (ace 4, king 3, queen 2, jack 1). Partners with about 25 points between them can usually make a game.',
+};
 
 export default {
-  id: 'bridge', title: 'Bridge', version: 1, seats: 4, rulesHTML: RULES,
+  id: 'bridge', title: 'Bridge', version: 1, seats: 4, howto: HOWTO,
   settings: [
     { key: 'scoring', label: 'Scoring', options: [['rubber', 'Rubber bridge'], ['chicago', 'Chicago (four deals)']], default: 'rubber' },
     { key: 'dummy', label: 'When your partner declares', options: [['play', 'You play both hands'], ['sitout', 'Sit out as dummy']], default: 'play' },

@@ -145,12 +145,33 @@ function aiTurn(s, seat) {
   return play(s, seat, pick.id, pick.rank === '8' ? bestSuit(hand.filter((c) => c.id !== pick.id)) : undefined);
 }
 
-const RULES = `<p>Get rid of all your cards. On your turn, play a card that matches the top card's <b>suit or rank</b>, or play an <b>8</b> (wild) and call a suit. Otherwise draw until you can play. You may draw even if you could play.</p>
-<h3>Very Crazy Eights</h3><ul><li>Jack: skip the next player.</li><li>King: reverse direction.</li><li>2: the next player draws two unless they play a 2 (which passes four on, and so on).</li><li>Red queen: the next player draws five and is skipped.</li></ul>
-<h3>Scoring</h3><p>The player who goes out scores the cards left in everyone else's hands: 8s are 50, face cards 10, others their number.</p>`;
+const HOWTO = {
+  goal: 'Be the first to get rid of all your cards.',
+  deal: 'Two to four players. With two players each gets seven cards; with three or four, five each. The next card starts the discard pile (it’s never an 8) and the rest is the stock.',
+  play: [
+    'On your turn, play a card that matches the top card’s <b>suit</b> or <b>rank</b>.',
+    '<b>Eights are wild</b>: play one at any time and call the suit the next player must match.',
+    'If you can’t play, or would rather not, draw from the stock. You may draw even when you could play, and your turn goes on until you play a card. If the stock is empty and you can’t draw, you pass.',
+    'When the stock runs out the discards are reshuffled into a new one (you can change this). If nobody can play or draw, the hand is <b>blocked</b> and ends.',
+    'In <b>Very Crazy Eights</b>: a jack skips the next player; a king reverses the direction of play (with two players it acts as a skip); a 2 makes the next player draw two unless they play a 2 of their own, which passes four on, and so on; and a red queen makes the next player draw five and skips them.',
+  ],
+  score: [
+    'The player who goes out scores the cards left in everyone else’s hands: 8s are 50, kings, queens and jacks 10, and other cards their number (aces 1). A blocked hand scores nothing.',
+    'In a game played to points, hands go on until someone reaches the target, and the highest score wins.',
+  ],
+  options: {
+    players: 'how many computer opponents join you, from one to three.',
+    variant: 'Crazy Eights, or Very Crazy Eights with the special jacks, kings, 2s and red queens.',
+    target: 'a single hand, or keep dealing until someone reaches 100, 200, 300 or 400 points.',
+    draw: 'One card per click draws a single card each time; Draw until you can play keeps drawing for you until you hold a card you can play.',
+    reshuffle: 'Reshuffle the discards to make a new stock, or leave the stock empty, so the hand ends when nobody can play.',
+  },
+  controls: '{Click} a highlighted card to play it. {Click} the stock to draw. After you play an 8, {click} the suit you want to call.',
+  tip: 'Hold on to your 8s until you’re stuck, and when you call a suit, pick the one you have the most of.',
+};
 
 export default {
-  id: 'crazy8', title: 'Crazy Eights', version: 1, rulesHTML: RULES,
+  id: 'crazy8', title: 'Crazy Eights', version: 1, howto: HOWTO,
   settings: [
     { key: 'players', label: 'Players', options: [[2, 'You + 1'], [3, 'You + 2'], [4, 'You + 3']], default: 4 },
     { key: 'variant', label: 'Game type', options: [['normal', 'Crazy Eights'], ['very', 'Very Crazy Eights']], default: 'normal' },
