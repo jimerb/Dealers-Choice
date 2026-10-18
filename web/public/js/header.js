@@ -40,7 +40,7 @@ const tableLabel = (t) => TABLE_LABEL[t] ?? t.replace(/-/g, ' ').replace(/^./, (
 
 export function mountChrome(active) {
   initAudio();
-  const nav = [['lobby', 'lobby.html', 'Lobby'], ['games', 'lobby.html#games', 'Card games'], ['solitaire', 'solitaire.html', 'Solitaire'], ['pinochle', 'pinochle.html', 'Pinochle']];
+  const nav = [['lobby', 'lobby.html', 'Lobby'], ['games', 'lobby.html#games', 'Card games'], ['solitaire', 'solitaire.html', 'Solitaire']];
   const header = document.getElementById('site-header');
   header.className = 'site-header';
   header.innerHTML = `<div class="bar">
