@@ -356,7 +356,7 @@ export default {
     const showDummy = s.phase !== 'auction' && s.leadMade && s.dummy !== null;
     const humanTurnOn = (p) => (s.phase === 'play' && s.turn === p && controller(s, p) === 0);
     const seats = seatsVM(s, 4, (i) => {
-      const faceUp = (i === s.dummy && showDummy) || (i === 2 && ourDecl && s.phase !== 'auction' && controller(s, 2) === 0) ? s.hands[i] : null;
+      const faceUp = (i === s.dummy && i !== 0 && showDummy) || (i === 2 && ourDecl && s.phase !== 'auction' && controller(s, 2) === 0) ? s.hands[i] : null;
       return { faceUp, faceUpWidth: 40, faceUpLabel: i === s.dummy ? 'Dummy' : 'Declarer', playable: faceUp && humanTurnOn(i) ? legal(s, i).map((c) => c.id) : null,
         count: faceUp ? 0 : i ? s.hands[i].length : 0, tag: i === s.declarer ? 'Declarer' : i === s.dummy ? 'Dummy' : '' };
     });
