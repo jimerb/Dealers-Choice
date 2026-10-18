@@ -19,7 +19,7 @@ import io
 import os
 import shutil
 import sys
-from PIL import Image, ImageChops, ImageFilter, ImageOps
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageOps
 
 ROOT = os.getcwd()
 SRC = os.path.join(ROOT, 'art/casino/source')
@@ -180,7 +180,10 @@ def video():
 
 
 def keno():
-    webp(resize(cut_magenta(src('keno', 'keno-board')), 1200, 800), os.path.join(CASINO, 'keno', 'keno-board'))
+    board = cut_magenta(src('keno', 'keno-board'))
+    for xy in ((0, 0), (board.width - 1, 0), (0, board.height - 1), (board.width - 1, board.height - 1)):
+        ImageDraw.floodfill(board, xy, (0, 0, 0, 0), thresh=12)   # the flat ground behind the frame, so it sits on any felt
+    webp(resize(board, 1200, 800), os.path.join(CASINO, 'keno', 'keno-board'))
     webp(resize(src('keno', 'keno-blower').convert('RGBA'), 512, 512), os.path.join(CASINO, 'keno', 'keno-blower'))
     webp(resize(src('keno', 'keno-ball').convert('RGBA'), 128, 128), os.path.join(CASINO, 'keno', 'keno-ball'))
     webp(src('keno', 'keno-paper').convert('RGB'), os.path.join(CASINO, 'keno', 'keno-paper'), quality=85)
