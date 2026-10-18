@@ -1,5 +1,6 @@
 // Shared site header + footer, "Table settings" dialog (name, portrait, card style, card back, table)
 // and the sound popover (game sounds / music volumes, mute).
+import { tipsOn, setTipsOn } from './core/tip.js';
 import { SKINS, currentSkin, currentBack, currentTable, savePref, preloadSkin } from './skin.js';
 import { initAudio, volumes, setVolume, setMuted, play } from './core/sound.js';
 import { PLAYER_PORTRAITS, playerPortrait } from './core/cast.js';
@@ -58,8 +59,7 @@ export function mountChrome(active) {
           <a href="sounds.html" class="sound-board-link">Sound board</a>
         </div>
       </div>
-      <span class="avatar" aria-hidden="true" id="who-avatar"></span>
-      <span id="who-name"></span>
+      <button class="who-me" type="button" id="who-me" title="Change your name and picture"><span class="avatar" aria-hidden="true" id="who-avatar"></span><span id="who-name"></span></button>
       <button class="btn ghost-brass sm" type="button" id="open-settings">Table settings</button>
     </div></div>`;
   paintName();
@@ -119,6 +119,7 @@ export function mountChrome(active) {
       <div class="field"><label for="set-table">Table</label><select id="set-table">
         ${SKINS[skin].tables.map((t) => `<option value="${t}" ${t === currentTable() ? 'selected' : ''}>${tableLabel(t)}</option>`).join('')}
       </select></div>
+      <label class="choice"><input type="checkbox" id="set-tips" ${tipsOn() ? 'checked' : ''}> Show a note about variants and options the first time I open a game</label>
       <div class="dialog-actions"><button class="btn" type="button" id="cancel-settings">Cancel</button><button class="btn primary" type="submit">Save</button></div>
     </form>`;
     dlg.querySelectorAll('input[name=skin]').forEach((r) => r.addEventListener('change', () => { savePref('dc.skin', r.value); render(); }));
@@ -141,10 +142,12 @@ export function mountChrome(active) {
       savePref(`dc.back.${currentSkin()}`, dlg.querySelector('#set-back').value);
       savePref(`dc.table.${currentSkin()}`, dlg.querySelector('#set-table').value);
       savePref('dc.avatar', dlg.querySelector('input[name=avatar]:checked')?.value ?? '');
+      setTipsOn(dlg.querySelector('#set-tips').checked);
       before = null;
       dlg.close();
     });
   };
+  document.getElementById('who-me').addEventListener('click', () => document.getElementById('open-settings').click());
   document.getElementById('open-settings').addEventListener('click', () => {
     before = { skin: currentSkin() };
     dlg.innerHTML = '';

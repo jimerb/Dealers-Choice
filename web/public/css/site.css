@@ -309,3 +309,7 @@ dialog { max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overfl
   .brand { gap: 8px; }
   .brand-word { font-size: 17px; }
 }
+
+/* Your name and picture: one button that opens Table settings. */
+.who-me { display: flex; align-items: center; gap: 10px; background: none; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer; }
+.who-me:focus-visible { outline: 3px solid var(--brass-2); outline-offset: 3px; border-radius: 8px; }
