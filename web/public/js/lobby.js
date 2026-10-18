@@ -12,7 +12,7 @@ function tile(game) {
   return `<a class="tile${ready ? ' ready' : ''}" href="${href}" id="${game.id}" ${ready ? '' : 'aria-disabled="true"'}>
     <div class="tile-art" style="background:${game.felt}">
       <img src="assets/art/lobby/tile-${game.id}.webp" width="1200" height="750" alt="" loading="lazy" decoding="async">
-      <span class="tile-badge">${ready ? 'Play now' : 'In the works'}</span>
+      <span class="tile-badge">${!ready ? 'In the works' : game.variants?.length ? `${game.variants.length} Variants` : 'Play now'}</span>
     </div>
     <div class="tile-body"><b>${esc(game.name)}</b><span>${esc(game.players)}</span><span>${esc(game.tagline)}</span></div>
   </a>`;
