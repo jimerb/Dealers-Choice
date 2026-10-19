@@ -71,7 +71,7 @@ test('low hands: a pair beats any two cards; the joker is an ace', () => {
   assert.equal(evalLow(cards('2S 2D')).cat, 1);
   assert.ok(evalLow(cards('2S 2D')).score > evalLow(cards('AS KD')).score);
   assert.deepEqual(evalLow(cards('JK KD')).tiebreak, [14, 13]);
-  assert.equal(evalLow(cards('JK AD')).text, 'Pair of As');
+  assert.equal(evalLow(cards('JK AD')).text, 'Pair of aces');
   assert.equal(evalLow(cards('QS 9D')).text, 'Q-9');
 });
 

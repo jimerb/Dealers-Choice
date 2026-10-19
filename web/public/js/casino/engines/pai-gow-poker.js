@@ -63,11 +63,12 @@ export function evalHigh(five, { a5 = true } = {}) {
 
 const WORD = { 14: 'A', 13: 'K', 12: 'Q', 11: 'J', 10: '10' };
 const short = (v) => WORD[v] ?? String(v);
+const PLURAL = { 14: 'aces', 13: 'kings', 12: 'queens', 11: 'jacks', 10: 'tens', 9: 'nines', 8: 'eights', 7: 'sevens', 6: 'sixes', 5: 'fives', 4: 'fours', 3: 'threes', 2: 'twos' };
 /** A two-card low hand's value (a joker there is an ace). */
 export function evalLow(two) {
   const ev = evaluate2(two);
   const [a, b] = ev.tiebreak;
-  return { ...ev, text: ev.cat ? `Pair of ${short(a)}s` : `${short(a)}-${short(b)}` };
+  return { ...ev, text: ev.cat ? `Pair of ${PLURAL[a]}` : `${short(a)}-${short(b)}` };
 }
 
 /** Does the two-card hand outrank the five-card hand? (A foul: not allowed.) */
