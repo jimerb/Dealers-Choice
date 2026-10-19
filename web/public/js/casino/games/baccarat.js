@@ -2,7 +2,7 @@
 // the third-card rules. The rules live in ../engines/baccarat.js (no DOM); this is the table.
 // Wide screens get the half-moon table with betting arcs; phones get a taller table with three
 // stacked betting boxes. The scorecard (bead plate) of the current shoe sits between the hands and
-// the bets.
+// the bets (below the bets on phones).
 import * as engine from '../engines/baccarat.js';
 import { svg, path, rect, circle, text, arcText, band, cardSlot, tableRail, polar, esc } from '../svg.js';
 import { railBand, tableCrest, crest, shoe, discardTray, CREST_TOP } from '../tableart.js';
@@ -18,13 +18,13 @@ const SIDE = { player: 'Player', banker: 'Banker', tie: 'Tie' };
 const WIDE = {
   w: 1000, h: 560, top: CREST_TOP, shoe: { x: 875, y: 80 }, tray: { x: 115, y: 80 },
   card: 64, hands: { player: { x: 280, y: 100, third: 1 }, banker: { x: 720, y: 100, third: -1 } }, labelY: 165,
-  road: { x: 500, y: 198, cols: 16, cell: 14, countY: 182 },
+  road: { x: 500, y: 186, cols: 12, cell: 17, countY: 175 },
 };
 const TALLG = {
   w: 600, h: 710, top: 100, shoe: { x: 520, y: 80 }, tray: { x: 80, y: 80 },
   card: 72, hands: { player: { x: 150, y: 180, below: true }, banker: { x: 450, y: 180, below: true } }, labelY: 330,
-  road: { x: 300, y: 374, cols: 20, cell: 16, countY: 356 },
-  boxes: { tie: [490, 552], banker: [560, 622], player: [630, 692] },
+  road: { x: 300, y: 582, cols: 20, cell: 16, countY: 566 },
+  boxes: { tie: [352, 412], banker: [420, 480], player: [488, 548] },
 };
 const geo = (tall) => (tall ? TALLG : WIDE);
 
@@ -237,7 +237,8 @@ function finish(r, release) {
     ctx.banner(`${head} · You win ${money(result.net)}`, { tone: 'win', detail: `${money(result.returned)} back from ${money(result.wagered)} bet` });
   } else if (result.net === 0) {
     ctx.play('chips');
-    ctx.banner(`${head} · Push`, { tone: 'push', detail: `Your ${money(result.wagered)} comes back` });
+    const push = result.lines.every((l) => l.outcome === 'push');
+    ctx.banner(`${head} · ${push ? 'Push' : 'Even'}`, { tone: 'push', detail: `Your ${money(result.wagered)} comes back` });
   } else {
     ctx.play('lose');
     ctx.banner(head, { tone: 'lose', detail: result.returned ? `${money(result.returned)} back from ${money(result.wagered)} bet` : `The house takes ${money(result.wagered)}` });
