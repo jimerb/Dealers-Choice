@@ -444,3 +444,27 @@ test('house edge of every bet, exact (pass 1.41%, don\'t pass 1.36%, place 6 1.5
   near(edge(table({ yo: S }), S), -1 / 9, 'eleven');
   near(edge(table({ horn: S }), S), -1 / 8, 'horn');
 });
+
+// ------------------------------------------------------------------ the drawn table
+test('the layout draws every bet spot, both ways round, with chips, the puck and the dice', async () => {
+  const { layout, propsLayout } = await import('../public/js/casino/games/craps.js');
+  const t = { ...newTable(), point: 6, bets: { pass: 10, 'pass-odds': 30, 'come:5': 10, 'come:5-odds': 20, 'dc:9': 5, 'place:8': 12, 'buy:4': 25 } };
+  const v = { table: t, staged: { field: 5 }, dice: [3, 3], hist: [6, 8] };
+  const wide = layout(v), tall = layout({ ...v, tall: true }), props = propsLayout(v);
+  for (const s of [wide, tall, props]) assert.doesNotMatch(s, /undefined|NaN/);
+  for (const k of ['pass', 'pass-odds', 'dp', 'dp-odds', 'come', 'dc', 'field', 'big6', 'big8', ...POINTS.flatMap((n) => [`place:${n}`, `buy:${n}`, `lay:${n}`])]) {
+    assert.ok(wide.includes(`data-spot="${k}"`), `wide ${k}`);
+    assert.ok(tall.includes(`data-spot="${k}"`), `tall ${k}`);
+  }
+  for (const k of ['any7', 'craps', 'two', 'three', 'yo', 'twelve', 'horn', 'hard:4', 'hard:6', 'hard:8', 'hard:10']) {
+    assert.ok(wide.includes(`data-spot="${k}"`), `wide ${k}`);
+    assert.ok(props.includes(`data-spot="${k}"`), `drawer ${k}`);
+    assert.ok(!tall.includes(`data-spot="${k}"`), `the phone layout leaves ${k} to the drawer`);
+  }
+  assert.ok(wide.includes('data-spot="come:5-odds"') && wide.includes('data-spot="dc:9-odds"'), 'come bets on numbers take odds');
+  assert.ok(wide.includes('>ON<'), 'the puck is ON');
+  assert.ok(layout().includes('>OFF<'), 'and OFF on the come-out');
+  assert.ok(wide.includes('class="cz-cr-staged"'), 'staged chips are ringed');
+  assert.match(wide, /hard six/);
+  assert.match(layout({ table: newTable({ field12: 3 }) }), /12 pays triple/);
+});

@@ -24,8 +24,8 @@ const TALL = '(max-width: 719px)';
 function propAreas(x0, y0) {
   const w = 240, half = 120;
   const A = [];
-  const row = (y, h, key, label, pays) => A.push({ key, x: x0, y, w, h, chip: [x0 + w - 26, y + h / 2, 13],
-    body: text(x0 + 92, y + h / 2, label, { size: 17, weight: 700 }) + text(x0 + 184, y + h / 2, pays, { size: 13, cls: 'cz-tx dim' }) });
+  const row = (y, h, key, label, pays) => A.push({ key, x: x0, y, w, h, chip: [x0 + w - 22, y + h / 2, 12],
+    body: text(x0 + 78, y + h / 2, label, { size: 17, weight: 700 }) + text(x0 + 162, y + h / 2, pays, { size: 13, cls: 'cz-tx dim' }) });
   const cell = (y, col, key, label, pays, dice) => {
     const x = x0 + col * half;
     A.push({ key, x, y, w: half, h: 56, chip: [x + half - 20, y + 18, 12],
@@ -88,7 +88,7 @@ function wideAreas(opts) {
   A.push({ key: 'come', x: 280, y: 178, w: 582, h: 62, chip: [800, 209, 15], body: text(560, 209, 'COME', { size: 40, weight: 800 }) });
   A.push({ key: 'big6', x: 280, y: 246, w: 90, h: 72, chip: [348, 262, 12], body: text(318, 270, 'BIG', { size: 13, cls: 'cz-tx dim' }) + text(318, 294, '6', { size: 28, weight: 800 }) });
   A.push({ key: 'big8', x: 280, y: 318, w: 90, h: 72, chip: [348, 334, 12], body: text(318, 342, 'BIG', { size: 13, cls: 'cz-tx dim' }) + text(318, 366, '8', { size: 28, weight: 800 }) });
-  A.push({ key: 'field', x: 370, y: 246, w: 492, h: 72, chip: [834, 266, 14], body: fieldBody(370, 246, 492, 72, opts, false) });
+  A.push({ key: 'field', x: 370, y: 246, w: 492, h: 72, chip: [838, 305, 11], body: fieldBody(370, 246, 492, 72, opts, false) });
   A.push({ key: 'dp', x: 370, y: 324, w: 412, h: 42, chip: [752, 345, 14],
     body: text(560, 345, "DON'T PASS BAR", { size: 19, weight: 800 }) + dieFace(672, 335, 20, 6) + dieFace(696, 335, 20, 6) });
   A.push({ key: 'dp-odds', x: 782, y: 324, w: 80, h: 42, chip: [838, 345, 12], body: text(806, 345, 'ODDS', { size: 12, cls: 'cz-tx dim' }) });
@@ -105,7 +105,7 @@ function tallAreas(opts) {
   A.push({ key: 'dc', x: 12, y: 312, w: 100, h: 60, chip: [90, 342, 12], puckAt: [36, 342],
     body: text(62, 334, "DON'T COME", { size: 11, weight: 700 }) + text(62, 352, 'BAR 12', { size: 10, cls: 'cz-tx dim' }) });
   A.push({ key: 'come', x: 112, y: 312, w: 276, h: 60, chip: [356, 342, 14], body: text(250, 342, 'COME', { size: 30, weight: 800 }) });
-  A.push({ key: 'field', x: 12, y: 378, w: 288, h: 78, chip: [276, 396, 12], body: fieldBody(12, 378, 288, 78, opts, true) });
+  A.push({ key: 'field', x: 12, y: 378, w: 288, h: 78, chip: [284, 441, 10], body: fieldBody(12, 378, 288, 78, opts, true) });
   A.push({ key: 'big6', x: 300, y: 378, w: 88, h: 39, chip: [366, 397, 11], body: text(332, 397, 'BIG 6', { size: 15, weight: 800 }) });
   A.push({ key: 'big8', x: 300, y: 417, w: 88, h: 39, chip: [366, 436, 11], body: text(332, 436, 'BIG 8', { size: 15, weight: 800 }) });
   A.push({ key: 'dp', x: 12, y: 462, w: 288, h: 44, chip: [272, 484, 13], body: text(140, 484, "DON'T PASS BAR", { size: 16, weight: 800 }) });
@@ -203,7 +203,7 @@ export function layout(v = {}) {
   }
   const W = 1080, H = 500;
   const tub = 'M12 12 H930 Q1068 12 1068 250 Q1068 488 930 488 H12 Z';
-  const hist = view.hist.slice(0, 6).map((t, i) => text(996, 372 + i * 19, String(t), { size: i ? 13 : 15, weight: i ? 600 : 800, cls: i ? 'cz-tx dim' : 'cz-tx' })).join('');
+  const hist = view.hist.slice(0, 5).map((t, i) => text(996, 372 + i * 19, String(t), { size: i ? 13 : 15, weight: i ? 600 : 800, cls: i ? 'cz-tx dim' : 'cz-tx' })).join('');
   return svg(W, H, `${railBand(tub, tub, W, H, 22)}${path(tub, { cls: 'cz-rail' })}
     ${drawAreas(wideAreas(opts), view)}
     ${text(996, 92, st1, { size: 14, weight: 800, cls: 'cz-tx dim' })}${text(996, 124, st2, { size: st2 === 'ROLL' ? 18 : 34, weight: 800 })}
@@ -260,7 +260,7 @@ function drawDice() {
 function sync() {
   if (!ctx?.live) return;
   const s = bets?.total() ?? 0;
-  ctx.setTotal(E.onTable(table) + s);
+  ctx.setTotal(E.onTable(shown ?? table) + s); // while the dice roll, the table as it was
   ctx.setButtons({ action: !rolling, clear: !rolling && s > 0, undo: !rolling && s > 0, rebet: !rolling && s === 0 && Boolean(bets?.last?.length), label: 'Roll' });
   const numbered = Object.keys(table.bets).some((k) => /^(come|dc):\d+$/.test(k));
   ctx.setActions({
