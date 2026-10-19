@@ -167,7 +167,7 @@ function spotsMessage() {
   const n = marks.length;
   if (!n) { ctx.message(`Mark one to ${MAX_SPOTS} numbers, or Quick pick. Then Play.`); return; }
   const top = Math.max(...Object.values(PAYS[n]));
-  ctx.message(`${n} spot${n > 1 ? 's' : ''} marked. Catch all ${n} and a ${money(price)} ticket pays ${money(top * price)}.`);
+  ctx.message(`${n} spot${n > 1 ? 's' : ''} marked. Catch ${n > 1 ? `all ${n}` : 'it'} and a ${money(price)} ticket pays ${money(top * price)}.`);
 }
 
 function quick() {
