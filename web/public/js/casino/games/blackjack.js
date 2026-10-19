@@ -18,6 +18,7 @@ const RAIL = tableRail(W, H, 30);
 const CX = RAIL.cx, SPOT_Y = 470, HAND_Y = 340, DEALER_Y = 95, DEALER_X = 470;
 const SHOE_AT = { x: 875, y: 80 }, TRAY_AT = { x: 115, y: 80 };
 const INS_AT = { x: 372, y: 250 };
+const CARD = 88; // a card's width in layout units (never under 40 px on screen)
 
 const ruleLine = (r) => (r.h17 ? 'Dealer must hit soft 17 and stand on hard 17s' : 'Dealer must draw to 16 and stand on all 17s');
 
@@ -53,17 +54,17 @@ function scale() {
 }
 function geo(st) {
   const k = scale();
-  const cw = Math.max(70, 40 / k);          // the width a card is drawn at, in units
-  const dx = Math.max(24, 17 / k);          // what shows of each card under the next one
-  const ddx = Math.max(46, 22 / k);
+  const cw = Math.max(CARD, 40 / k);        // the width a card is drawn at, in units
+  const dx = Math.max(30, 17 / k);          // what shows of each card under the next one
+  const ddx = Math.max(58, 22 / k);
   const n = st.hands.length;
   const spacing = n > 1 ? Math.min(260, 880 / n) : 0;
   const hands = st.hands.map((h, i) => {
     const hx = CX + (i - (n - 1) / 2) * spacing;
     const x0 = hx - (n > 1 ? dx * 0.5 : 20);
-    return h.cards.map((c, j) => ({ x: x0 + j * dx, y: HAND_Y - j * (k < 0.5 ? 0 : 8), w: 70, z: 10 + j }));
+    return h.cards.map((c, j) => ({ x: x0 + j * dx, y: HAND_Y - j * (k < 0.5 ? 0 : 8), w: CARD, z: 10 + j }));
   });
-  const dealer = st.dealer.map((c, j) => ({ x: DEALER_X + j * ddx, y: DEALER_Y, w: 70, z: 10 + j }));
+  const dealer = st.dealer.map((c, j) => ({ x: DEALER_X + j * ddx, y: DEALER_Y, w: CARD, z: 10 + j }));
   return { k, cw, dx, hands, dealer };
 }
 
@@ -268,6 +269,7 @@ function act(type, extra = {}) {
   if (!paid.ok) { hold?.(); hold = null; ctx.play('error'); ctx.message(paid.error); controls(); return; }
   ctx.banner(null);
   state = r.state;
+  bets.sync(); // the bet bar shows what is on the table now (a double or a split)
   run(r);
 }
 
@@ -319,6 +321,7 @@ function finish() {
   let title, tone;
   if (one?.result === 'blackjack') { title = `Blackjack! You win ${money(net)}`; tone = 'win'; }
   else if (net > 0) { title = `You win ${money(net)}`; tone = 'win'; }
+  else if (net === 0 && res.insurance === 'win') { title = 'Insurance saves your bet'; tone = 'push'; }
   else if (net === 0) { title = 'Push'; tone = 'push'; }
   else if (one?.result === 'surrender') { title = 'Surrendered'; tone = 'lose'; }
   else if (one?.result === 'bust') { title = 'Bust'; tone = 'lose'; }
@@ -402,7 +405,7 @@ export default {
     bets = ctx.bets({
       root: el,
       spot: (key) => (key === 'main' && between() && !busy ? { label: 'Your bet' } : null),
-      onChange: () => { if (state?.phase === 'over' && bets?.total()) clearTable(); drawDyn(); },
+      onChange: () => { if (state?.phase === 'over' && bets && !bets.locked && bets.total()) clearTable(); drawDyn(); },
     });
     addEventListener('resize', onResize);
     controls();

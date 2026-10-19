@@ -10,4 +10,7 @@
 
 .bjk-info { margin: 6px 0 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 18px; font-size: 13px; color: var(--ink-3); text-align: center; }
 .bjk-count { color: var(--ink-2); }
+/* The card layer maps layout units onto the SVG's box, so the box must keep the drawing's shape:
+   size the width from the height the stage allows instead of letting the drawing letterbox. */
+.bjk-stage > .cz-svg { width: min(100%, 1000px, calc(max(240px, 100vh - 372px) * 1000 / 708)); height: auto; max-height: none; aspect-ratio: 1000 / 708; }
 .bjk-count b { color: var(--ink); font-variant-numeric: tabular-nums; }
