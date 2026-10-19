@@ -1,0 +1,52 @@
+/* Craps (js/casino/games/craps.js): the layout's spots, staged chips, the dice and the phone's
+   Center bets drawer. Lines and lettering follow the felt through --cz-line and .cz-tx. */
+.cz-cr { position: relative; }
+.cz-cr-table > .cz-svg.wide { max-height: max(260px, calc(100vh - 372px)); max-width: 1080px; }
+.cz-cr-table > .cz-svg.tall { max-width: 460px; }
+
+.cz-cr-spot { cursor: pointer; outline: none; }
+.cz-cr-spot > .cz-area { transition: fill .15s; }
+.cz-cr-spot:hover > .cz-area { fill: rgba(255,255,255,.09); }
+.cz-cr-spot:focus-visible > .cz-area, .cz-cr-spot:focus-visible > .cz-cr-hit { stroke: var(--brass-2); stroke-width: 4; }
+.cz-cr-spot.shut { cursor: default; }
+.cz-cr-spot.shut > .cz-area { fill: rgba(0,0,0,.08); }
+.cz-cr-spot.shut > text { opacity: .55; }
+.cz-cr-spot.win > .cz-area, .cz-cr-rider.win > .cz-cr-hit { fill: rgba(226,194,122,.24); stroke: var(--brass-2); stroke-width: 3.5; }
+.cz-cr-spot.lose > .cz-area { fill: rgba(0,0,0,.18); }
+.cz-cr-hit { fill: rgba(0,0,0,.001); stroke: none; }
+.cz-cr-tag { fill: var(--ink); paint-order: stroke; stroke: rgba(0,0,0,.6); stroke-width: 2px; }
+.cz-cr-staged { fill: none; stroke: var(--brass-2); stroke-width: 2; stroke-dasharray: 4 3; pointer-events: none; }
+.cz-cr-offbg { fill: #1B1B1B; stroke: rgba(244,239,227,.7); stroke-width: 1; }
+.cz-cr-offtx { fill: #F4EFE3; }
+.cz-cr-tray { fill: rgba(0,0,0,.14); stroke: var(--cz-line); stroke-width: 1.5; }
+.cz-cr-puck { filter: drop-shadow(0 2px 2px rgba(0,0,0,.5)); }
+
+/* the dice tumble in place while they roll */
+.cz-cr-dice.rolling { animation: cz-cr-tumble .18s linear infinite alternate; transform-box: fill-box; transform-origin: center; }
+@keyframes cz-cr-tumble {
+  from { transform: translate(-3px, 2px) rotate(-4deg); }
+  to { transform: translate(3px, -2px) rotate(4deg); }
+}
+
+/* phones: the propositions slide up over the felt */
+.cz-cr-drawer { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; max-height: 100%; overflow: auto; padding: 10px 12px 14px;
+  background: rgba(8,24,19,.96); border: 2px solid var(--brass); border-radius: 16px 16px 12px 12px; box-shadow: 0 -10px 30px rgba(0,0,0,.45);
+  --cz-line: rgba(244,239,227,.72); animation: cz-cr-up .2s ease-out; }
+.cz-cr-drawer[hidden] { display: none; }
+.cz-cr-drawer-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+.cz-cr-drawer-head b { font-family: var(--font-display); font-weight: 400; font-size: 20px; color: var(--brass-2); }
+.cz-cr-drawer-head span { flex: 1; font-size: 13px; color: var(--ink-3); }
+.cz-cr-drawer .cz-tx { fill: #F4EFE3; }
+.cz-cr-drawer .cz-tx.dim { fill: rgba(244,239,227,.7); }
+.cz-cr-props > .cz-svg { max-width: 360px; }
+@keyframes cz-cr-up { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* narrow touch screens: the bet bar's five buttons (with Remove) wrap instead of running off the side */
+@media (max-width: 719px) {
+  [data-game="craps"] .cz-betbtns { flex-wrap: wrap; justify-content: flex-end; min-width: 0; max-width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cz-cr-dice.rolling, .cz-cr-drawer { animation: none; }
+  .cz-cr-spot > .cz-area { transition: none; }
+}
