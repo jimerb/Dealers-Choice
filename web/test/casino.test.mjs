@@ -4,9 +4,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, existsSync, readFileSync } from 'node:fs';
 import { CASINO, ALL_GAMES, TABLE_STAKES, MACHINE_STAKES, stakesFor, stakesById, stakesLabel, rackFor, gameById } from '../public/js/casino/catalog.js';
-import { MODULES } from '../public/js/casino/games/index.js';
+import { loadAll } from '../public/js/casino/games/index.js';
 import { layout as rouletteLayout, areas, wheelHTML } from '../public/js/casino/games/roulette.js';
 import { allArt, ART, TILE_IDS } from '../public/js/casino/art.js';
+
+const MODULES = await loadAll();
 
 test('the chooser groups the eleven games in build order', () => {
   assert.deepEqual(CASINO.map((g) => g.title), ['Table games', 'Machines', 'Lounge']);
@@ -50,9 +52,13 @@ test('every game has a module with the shared interface', () => {
     assert.ok(m, `${g.id} has a module`);
     assert.equal(m.id, g.id);
     assert.equal(m.name, g.name);
-    for (const fn of ['mount', 'unmount', 'action', 'clear', 'rebet', 'layout']) assert.equal(typeof m[fn], 'function', `${g.id}.${fn}`);
-    assert.ok(Array.isArray(m.todo) && m.todo.length, `${g.id} lists what is left to do`);
-    assert.match(m.howto, /howto-section/, `${g.id} has How to play`);
+    for (const fn of ['mount', 'unmount', 'action', 'layout']) assert.equal(typeof m[fn], 'function', `${g.id}.${fn}`);
+    for (const fn of ['clear', 'rebet', 'undo', 'minBuyIn', 'optionsChanged']) assert.ok(m[fn] === undefined || typeof m[fn] === 'function', `${g.id}.${fn} is optional`);
+    assert.equal(typeof m.ready, 'boolean', `${g.id} says whether it is ready`);
+    if (!m.ready) assert.ok(Array.isArray(m.todo) && m.todo.length, `${g.id} lists what is left to do`);
+    if (typeof m.howto === 'string') assert.match(m.howto, /howto-section/, `${g.id} has How to play`);
+    else assert.ok(m.howto?.goal && m.howto?.play, `${g.id} has How to play`);
+    for (const s of m.settings ?? []) assert.ok(s.key && s.label && ['select', 'check'].includes(s.type) && 'default' in s, `${g.id} setting ${s.key}`);
     const svg = m.layout();
     assert.match(svg, /^<svg class="cz-svg/, `${g.id} draws an SVG layout`);
     assert.doesNotMatch(svg, /undefined|NaN/, `${g.id} layout has no undefined or NaN`);

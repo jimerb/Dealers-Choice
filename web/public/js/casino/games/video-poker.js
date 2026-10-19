@@ -49,6 +49,7 @@ export function layout() {
 }
 
 export default stubGame({
+  credits: true,
   id: 'video-poker', name: 'Video Poker', layout,
   todo: [
     'Five-card ranks and the Jacks or Better (9/6) pay table (DOM-free engine + tests)',

@@ -4,7 +4,7 @@
 // the lines between numbers, La Partage-style options.
 // The wheel is three pictures (static bowl, spinning rotor, ball) over a code-drawn stand-in; the code
 // draws the 38 pockets and their numbers in the rotor's open ring and turns them with it.
-import { WHEEL, colorOf, playSpin, betName, total, isBetKey } from '../engines/roulette.js';
+import { WHEEL, colorOf, betName, isBetKey, settle, spin, checkLimits } from '../engines/roulette.js';
 import { svg, rect, text, path, esc, polar } from '../svg.js';
 import { chipSVG } from '../chips.js';
 import { ART, imgArt } from '../art.js';
@@ -102,11 +102,10 @@ export function wheelHTML(turn = 0) {
 
 // ------------------------------------------------------------------ the table
 const TALL = '(max-width: 640px)';
-let root = null, ctx = null, mq = null;
-let bets = {}, last = null, spinning = false, timer = null, frame = 0, pending = null, release = null, hit = null, history = [], turn = 0;
+let root = null, ctx = null, mq = null, bets = null;
+let spinning = false, timer = null, frame = 0, pending = null, release = null, hit = null, history = [], turn = 0;
 
-const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
-const spinMs = () => (reduced() ? 300 : 4200);
+const spinMs = () => (ctx?.reduced() ? 300 : 4200);
 const easeOut = (u) => 1 - (1 - u) ** 3;
 
 /** Put the ball at angle `deg` (0 = top, clockwise) and radius `r` (wheel units). */
@@ -156,63 +155,37 @@ function draw() {
   const tall = mq?.matches ?? false;
   // Redrawing replaces the cells: keep keyboard focus on the same bet.
   const focused = root.ownerDocument.activeElement?.closest?.('[data-bet]')?.dataset.bet;
-  root.querySelector('.cz-rl-grid').innerHTML = layout({ tall, bets, hit });
+  root.querySelector('.cz-rl-grid').innerHTML = layout({ tall, bets: bets.amounts(), hit });
   if (focused) root.querySelector(`[data-bet="${focused}"]`)?.focus({ preventScroll: true });
   root.querySelector('.cz-rl-history').innerHTML = history.length
     ? `<span class="cz-rl-hlabel">Last spins</span>${history.map((p) => `<span class="cz-rl-ball ${colorOf(p)}">${p}</span>`).join('')}`
     : '<span class="cz-rl-hlabel">Place your chips, then spin</span>';
-  sync();
-}
-
-function sync() {
-  const t = total(bets);
-  ctx.setTotal(t);
-  ctx.setButtons({ action: t > 0 && !spinning, clear: t > 0 && !spinning, rebet: Boolean(last) && t === 0 && !spinning });
-}
-
-function place(key, sign = 1) {
-  if (spinning || !isBetKey(key)) return;
-  const chip = ctx.chip();
-  const { max } = ctx.stakes;
-  const now = bets[key] ?? 0;
-  if (sign < 0) {
-    if (!now) return;
-    const left = Math.max(0, now - chip);
-    if (left) bets[key] = left; else delete bets[key];
-    ctx.play('chips');
-    hit = null;
-    return draw();
-  }
-  if (total(bets) + chip > ctx.bank.balance) { ctx.play('error'); return ctx.message(`Not enough in the bank for another ${money(chip)} chip.`); }
-  if (max != null && now + chip > max) { ctx.play('error'); return ctx.message(`The most on one bet at this table is ${money(max)}.`); }
-  bets[key] = now + chip;
-  hit = null;
-  ctx.play('chips');
-  ctx.message(`${betName(key)}: ${money(bets[key])}. Total on the table ${money(total(bets))}.`);
-  draw();
 }
 
 function action() {
   if (spinning) return;
   // Settled now (bank debited, hand recorded, winnings paid); the wheel only reveals the result.
-  release = ctx.holdBank(); // the bank display keeps the pre-spin figure until the ball lands
-  const r = playSpin(ctx.bank, bets, ctx.stakes);
-  if (r.error) { release(); release = null; ctx.play('error'); return ctx.message(r.error); }
-  spinning = true;
-  pending = r;
-  last = { ...bets };
-  // turn the wheel so the winning pocket stops under the marker at the top, the ball in it
-  const idx = WHEEL.indexOf(r.pocket);
-  const from = turn;
-  turn += 360 * 4 + ((((-idx * STEP - turn) % 360) + 360) % 360);
-  if (reduced()) { setRotor(turn); placeBall(0, FLOOR_R); } else animate(from, turn, idx, spinMs());
-  ctx.message('No more bets…');
-  ctx.play('shuffle');
-  sync();
-  timer = setTimeout(reveal, spinMs());
+  // The bank display keeps the pre-spin figure until the ball lands.
+  bets.commit((amounts, hold) => {
+    const pocket = spin(ctx.rng);
+    const r = settle(amounts, pocket);
+    ctx.settle({ returned: r.returned });
+    release = hold;
+    spinning = true;
+    pending = { pocket, ...r };
+    // turn the wheel so the winning pocket stops under the marker at the top, the ball in it
+    const idx = WHEEL.indexOf(pocket);
+    const from = turn;
+    turn += 360 * 4 + ((((-idx * STEP - turn) % 360) + 360) % 360);
+    if (ctx.reduced()) { setRotor(turn); placeBall(0, FLOOR_R); } else animate(from, turn, idx, spinMs());
+    ctx.message('No more bets…');
+    ctx.play('shuffle');
+    ctx.setButtons({ action: false });
+    timer = setTimeout(reveal, spinMs());
+  }, { hold: true });
 }
 
-/** The ball has landed: show what playSpin() already settled. */
+/** The ball has landed: show what was already settled. */
 function reveal() {
   clearTimeout(timer);
   const r = pending;
@@ -220,33 +193,32 @@ function reveal() {
   spinning = false;
   release?.(); release = null;
   if (!r || !root) return;
-  bets = {};
   hit = r.pocket;
   root.dataset.pocket = r.pocket;
   history = [r.pocket, ...history].slice(0, 12);
   cancelAnimationFrame(frame);
   setRotor(turn);
   placeBall(0, FLOOR_R);
-  const name = `${r.pocket} ${colorOf(r.pocket)}`;
-  if (r.net > 0) { ctx.play('win'); ctx.message(`${name}. You win ${money(r.net)} (${money(r.returned)} back from ${money(r.wagered)} bet).`); }
-  else if (r.returned) { ctx.play('chips'); ctx.message(`${name}. ${money(r.returned)} back from ${money(r.wagered)} bet.`); }
-  else { ctx.play('lose'); ctx.message(`${name}. The house takes ${money(r.wagered)}.`); }
+  bets.release(); // the chips come off the layout (the result is shown below); Rebet remembers them
+  hit = r.pocket;
   draw();
+  const name = `${r.pocket} ${colorOf(r.pocket)}`;
+  if (r.net > 0) {
+    ctx.play('win');
+    ctx.banner(`${name} · You win ${money(r.net)}`, { tone: 'win', detail: `${money(r.returned)} back from ${money(r.wagered)} bet` });
+    ctx.message(`${name}. You win ${money(r.net)} (${money(r.returned)} back from ${money(r.wagered)} bet).`);
+  } else if (r.returned) {
+    ctx.play('chips');
+    ctx.banner(`${name} · ${money(r.returned)} back`, { tone: 'push', detail: `from ${money(r.wagered)} bet` });
+    ctx.message(`${name}. ${money(r.returned)} back from ${money(r.wagered)} bet.`);
+  } else {
+    ctx.play('lose');
+    ctx.banner(`${name}`, { tone: 'lose', detail: `The house takes ${money(r.wagered)}` });
+    ctx.message(`${name}. The house takes ${money(r.wagered)}.`);
+  }
   ctx.checkBroke();
 }
 
-function onClick(e) {
-  const g = e.target.closest('[data-bet]');
-  if (g) place(g.dataset.bet, e.shiftKey ? -1 : 1);
-}
-function onContext(e) {
-  const g = e.target.closest('[data-bet]');
-  if (g) { e.preventDefault(); place(g.dataset.bet, -1); }
-}
-function onKey(e) {
-  const g = e.target.closest('[data-bet]');
-  if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); place(g.dataset.bet, e.shiftKey ? -1 : 1); }
-}
 const onResize = () => draw();
 
 export default {
@@ -260,22 +232,27 @@ export default {
   ],
   options: ['Single-zero wheel', 'Half back on even-money bets when 0 or 00 comes up'],
   howto: howtoSections([
-    ['Placing bets', 'Choose a chip on the rack, then click or tap a number or box to put it there. Click again to add more. Right-click (or shift-click) takes a chip back off. Clear removes everything; Rebet repeats your last spin\'s bets.'],
+    ['Placing bets', 'Choose a chip on the rack, then click or tap a number or box to put it there. Click again to add more. Right-click, shift-click or a long press takes a chip back off. Undo takes back the last chip, Clear removes everything, and Rebet repeats your last spin\'s bets (as much as your bank covers).'],
+    ['Keys', 'Number keys 1 to 8 pick a chip, Enter or Space spins, Backspace undoes, C clears, R rebets and Shift+R rebets double.'],
     ['Payouts', '<ul><li>A single number (straight up) pays 35 to 1.</li><li>A dozen or a column pays 2 to 1.</li><li>Red, black, odd, even, 1–18 and 19–36 pay even money.</li><li>0 and 00 lose every bet except a straight-up bet on them.</li></ul>'],
     ['Table limits', 'Your bets together must reach the table minimum, and no single bet may go over the table maximum.'],
   ]),
 
   mount(el, c) {
     root = el; ctx = c;
-    bets = {}; hit = null; spinning = false; pending = null;
+    hit = null; spinning = false; pending = null;
     el.innerHTML = `<div class="cz-rl">
       <div class="cz-rl-wheel">${wheelHTML(turn)}<span class="cz-wheel-marker" aria-hidden="true"></span></div>
       <div class="cz-rl-main"><div class="cz-rl-history" aria-live="off"></div><div class="cz-rl-grid"></div></div></div>`;
     mq = matchMedia(TALL);
     mq.addEventListener('change', onResize);
-    el.addEventListener('click', onClick);
-    el.addEventListener('contextmenu', onContext);
-    el.addEventListener('keydown', onKey);
+    bets = ctx.bets({
+      root: el, attr: 'data-bet',
+      // every pocket and box takes chips up to the table maximum; the minimums are checked as a whole
+      spot: (key) => (isBetKey(key) && !spinning ? { label: betName(key), min: 0 } : null),
+      validate: (b) => checkLimits(b, ctx.stakes),
+      onChange: () => { if (!spinning) hit = null; draw(); },
+    });
     if (history.length) placeBall(0, FLOOR_R); // the last ball still sits in its pocket
     draw();
     ctx.message(`Place your chips: ${ctx.stakesText}. Then Spin.`);
@@ -287,14 +264,8 @@ export default {
     pending = null; spinning = false;
     release?.(); release = null;
     mq?.removeEventListener('change', onResize);
-    if (root) { root.removeEventListener('click', onClick); root.removeEventListener('contextmenu', onContext); root.removeEventListener('keydown', onKey); root.innerHTML = ''; }
-    root = null; bets = {};
+    if (root) root.innerHTML = '';
+    root = null; bets = null;
   },
   action,
-  clear() { if (spinning) return; bets = {}; hit = null; ctx.play('chips'); ctx.message('Bets cleared.'); draw(); },
-  rebet() {
-    if (spinning || !last) return;
-    if (total(last) > ctx.bank.balance) { ctx.play('error'); return ctx.message(`Rebet needs ${money(total(last))}; the bank has ${money(ctx.bank.balance)}.`); }
-    bets = { ...last }; hit = null; ctx.play('chips'); ctx.message(`Same bets again: ${money(total(bets))}.`); draw();
-  },
 };

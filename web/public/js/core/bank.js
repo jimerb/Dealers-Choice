@@ -293,3 +293,14 @@ export function getBank() { return (shared ??= createBank()); }
 
 /** "$1,250" */
 export const money = (n) => `${n < 0 ? '−' : ''}$${Math.abs(n).toLocaleString('en-US')}`;
+/** Short money for tight spaces: "$950", "$12.4K", "$1.25M", "$1.00B" (rounded down, never up). */
+export function moneyShort(n) {
+  const a = Math.abs(n), sign = n < 0 ? '−' : '';
+  const cut = (v, d) => (Math.floor(v * 10 ** d) / 10 ** d).toFixed(d);
+  if (a < 1000) return `${sign}$${a}`;
+  if (a < 1e6) return `${sign}$${cut(a / 1e3, a < 1e4 ? 2 : a < 1e5 ? 1 : 0)}K`;
+  if (a < 1e9) return `${sign}$${cut(a / 1e6, a < 1e7 ? 2 : a < 1e8 ? 1 : 0)}M`;
+  return `${sign}$${cut(a / 1e9, a < 1e10 ? 2 : 1)}B`;
+}
+/** The bank as a pill shows it: whole dollars under a million, then "$1.25M" / "$1.00B". */
+export const moneyPill = (n) => (Math.abs(n) < 1e6 ? money(n) : moneyShort(n));

@@ -34,15 +34,26 @@
         <button class="btn sm" type="button" data-cmd="stats">Stats</button>
       </div>
     </div>
-    <div class="felt cz-felt" id="cz-felt" aria-label="Casino table"></div>
+    <div class="cz-feltwrap">
+      <div class="felt cz-felt" id="cz-felt" aria-label="Casino table"></div>
+      <div class="cz-result" id="cz-result" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+    </div>
     <div class="cz-dock">
     <p class="cz-msg" id="cz-msg" role="status" aria-live="polite" tabindex="-1"></p>
+    <div class="cz-actions" id="cz-actions" role="group" aria-label="Your play" hidden></div>
     <div class="cz-betbar">
+      <div class="cz-meter" id="cz-meter" hidden>
+        <span class="cz-meter-read">Credits <b id="cz-credits">0</b> <span id="cz-credits-usd">= $0</span></span>
+        <button class="btn sm" type="button" data-cmd="insert" id="cz-insert">Insert bills</button>
+        <button class="btn sm" type="button" data-cmd="cashout" id="cz-cashout">Cash out</button>
+      </div>
       <div class="cz-rack" id="cz-rack" role="radiogroup" aria-label="Chip to bet"></div>
-      <div class="cz-betinfo">Bet <b id="cz-total">$0</b></div>
+      <div class="cz-betinfo">Bet <b id="cz-total">$0</b> <span class="cz-after" id="cz-after"></span></div>
       <div class="cz-betbtns">
-        <button class="btn sm" type="button" data-cmd="clear" id="cz-clear">Clear</button>
-        <button class="btn sm" type="button" data-cmd="rebet" id="cz-rebet">Rebet</button>
+        <button class="btn sm cz-erase" type="button" data-cmd="erase" id="cz-erase" aria-pressed="false" hidden>Remove</button>
+        <button class="btn sm" type="button" data-cmd="undo" id="cz-undo" title="Take back the last chip (Backspace)">Undo</button>
+        <button class="btn sm" type="button" data-cmd="clear" id="cz-clear" title="Clear all bets (C)">Clear</button>
+        <button class="btn sm" type="button" data-cmd="rebet" id="cz-rebet" title="Same bets again (R; Shift+R doubles them)">Rebet</button>
         <button class="btn primary" type="button" data-cmd="action" id="cz-action">Deal</button>
       </div>
     </div>
@@ -56,7 +67,7 @@
     <form method="dialog"><button class="howto-close" aria-label="Close">×</button></form>
   </div>
   <div id="cz-rules-body" class="howto-body" tabindex="0" role="region" aria-label="Rules"></div>
-  <form method="dialog" class="howto-foot"><span></span><button class="btn primary">Got it</button></form>
+  <form method="dialog" class="howto-foot"><label class="choice"><input type="checkbox" id="cz-howto-auto"> Show this when I open a game for the first time</label><button class="btn primary">Got it</button></form>
 </dialog>
 <footer id="site-footer"></footer>
 <script type="module" src="js/casino/ui.js"></script>

@@ -2,7 +2,12 @@
 
 /* ---------- bank pill (site header on casino.html, and each game's top bar) ---------- */
 .cz-pill, .cz-bank-top { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px 0 6px; border-radius: 999px; border: 2px solid var(--tier, var(--brass)); background: var(--panel); color: var(--ink); text-decoration: none; font-size: 15px; white-space: nowrap; }
+.cz-pill { cursor: pointer; font: inherit; }
 .cz-pill:hover { color: var(--brass-2); }
+.cz-bank-top { cursor: pointer; }
+.cz-amt-short { display: none; }
+/* the loan marker on the bank pill */
+.cz-loan-mark { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; margin-left: -2px; border-radius: 50%; background: #8E2F2F; color: #FBF8F0; font-size: 11px; font-weight: 800; }
 .cz-bank-top b, .cz-pill b { font-weight: 700; }
 .cz-bank-top small { color: var(--ink-3); font-size: 12px; }
 /* a chip in the tier's colour: cream face, coloured rim with white edge spots */
@@ -47,6 +52,10 @@
 .cz-stakes button[disabled] { opacity: .4; cursor: not-allowed; text-decoration: line-through; }
 .cz-stakes button[aria-checked="true"] { background: var(--brass); border-color: var(--brass); color: var(--on-brass); }
 .cz-sit { align-self: flex-start; margin-top: auto; }
+.cz-tile.pending .tile-badge { visibility: hidden; }
+.cz-tile-net { font-size: 13px; font-weight: 600; color: var(--ink-3) !important; }
+.cz-tile-net.up { color: var(--brass-2) !important; }
+.cz-tile-netslot:empty { display: none; }
 .tile.cz-tile:hover { transform: none; } /* the tile isn't a link: its buttons are */
 
 /* ---------- game shell ---------- */
@@ -71,6 +80,66 @@
 .cz-betbtns { display: flex; gap: 8px; margin-left: auto; align-items: center; }
 .cz-betbtns .btn.primary { min-width: 104px; }
 
+/* the felt and the result banner over it */
+.cz-feltwrap { position: relative; }
+.cz-result { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); z-index: 4; display: flex; flex-direction: column; align-items: center; gap: 2px; max-width: calc(100% - 24px); padding: 12px 26px; border-radius: 16px; background: rgba(8,24,19,.88); border: 2px solid var(--brass); box-shadow: 0 16px 40px rgba(0,0,0,.5); text-align: center; cursor: pointer; animation: cz-pop .25s ease-out; }
+.cz-result[hidden] { display: none; }
+.cz-result b { font-family: var(--font-display); font-weight: 400; font-size: clamp(22px, 3.4vw, 32px); line-height: 1.15; color: var(--ink); }
+.cz-result span { font-size: 15px; color: var(--ink-2); }
+.cz-result.win { border-color: var(--brass-2); box-shadow: 0 0 0 4px rgba(226,194,122,.25), 0 16px 40px rgba(0,0,0,.5); }
+.cz-result.win b { color: var(--brass-2); }
+.cz-result.lose { border-color: #8E2F2F; }
+@keyframes cz-pop { from { transform: translate(-50%, -50%) scale(.85); opacity: 0; } }
+
+/* the game's own buttons (Hit, Stand, Hold, Draw ...) above the bet bar */
+.cz-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 10px; }
+.cz-actions[hidden] { display: none; }
+.cz-actions .btn { min-width: 92px; }
+.cz-actions kbd { margin-left: 8px; padding: 0 5px; border-radius: 4px; border: 1px solid currentColor; font: 600 11px var(--font-ui); opacity: .6; }
+.cz-actions .btn[aria-pressed="true"] { background: var(--brass); color: var(--on-brass); border-color: var(--brass); }
+.cz-after { font-size: 13px; color: var(--ink-3); margin-left: 6px; }
+.cz-erase.on { background: #8E2F2F; border-color: #8E2F2F; color: #FBF8F0; }
+.cz-chip:focus-visible { outline: 3px solid var(--brass-2); outline-offset: 2px; }
+
+/* machines: the credit meter in the bet bar, and the Insert bills dialog */
+.cz-meter { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.cz-meter[hidden] { display: none; }
+.cz-meter-read { font-size: 15px; color: var(--ink-2); padding: 6px 12px; border-radius: 10px; background: #0A1511; border: 1px solid #3C6B5A; white-space: nowrap; }
+.cz-meter-read b { color: #E2C27A; font-size: 18px; font-variant-numeric: tabular-nums; }
+#cz-credits-usd { font-size: 13px; color: #A9C2B7; }
+.cz-bills { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
+.cz-bill-amt { display: flex; align-items: center; gap: 10px; color: var(--ink-2); }
+.cz-bill-amt input, .cz-opt select { min-height: 40px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--panel); color: var(--ink); font: inherit; width: 9em; }
+.cz-opts { display: flex; flex-direction: column; gap: 12px; margin-bottom: 8px; }
+.cz-opt { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--ink-2); }
+.cz-opt select { width: auto; }
+.cz-next { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cz-meterbar { display: inline-block; width: 160px; height: 8px; border-radius: 4px; background: rgba(255,255,255,.12); overflow: hidden; }
+.cz-meterbar > span { display: block; height: 100%; background: var(--brass-2); }
+table.cz-stats tr.here td { color: var(--brass-2); font-weight: 700; }
+#cz-rules .howto-foot .choice { font-size: 13px; color: var(--ink-3); }
+
+/* cards on a table (js/casino/kit/cards.js): the site's faces and backs over the SVG layout */
+.cz-cardhost { position: relative; }
+.cz-cards { position: absolute; pointer-events: none; z-index: 2; }
+.cz-c { position: absolute; display: block; padding: 0; border: 0; background: none; --card-w: max(var(--minw, 40px), calc(var(--w, 70) * var(--u, 1) * 1px)); width: var(--card-w); aspect-ratio: 5 / 7; transform: translate(-50%, -50%) rotate(var(--rot, 0deg)); transition: left .3s ease, top .3s ease, transform .3s ease; perspective: 600px; }
+.cz-c.still { transition: none; }
+button.cz-c { pointer-events: auto; cursor: pointer; border-radius: calc(var(--card-w) * .06); }
+button.cz-c:focus-visible { outline: 3px solid var(--brass-2); outline-offset: 2px; }
+.cz-c-in { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform .26s ease; }
+.cz-c.down .cz-c-in { transform: rotateY(180deg); }
+.cz-c.still .cz-c-in { transition: none; }
+.cz-c-face, .cz-c-back { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.cz-c-back { transform: rotateY(180deg); }
+.cz-c .card { width: var(--card-w); box-shadow: 0 2px 6px rgba(0,0,0,.45); }
+.cz-c.win .card { box-shadow: 0 0 0 3px var(--brass-2), 0 6px 14px rgba(0,0,0,.45); }
+.cz-c.held { transform: translate(-50%, calc(-50% - 10px)) rotate(var(--rot, 0deg)); }
+.cz-c.dim .card { filter: brightness(.6); }
+@media (prefers-reduced-motion: reduce) {
+  .cz-c, .cz-c-in { transition: none; }
+  .cz-result { animation: none; }
+}
+
 /* stub tables */
 .cz-stage { display: flex; justify-content: center; }
 .cz-todo { margin: 14px auto 0; max-width: 760px; background: rgba(8,24,19,.78); border: 1px solid #3C6B5A; border-radius: 12px; padding: 10px 16px; color: #D7E2DC; font-size: 14px; }
@@ -85,7 +154,7 @@
 table.cz-stats { font-size: 14px; white-space: nowrap; }
 
 /* toast for bank news (loan repaid, tier up, Hall of Fame) */
-.cz-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 50; background: var(--panel); border: 1px solid var(--brass); color: var(--ink); padding: 12px 18px; border-radius: 14px; box-shadow: 0 16px 40px rgba(0,0,0,.5); font-weight: 600; width: max-content; max-width: calc(100vw - 32px); transition: opacity .4s ease; }
+.cz-toast { position: fixed; left: 50%; bottom: calc(24px + var(--lift, 0) * 58px); transform: translateX(-50%); z-index: 50; background: var(--panel); border: 1px solid var(--brass); color: var(--ink); padding: 12px 18px; border-radius: 14px; box-shadow: 0 16px 40px rgba(0,0,0,.5); font-weight: 600; width: max-content; max-width: calc(100vw - 32px); transition: opacity .4s ease; }
 .cz-toast.big { background: var(--brass-2); color: var(--on-brass); font-size: 17px; }
 .cz-toast.out { opacity: 0; }
 .cz-toast.medal { display: flex; align-items: center; gap: 12px; }
@@ -217,8 +286,13 @@ table.cz-stats { font-size: 14px; white-space: nowrap; }
 .cz-roulette.tall { max-width: 380px; }
 .cz-felt[data-game] { touch-action: manipulation; }
 
-/* the header pill gives way to the table's own bank display on narrow screens */
-@media (max-width: 719px) { body.cz-playing .cz-pill { display: none; } }
+/* the header pill gives way to the table's own bank display on narrow screens, and both pills
+   use the short amount ($12.4K) there */
+@media (max-width: 719px) {
+  body.cz-playing .cz-pill { display: none; }
+  .cz-amt-full { display: none; }
+  .cz-amt-short { display: inline; }
+}
 .cz-subtitle:empty { display: none; }
 .cz-msg:focus { outline: none; }
 
@@ -233,7 +307,6 @@ table.cz-stats { font-size: 14px; white-space: nowrap; }
   .cz-hall-board { padding: 10px; border-width: 20px; border-image-width: 20px; }
   .cz-rl-main { flex-basis: 100%; }
   .cz-rl-history { justify-content: center; }
-  .cz-chip { width: 42px; height: 42px; }
   .cz-chip b { font-size: 13px; }
   .cz-betbar { padding: 8px 10px; gap: 8px 12px; }
   /* the message and bet bar stay on screen while the layout scrolls under them */
@@ -247,6 +320,17 @@ table.cz-stats { font-size: 14px; white-space: nowrap; }
   .cz-bank-next { display: block; margin: 4px 0 0; }
   .cz-pill { min-height: 36px; padding: 0 10px 0 5px; font-size: 14px; gap: 6px; }
   .cz-pill-chip { width: 22px; height: 22px; }
+  .cz-actions { gap: 6px; margin-top: 6px; }
+  .cz-actions .btn { min-width: 0; flex: 1 1 auto; padding: 0 10px; }
+  .cz-actions kbd { display: none; }
+  .cz-rack { flex-wrap: nowrap; overflow-x: auto; scroll-snap-type: x mandatory; max-width: 100%; padding-bottom: 2px; }
+  .cz-chip { scroll-snap-align: start; width: 44px; height: 44px; }
+  .cz-after { display: none; }
+  .cz-meter-read { font-size: 14px; padding: 4px 10px; }
+  .cz-result { padding: 10px 16px; top: 38%; }
+}
+@media (pointer: coarse) {
+  .cz-betbtns .btn.sm, .cz-meter .btn.sm { min-height: 44px; }
 }
 @media (pointer: coarse) {
   .cz-stakes button { min-height: 40px; }

@@ -61,6 +61,7 @@ export function layout() {
 }
 
 export default stubGame({
+  credits: true,
   id: 'slots', name: 'Slots', layout,
   todo: [
     'Brass Crown reel strips, crypto spin and pay table; an exact return-to-player test (DOM-free engine)',

@@ -3,18 +3,18 @@
 // module (see the interface at the top of ui.js) when the game is built.
 import { esc } from './svg.js';
 
-export function stubGame({ id, name, layout, stage = layout, todo, howto, options = [] }) {
+export function stubGame({ id, name, layout, stage = layout, todo, howto, options = [], credits = false }) {
   let root = null;
   return {
-    id, name, todo, howto, options, layout, stage, ready: false,
+    id, name, todo, howto, options, layout, stage, credits, ready: false,
     mount(el, ctx) {
       root = el;
       el.innerHTML = `<div class="cz-stage">${stage()}</div>
         <details class="cz-todo"><summary>This table is still being built</summary>
         <ul>${todo.map((t) => `<li>${esc(t)}</li>`).join('')}</ul></details>`;
       ctx.setTotal(0);
-      ctx.setButtons({ action: false, clear: false, rebet: false });
-      ctx.message(`${name} is set up but not dealing yet. Roulette is open now.`);
+      ctx.setButtons({ action: false, clear: false, rebet: false, undo: false });
+      ctx.message(credits ? `${name} is set up but not paying yet. Insert bills and Cash out already work.` : `${name} is set up but not dealing yet. Roulette is open now.`);
     },
     unmount() { if (root) root.innerHTML = ''; root = null; },
     action() {}, clear() {}, rebet() {},
