@@ -17,6 +17,9 @@ export const LOAN_LIMIT = 1000;           // a loan is offered only while the ba
 export const HALL_OF_FAME_AT = 1_000_000_000;
 export const MAX_BANK = 9_000_000_000_000; // sanity clamp, well inside Number.MAX_SAFE_INTEGER
 export const CORRUPT_KEY = 'dc.bank.corrupt';
+/** Machine denominations, and the most credits one machine's meter holds. */
+export const DENOMS = [1, 5, 25];
+export const MAX_CREDITS = 10_000;
 
 /** Tiers, lowest first. `next` is the bank that upgrades out of this tier (the last one's is the
  *  Hall of Fame); `loan` is what the loan desk offers at this tier. */
@@ -42,6 +45,13 @@ const cleanHall = (rows) => (Array.isArray(rows) ? rows : [])
   .filter((h) => h && typeof h === 'object' && typeof h.name === 'string' && typeof h.date === 'string' && DATE.test(h.date))
   .map((h) => ({ ...h, name: h.name.slice(0, 20) }));
 
+/** Credits sitting in a machine: { game, denom, credits }, or null when the field is missing or bad. */
+function cleanMachine(m) {
+  if (!m || typeof m !== 'object' || typeof m.game !== 'string' || !m.game || !DENOMS.includes(m.denom)) return null;
+  if (!Number.isSafeInteger(m.credits) || m.credits < 0) return null;
+  return { game: m.game.slice(0, 40), denom: m.denom, credits: Math.min(m.credits, MAX_CREDITS) };
+}
+
 /** Repair whatever was stored into a valid state (never throws). A wrong or missing version
  *  starts fresh, keeping any valid Hall of Fame rows. The tier is brought up to date with the bank. */
 export function normalize(raw) {
@@ -55,6 +65,8 @@ export function normalize(raw) {
   }
   const loan = TIERS.some((t) => t.loan === raw.loan) ? raw.loan : 0;
   const state = { v: VERSION, bank: cleanInt(raw.bank), tier: cleanInt(raw.tier, 0, TOP), loan, stats, hall: cleanHall(raw.hall) };
+  const machine = cleanMachine(raw.machine);
+  if (machine) state.machine = machine;
   // a tier behind its bank catches up (blocked by a loan, as always); loan repayment and the
   // Hall of Fame wait for the next real change of money
   while (state.loan === 0 && state.tier < TOP && state.bank >= TIERS[state.tier].next) state.tier++;
@@ -63,8 +75,8 @@ export function normalize(raw) {
 
 export const tierOf = (state) => TIERS[state.tier];
 
-/** Can the player take a loan right now? */
-export const loanEligible = (state) => state.loan === 0 && state.bank < LOAN_LIMIT;
+/** Can the player take a loan right now? Not while credits sit in a machine (cash out first). */
+export const loanEligible = (state) => state.loan === 0 && state.bank < LOAN_LIMIT && !state.machine;
 /** The loan the desk offers at the player's tier (offered or not). */
 export const loanAmount = (state) => TIERS[state.tier].loan;
 
@@ -72,7 +84,8 @@ const blankStats = () => ({ hands: 0, wagered: 0, won: 0, net: 0, biggest: 0 });
 
 /**
  * The single place money changes. `delta` is a whole number of dollars (negative to take money).
- * opts.game: the game it came from, for its stats ('wager' for a debit, 'return' for a credit);
+ * opts.game: the game it came from, for its stats ('wager' for a debit, 'return' for a credit;
+ *   with opts.refund a credit is a bet handed back, which takes it off 'wager' instead);
  * opts.name / opts.now: who and when, for a Hall of Fame entry.
  * Returns { state, events } with events such as { type: 'repaid', amount },
  * { type: 'upgrade', from, to } and { type: 'hall', entry }. Throws on an overdraft.
@@ -85,7 +98,9 @@ export function applyChange(prev, delta, opts = {}) {
 
   if (opts.game && delta !== 0) {
     const g = { ...(s.stats[opts.game] ?? blankStats()) };
-    if (delta < 0) g.wagered += -delta; else g.won += delta;
+    if (delta < 0) g.wagered += -delta;
+    else if (opts.refund) g.wagered = Math.max(0, g.wagered - delta); // a bet taken back: it was never really wagered
+    else g.won += delta;
     g.net += delta;
     s.stats[opts.game] = g;
   }
@@ -107,6 +122,18 @@ export function applyChange(prev, delta, opts = {}) {
     return { state: freshState([...s.hall, entry]), events };
   }
   return { state: s, events };
+}
+
+/** Count one finished round of a game whose money moved without the bank (a machine's credits):
+ *  hands, wagered and won in dollars, and the biggest win. */
+export function recordRoundState(prev, game, { wagered = 0, won = 0 } = {}) {
+  const g = { ...(prev.stats[game] ?? blankStats()) };
+  g.hands += 1;
+  g.wagered += wagered;
+  g.won += won;
+  g.net = g.won - g.wagered;
+  if (won - wagered > g.biggest) g.biggest = won - wagered;
+  return { ...prev, stats: { ...prev.stats, [game]: g } };
 }
 
 /** Take the loan offered at the current tier (no change if not eligible). */
@@ -192,15 +219,63 @@ export function createBank({ storage = defaultStorage(), name = defaultName, now
       commit(applyChange(state, -n, { game, name: name(), now: now() }));
       return true;
     },
-    /** Pay winnings (or return a stake) into the bank. */
-    credit(n, { game } = {}) {
+    /** Pay winnings (or return a stake) into the bank. With `refund`, the money is a bet handed
+     *  back (taken down, pulled back) and comes off the game's wagered total instead of counting as won. */
+    credit(n, { game, refund = false } = {}) {
       if (n === 0) return true;
       if (!amountOk(n)) return false;
       if (game) sessionNet += n;
-      commit(applyChange(state, n, { game, name: name(), now: now() }));
+      commit(applyChange(state, n, { game, refund, name: name(), now: now() }));
       return true;
     },
     recordHand(game, net) { state = recordHandState(state, game, net); write(); emit([{ type: 'hand', game, net }]); },
+    /** A round played on a machine's credits (no money moved through the bank): wagered and won in dollars. */
+    recordRound(game, round) {
+      state = recordRoundState(state, game, round);
+      sessionNet += (round.won ?? 0) - (round.wagered ?? 0);
+      write();
+      emit([{ type: 'hand', game, net: (round.won ?? 0) - (round.wagered ?? 0) }]);
+    },
+
+    // ---- machine credits: one machine at a time holds credits taken from the bank
+    /** The machine holding credits ({ game, denom, credits }), or null. */
+    get machine() { return state.machine ?? null; },
+    /** Feed `dollars` into game's machine: rounded down to whole credits, capped by the bank and the
+     *  meter. Returns { ok, credits (added), reason: 'other-machine' | 'bad-amount' | 'insufficient' | 'full' }. */
+    machineIn(game, denom, dollars) {
+      const m = state.machine;
+      if (m && (m.game !== game || m.denom !== denom)) return { ok: false, credits: 0, reason: 'other-machine' };
+      if (!DENOMS.includes(denom) || !Number.isSafeInteger(dollars) || dollars <= 0) return { ok: false, credits: 0, reason: 'bad-amount' };
+      const room = MAX_CREDITS - (m?.credits ?? 0);
+      const credits = Math.min(Math.floor(Math.min(dollars, state.bank) / denom), room);
+      if (credits <= 0) return { ok: false, credits: 0, reason: room <= 0 ? 'full' : 'insufficient' };
+      const r = applyChange(state, -credits * denom, { name: name(), now: now() });
+      r.state = { ...r.state, machine: { game, denom, credits: (m?.credits ?? 0) + credits } };
+      commit(r);
+      return { ok: true, credits };
+    },
+    /** Change the credits on the meter by `delta` (a bet off, a win on). False, changing nothing, if
+     *  `game` doesn't hold the machine (cashed out in another tab) or the meter would go below zero. */
+    machineAdjust(game, delta) {
+      const m = state.machine;
+      if (!m || m.game !== game || !Number.isSafeInteger(delta)) return false;
+      const credits = m.credits + delta;
+      if (credits < 0) return false;
+      state = { ...state, machine: { ...m, credits: Math.min(credits, MAX_CREDITS * 100) } };
+      write();
+      emit([{ type: 'machine', credits }]);
+      return true;
+    },
+    /** Cash the machine out into the bank (loan repayment and tier upgrades happen here).
+     *  Returns { game, credits, dollars } (credits 0 when no machine held any). */
+    machineOut() {
+      const m = state.machine;
+      if (!m) return { game: null, credits: 0, dollars: 0 };
+      const { machine, ...rest } = state;
+      const dollars = m.credits * m.denom;
+      commit(applyChange(rest, dollars, { name: name(), now: now() }));
+      return { game: m.game, credits: m.credits, dollars };
+    },
     loanEligible: () => loanEligible(state),
     loanAmount: () => loanAmount(state),
     takeLoan() { return commit(takeLoanState(state)).some((e) => e.type === 'loan'); },

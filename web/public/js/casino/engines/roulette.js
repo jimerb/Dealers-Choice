@@ -6,6 +6,8 @@
 //   'red' 'black' 'odd' 'even' 'low' (1-18) 'high' (19-36)   even money
 //   'dozen:1'..'dozen:3', 'col:1'..'col:3'                    2 to 1
 // 0 and 00 lose every outside bet.
+import { cryptoRng, randomInt } from '../kit/rng.js';
+import { createRound } from '../kit/round.js';
 
 export const POCKETS = ['0', '00', ...Array.from({ length: 36 }, (_, i) => String(i + 1))];
 export const RED = new Set([1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]);
@@ -96,20 +98,11 @@ export function checkLimits(bets, { min, max }) {
   return null;
 }
 
-/** A fair whole number in [0, n) from crypto.getRandomValues (rejection sampling, no modulo bias).
- *  `fill` stands in for crypto.getRandomValues in tests. */
-export function randomInt(n, fill = (a) => globalThis.crypto.getRandomValues(a)) {
-  if (!Number.isInteger(n) || n < 1 || n > 0x1_0000_0000) throw new RangeError(`randomInt: ${n} is not a count from 1 to 2^32`);
-  const limit = Math.floor(0x1_0000_0000 / n) * n;
-  const buf = new Uint32Array(1);
-  for (;;) {
-    fill(buf);
-    if (buf[0] < limit) return buf[0] % n;
-  }
-}
+export { randomInt };
 
-/** Spin: the pocket the ball lands in. */
-export const spin = (fill) => WHEEL[randomInt(WHEEL.length, fill)];
+const defaultRng = cryptoRng();
+/** Spin: the pocket the ball lands in (`rng` from kit/rng.js; tests pass a seeded one). */
+export const spin = (rng = defaultRng) => WHEEL[rng.int(WHEEL.length)];
 
 /**
  * One whole spin against a bank, settled at once: checks the limits, takes the wager, picks the
@@ -123,8 +116,8 @@ export function playSpin(bank, bets, limits, { game = 'roulette', pocket = spin(
   const error = checkLimits(bets, limits);
   if (error) return { error };
   const r = settle(bets, pocket);
-  if (!bank.debit(r.wagered, { game })) return { error: 'The bank can\'t cover those bets.' };
-  bank.recordHand(game, r.net);
-  if (r.returned) bank.credit(r.returned, { game });
+  const round = createRound(bank, game);
+  if (!round.wager(r.wagered)) return { error: 'The bank can\'t cover those bets.' };
+  round.settle({ returned: r.returned });
   return { pocket, ...r };
 }
