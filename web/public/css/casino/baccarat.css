@@ -1,0 +1,25 @@
+/* Baccarat: betting spots, hand totals, results and the scorecard (js/casino/games/baccarat.js) */
+/* The shared rule caps the drawing's height; cap its width to match, so the SVG's box is the
+   drawing itself (no letterbox) and the card layer lines up with it. Ratios are the viewBoxes. */
+.cz-stage > .bc-table.wide { width: min(100%, 1000px, calc(max(240px, 100vh - 372px) * 1000 / 708)); }
+.cz-stage > .bc-table.tall { width: min(100%, 520px, calc(max(240px, 100vh - 372px) * 600 / 810)); }
+.bc-spot { cursor: pointer; outline: none; }
+.bc-spot:hover .cz-area { stroke: var(--brass-2); stroke-width: 3; }
+.bc-spot:focus-visible .cz-area { stroke: var(--brass-2); stroke-width: 5; }
+.bc-total { fill: rgba(8, 24, 19, .82); stroke: var(--cz-line); stroke-width: 2; }
+.bc-total.win { fill: var(--brass-2); stroke: #1B1B1B; }
+.bc-total-tx { fill: #F4EFE3; }
+.bc-total.win + .bc-total-tx { fill: #1B1B1B; }
+.bc-plate { fill: rgba(8, 24, 19, .55); stroke: var(--cz-line); stroke-width: 1.5; }
+.bc-bead { stroke: rgba(255, 255, 255, .55); stroke-width: 1; }
+.bc-bead.banker { fill: #B3261E; }
+.bc-bead.player { fill: #2E5AA8; }
+.bc-bead.tie { fill: #2E7D4F; }
+.bc-bead-tx { fill: #FBF8F0; pointer-events: none; }
+.bc-res { paint-order: stroke; stroke: rgba(8, 24, 19, .85); stroke-width: 4px; stroke-linejoin: round; }
+.bc-res.win { fill: #E8C35A; }
+.bc-res.push { fill: #F4EFE3; }
+.bc-res.lose { fill: #E8A49C; }
+.bc-chip.lost { opacity: .45; }
+/* the result banner sits over the betting area, so the hands stay in view */
+[data-game="baccarat"] .cz-result { top: 74%; }

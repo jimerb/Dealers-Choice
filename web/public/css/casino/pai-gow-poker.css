@@ -1,0 +1,16 @@
+/* Pai Gow Poker: the low box, the high row, the bet circle and results (js/casino/games/pai-gow-poker.js) */
+/* The shared rule caps the drawing's height; cap its width to match so the card layers line up. */
+.cz-stage > .pg-table.wide { width: min(100%, 1000px, calc(max(240px, 100vh - 372px) * 1000 / 708)); }
+.cz-stage > .pg-table.tall { width: min(100%, 520px, calc(max(300px, 100vh - 330px) * 600 / 720)); max-height: none; }
+.pg-box { fill: rgba(255, 255, 255, .03); stroke: var(--cz-line); stroke-width: 2; stroke-dasharray: 8 6; }
+.pg-spot { cursor: pointer; outline: none; }
+.pg-spot:hover .cz-area { stroke: var(--brass-2); stroke-width: 3; }
+.pg-spot:focus-visible .cz-area { stroke: var(--brass-2); stroke-width: 5; }
+.pg-foul { fill: #E8A49C; }
+.pg-res { paint-order: stroke; stroke: rgba(8, 24, 19, .85); stroke-width: 4px; stroke-linejoin: round; }
+.pg-res.win { fill: #E8C35A; }
+.pg-res.push { fill: #F4EFE3; }
+.pg-res.lose { fill: #E8A49C; }
+.pg-stage button.cz-c:hover .card { box-shadow: 0 0 0 2px var(--brass-2), 0 4px 10px rgba(0, 0, 0, .45); }
+/* the result banner sits over the crest, so both players' hands stay in view */
+#room[data-game="pai-gow-poker"] .cz-result { top: 17%; padding: 8px 22px; }
