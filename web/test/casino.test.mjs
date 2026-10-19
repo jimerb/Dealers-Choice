@@ -142,3 +142,9 @@ test('tables are dressed with the casino art over code-drawn stand-ins', () => {
   for (const p of [ART.bowl, ART.rotor, ART.ball]) assert.ok(w.includes(p), p);
   assert.equal((w.match(/data-pocket=/g) ?? []).length, 38, 'the code draws all 38 pockets');
 });
+
+test('the casino code and the game guide stay in our own words', () => {
+  const files = [...walk(pub('js/casino/')), pub('css/casino.css'), pub('casino.html'), pub('js/core/bank.js')];
+  for (const f of files) assert.doesNotMatch(readFileSync(f, 'utf8'), /hoyle|sierra|reverse.engineer|decomp/i, f.pathname);
+  assert.ok(existsSync(pub('js/casino/GAMES.md')), 'the guide for game authors is there');
+});
