@@ -194,8 +194,9 @@ export function limits(state, key, stakes, staged = {}) {
   return { min: Math.max(0, stakes.min - now), max: stakes.max == null || !Number.isFinite(stakes.max) ? null : Math.max(0, stakes.max - now) };
 }
 
-/** The first problem with a set of staged chips, or null. */
-export function checkStaged(state, staged, stakes) {
+/** The first problem with a set of staged chips, or null. With { mins: false } a bet under the
+ *  table minimum is let through (the casino shell offers to raise it). */
+export function checkStaged(state, staged, stakes, { mins = true } = {}) {
   for (const [key, amount] of Object.entries(staged)) {
     if (!amount) continue;
     if (!Number.isSafeInteger(amount) || amount < 0) return 'Bets are whole dollars.';
@@ -207,7 +208,7 @@ export function checkStaged(state, staged, stakes) {
         ? `The most odds behind ${betName(flatOf(key))} is ${usd(oddsMax(state, key, staged))} (${state.opts.odds} times).`
         : `Table max is ${usd(stakes.max)} on ${betName(key)}.`;
     }
-    if (amount < lim.min) return `Your bet on ${betName(key)} doesn't cover the ${usd(stakes.min)} minimum.`;
+    if (mins && amount < lim.min) return `Your bet on ${betName(key)} doesn't cover the ${usd(stakes.min)} minimum.`;
     if (key === 'horn' && amount % 4) return 'The horn splits into four equal bets: make it a multiple of $4.';
   }
   return null;
