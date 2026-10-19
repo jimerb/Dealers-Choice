@@ -1,0 +1,34 @@
+/* Slots: the Brass Crown machine (js/casino/games/slots.js). */
+.cz-sl-stage { align-items: center; gap: 28px; }
+.cz-sl-stage > .cz-svg { margin: 0; flex: 0 1 auto; min-width: 0; aspect-ratio: 2 / 3; width: auto; height: max(300px, calc(100vh - 372px)); max-width: 100%; }
+.cz-sl-card { flex: 0 0 auto; width: 290px; background: rgba(8,24,19,.82); border: 1px solid var(--brass); border-radius: 14px; padding: 12px 14px; color: #E2C27A; font-size: 14px; }
+.cz-sl-card h3 { margin: 0 0 6px; font-family: var(--font-display); font-size: 18px; color: #E2C27A; }
+.cz-sl-card table { width: 100%; border-collapse: collapse; }
+.cz-sl-card th, .cz-sl-card td { padding: 3px 4px; text-align: right; font-weight: 600; white-space: nowrap; }
+.cz-sl-card th[scope="row"] { text-align: left; color: #F3ECDA; font-weight: 500; }
+.cz-sl-card thead th { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #A9C2B7; }
+.cz-sl-card .on { background: rgba(226,194,122,.14); color: #FBF8F0; }
+.cz-sl-card tr.lit { background: rgba(226,194,122,.34); outline: 2px solid #E2C27A; }
+.cz-sl-card p { margin: 8px 0 0; font-size: 12px; color: #A9C2B7; }
+@media (max-width: 899px) { .cz-sl-card { display: none; } }
+.cz-sl-stage > .cz-svg.crop { aspect-ratio: 800 / 599; height: auto; width: 100%; max-width: 460px; }
+.cz-svg.cz-sl { max-width: 440px; user-select: none; -webkit-user-select: none; }
+.cz-sl-col { fill: rgba(226,194,122,.13); stroke: rgba(226,194,122,.45); stroke-width: 1.5; transition: x .15s ease; }
+.cz-sl-row { fill: transparent; }
+.cz-sl-row.lit { fill: rgba(226,194,122,.32); stroke: #E2C27A; stroke-width: 2; animation: cz-sl-blink .5s ease-in-out 6 alternate; }
+.cz-sl-hit { fill: transparent; }
+.cz-sl-hit.on { fill: rgba(255,214,90,.55); animation: cz-sl-blink .45s ease-in-out 6 alternate; }
+.cz-payline.win { stroke: #F2C230; stroke-width: 5; }
+.cz-sl-tagbg { fill: #B3261E; stroke: #F3ECDA; stroke-width: 2; }
+.cz-sl-tagtx { fill: #FBF8F0; }
+.cz-sl-btn { cursor: pointer; }
+.cz-sl-btn:hover .cz-mbtn { filter: brightness(1.25); }
+.cz-sl-btn:active .cz-mbtn { filter: brightness(.85); }
+.cz-sl-btn:focus { outline: none; }
+.cz-sl-btn:focus-visible .cz-mbtn { stroke: #FBF8F0; stroke-width: 4; }
+.cz-sl-reel { cursor: pointer; }
+@keyframes cz-sl-blink { from { opacity: 1; } to { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) {
+  .cz-sl-row.lit, .cz-sl-hit.on { animation: none; }
+  .cz-sl-col { transition: none; }
+}
