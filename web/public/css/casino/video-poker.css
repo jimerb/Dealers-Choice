@@ -1,0 +1,61 @@
+/* Video Poker: the machine picker beside the cabinet, and the cabinet's screen, pay table and meters. */
+.vp { display: flex; align-items: center; justify-content: center; gap: 18px 28px; }
+.vp-stage { flex: none; min-width: 0; position: relative; width: min(100%, max(300px, calc((100vh - 366px) * var(--vp-ratio, .93)))); }
+
+/* the cabinet keeps its own proportions (the card layer lines up with it), sized to the height left */
+.vp-stage > .cz-svg.vp-cab {
+  max-width: none; max-height: none; height: auto; aspect-ratio: var(--vp-ratio); overflow: hidden;
+  width: 100%;
+}
+
+/* machine picker */
+.vp-pick { display: flex; flex-direction: column; gap: 10px; width: 210px; flex: none; }
+.vp-pick-btn {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left;
+  min-height: 44px; padding: 9px 14px; border-radius: 12px; cursor: pointer;
+  background: rgba(8, 24, 19, .72); border: 1px solid #3C6B5A; color: #D7E2DC; font: inherit;
+}
+.vp-pick-btn b { font-size: 15px; color: #F4EFE3; }
+.vp-pick-btn span { font-size: 12.5px; color: #A9C2B7; }
+.vp-pick-btn[aria-checked="true"] { background: #14204A; border-color: #E2C27A; box-shadow: 0 0 0 1px #E2C27A inset; }
+.vp-pick-btn[aria-checked="true"] b { color: #E2C27A; }
+.vp-pick-btn:disabled { cursor: default; opacity: .6; }
+.vp-pick-btn[aria-checked="true"]:disabled { opacity: .85; }
+.vp-pick-btn:focus-visible { outline: 3px solid var(--brass-2, #E2C27A); outline-offset: 2px; }
+.vp-pick-btn:not(:disabled):hover { border-color: #E2C27A; }
+
+/* the screen */
+.vp-glass { fill: #0B1638; }
+.vp-glass.screen { fill: #101C4A; }
+.vp-title { fill: #E2C27A; letter-spacing: 2px; }
+.vp-sub { fill: #BFD0F2; }
+.vp-tx { fill: #F2D58A; }
+.vp-tx.on { fill: #FFFFFF; }
+.vp-tx.win { fill: #1B1B1B; }
+.vp-col { fill: rgba(179, 38, 30, .78); }
+.vp-winrow { fill: #F2D58A; }
+.vp-slot { fill: rgba(255, 255, 255, .05); stroke: rgba(191, 208, 242, .45); stroke-width: 2; stroke-dasharray: 6 5; }
+.vp-held { fill: #FFE27A; letter-spacing: 2px; }
+.vp-status-tx { fill: #FFFFFF; letter-spacing: 1px; }
+
+/* the meters on the gold plate */
+.vp-led { fill: #0A0F0D; stroke: #3A2A12; stroke-width: 3; }
+.vp-led-label { fill: #E2C27A; letter-spacing: 1.5px; }
+.vp-led-tx { fill: #FF5A3C; font-variant-numeric: tabular-nums; }
+
+/* the hint's suggested cards */
+.cz-c.vp-hint .card { box-shadow: 0 0 0 3px #7FD1FF, 0 6px 14px rgba(0, 0, 0, .45); }
+.cz-c.held.vp-hint .card { box-shadow: 0 0 0 3px #7FD1FF, 0 0 0 6px #FFE27A; }
+button.cz-c:disabled { cursor: default; }
+
+@media (max-width: 860px) {
+  .vp { flex-direction: column; gap: 10px; }
+  .vp-pick { flex-direction: row; width: 100%; max-width: 560px; gap: 6px; }
+  .vp-pick-btn { flex: 1 1 0; min-width: 0; padding: 6px 8px; align-items: center; text-align: center; }
+  .vp-pick-btn b { font-size: 13.5px; }
+  .vp-pick-btn span { display: none; }
+  .vp-stage { width: min(100%, max(300px, calc((100vh - 410px) * var(--vp-ratio, .93)))); }
+}
+@media (max-width: 560px) {
+  .vp-stage { width: 100%; }
+}
