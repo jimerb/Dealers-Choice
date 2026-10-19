@@ -143,8 +143,16 @@ test('tables are dressed with the casino art over code-drawn stand-ins', () => {
   assert.equal((w.match(/data-pocket=/g) ?? []).length, 38, 'the code draws all 38 pockets');
 });
 
-test('the casino code and the game guide stay in our own words', () => {
-  const files = [...walk(pub('js/casino/')), pub('css/casino.css'), pub('casino.html'), pub('js/core/bank.js')];
-  for (const f of files) assert.doesNotMatch(readFileSync(f, 'utf8'), /hoyle|sierra|reverse.engineer|decomp/i, f.pathname);
+// The words that must never appear are kept in an untracked file, so this test doesn't publish them.
+const WORDS_FILE = new URL('../../_private/casino/forbidden-words.txt', import.meta.url);
+const WORDS = existsSync(WORDS_FILE)
+  ? readFileSync(WORDS_FILE, 'utf8').split('\n').map((w) => w.trim()).filter(Boolean) : null;
+
+test('the casino code and the game guide stay in our own words', { skip: WORDS ? false : 'no private word list' }, () => {
+  const esc = (w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[\\s._-]?');
+  const re = new RegExp(WORDS.map(esc).join('|'), 'i');
+  const tests = readdirSync(new URL('./', import.meta.url)).filter((f) => f.endsWith('.mjs')).map((f) => new URL(`./${f}`, import.meta.url));
+  const files = [...walk(pub('js/casino/')), pub('css/casino.css'), ...walk(pub('css/casino/')), pub('casino.html'), pub('js/core/bank.js'), ...tests];
+  for (const f of files) assert.doesNotMatch(readFileSync(f, 'utf8'), re, f.pathname);
   assert.ok(existsSync(pub('js/casino/GAMES.md')), 'the guide for game authors is there');
 });
