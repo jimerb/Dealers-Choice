@@ -1,0 +1,16 @@
+/* Blackjack (js/casino/games/blackjack.js): hand-total labels on the felt and the rules / count line. */
+.bjk-lbl-bg { fill: rgba(8, 24, 19, .82); stroke: rgba(226, 194, 122, .55); stroke-width: 1.5; }
+.bjk-lbl-tx { fill: #F4EFE3; }
+.bjk-lbl.active .bjk-lbl-bg { stroke: var(--brass-2, #E2C27A); stroke-width: 4; }
+.bjk-lbl.win .bjk-lbl-bg { fill: #E2C27A; stroke: #8A6A22; }
+.bjk-lbl.win .bjk-lbl-tx { fill: #2A1E0E; }
+.bjk-lbl.push .bjk-lbl-bg { fill: rgba(60, 70, 66, .9); }
+.bjk-lbl.lose .bjk-lbl-tx { fill: #C9BFAE; }
+.bjk-lbl { pointer-events: none; }
+
+.bjk-info { margin: 6px 0 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 18px; font-size: 13px; color: var(--ink-3); text-align: center; }
+.bjk-count { color: var(--ink-2); }
+/* The card layer maps layout units onto the SVG's box, so the box must keep the drawing's shape:
+   size the width from the height the stage allows instead of letting the drawing letterbox. */
+.bjk-stage > .cz-svg { width: min(100%, 1000px, calc(max(240px, 100vh - 372px) * 1000 / 708)); height: auto; max-height: none; aspect-ratio: 1000 / 708; }
+.bjk-count b { color: var(--ink); font-variant-numeric: tabular-nums; }
