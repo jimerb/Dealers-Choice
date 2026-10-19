@@ -33,7 +33,7 @@ export const dealerQualifies = (ev) => ev.cat > HAND.HIGH || (ev.tiebreak[0] ===
 /** Raise or fold, given the player's five cards and the dealer's face-up card. */
 export function advise(player, up) {
   const ev = evaluate(player);
-  if (ev.cat > HAND.HIGH) return { raise: true, text: `Raise: ${describe(ev).toLowerCase()} beats the dealer's usual hand, and a pair or better always raises.` };
+  if (ev.cat > HAND.HIGH) return { raise: true, text: `Raise: ${describe(ev).toLowerCase()}, and a pair or better always raises.` };
   const [a, b] = ev.tiebreak;
   if (!(a === 14 && b === 13)) return { raise: false, text: `Fold: ${describe(ev).toLowerCase()} is less than ace-king.` };
   const ranks = ev.tiebreak; // A, K and three more, high to low
