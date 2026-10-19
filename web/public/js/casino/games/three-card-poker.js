@@ -22,15 +22,16 @@ export const seatPoint = (r) => [500, TABLE_CY + r];
 
 /**
  * The shared poker table with one seat: the other four seats' spots are left off, the player's spots
- * named by their plain key (`bettable` ones take chips: data-spot, a button for keyboards), and an
+ * named by their plain key (`bettable` ones take chips: data-spot, a button for keyboards; `rename`
+ * gives several spots one staging key), and an
  * empty <g class="pk-dyn"> on top for chips, hand names and results.
  */
-export function seatTable(cfg, bettable = [], labels = {}) {
+export function seatTable(cfg, bettable = [], labels = {}, rename = {}) {
   const s = pokerTable({ ...cfg, extras: (cx, cy, a, i) => (i === SEAT ? '<g class="pk-dyn"></g>' : '') });
   return s.replace(/<g data-spot="([\w-]+):(\d)">([\s\S]*?)<\/g>/g, (m, key, i, inner) => {
     if (Number(i) !== SEAT) return '';
     if (!bettable.includes(key)) return `<g class="pk-spot fixed" data-pk="${key}">${inner}</g>`;
-    return `<g class="pk-spot" data-spot="${key}" role="button" tabindex="0" aria-label="${esc(labels[key] ?? key)}">${inner}</g>`;
+    return `<g class="pk-spot" data-spot="${rename[key] ?? key}" data-pk="${key}" role="button" tabindex="0" aria-label="${esc(labels[key] ?? key)}">${inner}</g>`;
   });
 }
 
