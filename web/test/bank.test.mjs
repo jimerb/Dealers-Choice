@@ -52,7 +52,7 @@ test('tiers never go down when the bank falls', () => {
 test('reaching $1 billion on Onyx enters the Hall of Fame and starts over', () => {
   const { state, events } = applyChange(at({ tier: 5, bank: HALL_OF_FAME_AT - 10, stats: { roulette: { hands: 1, wagered: 1, won: 0, net: -1, biggest: 0 } } }), 10, { name: 'Ada', now: Date.UTC(2026, 9, 18) });
   assert.equal(events.at(-1).type, 'hall');
-  assert.deepEqual(state.hall, [{ name: 'Ada', date: '2026-10-18', bank: HALL_OF_FAME_AT }]);
+  assert.deepEqual(state.hall, [{ name: 'Ada', date: '2026-10-18', bank: HALL_OF_FAME_AT, hands: 1 }]);
   assert.equal(state.bank, START);
   assert.equal(state.tier, 0);
   assert.deepEqual(state.stats, {});

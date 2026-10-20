@@ -140,9 +140,10 @@ function hallOfFameMoment(entry) {
 }
 
 /** The save came from a newer version of the casino (another tab): nothing changes until a reload. */
+const READONLY_TEXT = 'The casino was updated in another tab. Reload to keep playing.';
 function readOnlyNotice() {
   document.body.classList.add('cz-readonly');
-  dialog('The casino was updated', '<p>The casino was updated in another tab. Reload to keep playing.</p><p class="muted">Until then your bank is shown but can\'t change.</p>',
+  dialog('The casino was updated', `<p>${READONLY_TEXT}</p><p class="muted">Until then your bank is shown but can't change.</p>`,
     [{ label: 'Not now' }, { label: 'Reload', primary: true, run: () => location.reload() }]);
 }
 
@@ -178,7 +179,6 @@ bank.subscribe((_, events) => {
   paintBank();
   announce(events);
 });
-announce(bank.drainNotices());
 
 /** Keep showing the bank as it is now until the returned function is called (a game settles at
  *  once but reveals the result after its animation). */
@@ -207,15 +207,6 @@ function toast(msg, { big = false, tier = null } = {}) {
   if (big) play('win');
   setTimeout(() => t.classList.add('out'), 3200);
   setTimeout(() => t.remove(), 3700);
-}
-
-// Credits left in a machine when the page was closed go back to the bank first thing.
-{
-  const m = bank.machine;
-  if (m) {
-    const r = bank.machineOut();
-    if (r.credits) toast(`Cashed out ${r.credits.toLocaleString('en-US')} credits (${money(r.dollars)}) left in a machine.`);
-  }
 }
 
 // ------------------------------------------------------------------ chooser
@@ -706,7 +697,7 @@ function makeBets(c, spec = {}) {
       const total = staging.cost();
       if (!total) { play('error'); c.ctx.message('Place a bet first.'); return false; }
       const release = hold ? holdBank() : () => {};
-      if (!c.round.wager(total)) { release(); play('error'); c.ctx.message('The bank can\'t cover those bets.'); return false; }
+      if (!c.round.wager(total)) { release(); play('error'); c.ctx.message(bank.readOnly ? READONLY_TEXT : 'The bank can\'t cover those bets.'); return false; }
       writeJSON(lastKey(game.id), staging.layout());
       staging.lock();
       clearBanner();
@@ -857,7 +848,7 @@ function insertBills() {
   function feed(dollars) {
     const r = m.insert(Math.floor(dollars) || 0);
     if (!r.ok) {
-      toast(r.reason === 'full' ? 'The meter is full.' : r.reason === 'other-machine' ? 'Another machine is holding your credits. Cash out there first.' : `Insert at least ${money(m.denom)}.`);
+      toast(r.reason === 'readonly' ? READONLY_TEXT : r.reason === 'full' ? 'The meter is full.' : r.reason === 'other-machine' ? 'Another machine is holding your credits. Cash out there first.' : `Insert at least ${money(m.denom)}.`);
       return;
     }
     play('chips');
@@ -1090,6 +1081,14 @@ window.addEventListener('dc:settings', () => {
 });
 
 // ------------------------------------------------------------------ start: casino.html?g=roulette&s=25 or casino.html#roulette
+// News from loading the bank (a save it couldn't read, or one from a newer version) ...
+announce(bank.drainNotices());
+// ... and credits left in a machine when the page was closed go back to the bank first thing (a
+// tier reached that way gets its dialog: everything it needs is defined by now).
+if (bank.machine) {
+  const r = bank.machineOut();
+  if (r.credits) toast(`Cashed out ${r.credits.toLocaleString('en-US')} credits (${money(r.dollars)}) left in a machine.`);
+}
 const params = new URLSearchParams(location.search);
 const deep = params.get('g') || location.hash.slice(1);
 renderChooser();

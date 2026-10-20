@@ -117,7 +117,8 @@ export function applyChange(prev, delta, opts = {}) {
   if (s.tier !== from) events.push({ type: 'upgrade', from, to: s.tier });
   // 3. Hall of Fame, then a fresh start (the board itself is kept)
   if (s.loan === 0 && s.tier === TOP && s.bank >= HALL_OF_FAME_AT) {
-    const entry = { name: opts.name || 'Guest', date: new Date(opts.now ?? Date.now()).toISOString().slice(0, 10), bank: s.bank };
+    const hands = Object.values(s.stats).reduce((t, g) => t + (g.hands || 0), 0); // for bragging on the plate
+    const entry = { name: opts.name || 'Guest', date: new Date(opts.now ?? Date.now()).toISOString().slice(0, 10), bank: s.bank, hands };
     events.push({ type: 'hall', entry });
     return { state: freshState([...s.hall, entry]), events };
   }
