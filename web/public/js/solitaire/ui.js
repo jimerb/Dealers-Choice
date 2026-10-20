@@ -223,11 +223,16 @@ function render() {
   // Keep keyboard focus on the same spot across the redraw.
   const f = document.activeElement && felt.contains(document.activeElement) ? document.activeElement : null;
   const focusKey = f && ['pile', 'i', 'drop', 'stock', 'c', 'k', 'r', 'col', 'dir'].map((k) => (f.dataset[k] !== undefined ? `[data-${k}="${f.dataset[k]}"]` : '')).join('');
-  felt.innerHTML = body + (finished ? `<div class="overlay sol-win"><div class="card-panel"><h3>${won() ? 'You won!' : 'Game over'}</h3><p>${esc(status)}.</p>
+  felt.innerHTML = body + (finished ? `<div class="overlay sol-win"><div class="card-panel"><h3>${won() ? 'You won!' : 'Game over'}</h3><p>${esc(status)} · ${state.moves} move${state.moves === 1 ? '' : 's'}.${winTally()}</p>
     <div class="row"><button class="btn primary" data-cmd="new">Deal again</button><button class="btn" data-cmd="menu">Choose another</button></div></div></div>` : '');
   if (custom) fitCustom(felt.firstElementChild, box);
   if (focusKey) (felt.querySelector(`button${focusKey}:not([disabled])`) ?? felt.querySelector('.sol-win .btn'))?.focus({ preventScroll: true });
   else if (finished) felt.querySelector('.sol-win .btn')?.focus({ preventScroll: true });
+}
+
+function winTally() {
+  const st = readStats()[variant];
+  return st?.played ? `<br>You have won ${st.won} of ${st.played} ${esc(info(variant).name)} deal${st.played === 1 ? '' : 's'}.` : '';
 }
 
 function flash(msg) {
