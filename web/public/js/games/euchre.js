@@ -1,6 +1,6 @@
 // Euchre: partners, 24-card deck (9–A), bowers, order up / name trump, going alone.
 import { deck, shuffle, rngOf, SUIT_TITLE } from '../core/cards.js';
-import { clone, log, fx, who, trickWinner, seatsVM, must, POS4, suitSpan } from './lib/common.js';
+import { clone, log, fx, who, trickWinner, seatsVM, must, POS4, suitSpan, plural } from './lib/common.js';
 import { trickHTML, panel, btn, scoreTable } from '../core/table.js';
 import { sortCards } from '../core/cards.js';
 import { cardHTML } from '../skin.js';
@@ -291,7 +291,7 @@ export default {
     return {
       subtitle: `Hand ${s.handNo} · to ${s.opts.target}`,
       scores: [{ label: 'Us', value: s.scores[0], us: true }, { label: 'Them', value: s.scores[1] }],
-      seats: seatsVM(s, 4, (i) => ({ tag: i === s.sitOut ? 'Sitting out' : i === s.maker ? `Maker${s.alone ? ' · alone' : ''}` : (s.phase === 'play' || s.phase === 'trickDone') && s.tricks[i] ? `${s.tricks[i]} tr` : '', tagMuted: i === s.sitOut })),
+      seats: seatsVM(s, 4, (i) => ({ tag: i === s.sitOut ? 'Sitting out' : i === s.maker ? `Maker${s.alone ? ' · alone' : ''}` : (s.phase === 'play' || s.phase === 'trickDone') && s.tricks[i] ? plural(s.tricks[i], 'trick') : '', tagMuted: i === s.sitOut })),
       hand: s.phase === 'discard' && s.turn === 0
         ? { cards: s.hands[0], legal: s.hands[0].map((c) => c.id), mode: 'select', maxSelect: 1 }
         : { cards: s.hands[0], legal: myTurn ? legal(s, 0).map((c) => c.id) : null },

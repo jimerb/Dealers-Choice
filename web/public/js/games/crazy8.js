@@ -1,7 +1,7 @@
 // Crazy Eights (2–4 players). Match suit or rank; eights are wild. "Very crazy" adds
 // J = skip, K = reverse, 2 = draw two (stackable), red Q = draw five and skip.
 import { deck, shuffle, sortCards, rngOf, SUIT_TITLE, pipValue, SYM } from '../core/cards.js';
-import { clone, log, fx, who, must, posFor, suitSpan } from './lib/common.js';
+import { clone, log, fx, who, must, posFor, suitSpan, plural } from './lib/common.js';
 import { panel, btn, scoreTable, cw } from '../core/table.js';
 import { cardHTML, backHTML } from '../skin.js';
 
@@ -226,7 +226,7 @@ export default {
     return {
       subtitle: `${s.opts.variant === 'very' ? 'Very Crazy' : 'Classic'} · ${s.opts.target ? `to ${s.opts.target}` : 'single hand'}`,
       scores: s.opts.target ? s.names.map((n, i) => ({ label: i === 0 ? 'You' : n, value: s.scores[i], us: i === 0 })) : [],
-      seats: Array.from({ length: s.n }, (_, i) => ({ seat: i, pos: posFor(s.n, i), name: s.names[i], mine: i === 0, turn: s.turn === i, count: i ? s.hands[i].length : 0, tag: i ? `${s.hands[i].length} cards` : '' })),
+      seats: Array.from({ length: s.n }, (_, i) => ({ seat: i, pos: posFor(s.n, i), name: s.names[i], mine: i === 0, turn: s.turn === i, count: i ? s.hands[i].length : 0, tag: i ? plural(s.hands[i].length, 'card') : '' })),
       hand: { cards: s.hands[0], legal: myTurn ? s.hands[0].filter((c) => canPlay(s, c)).map((c) => c.id) : null },
       center, banner, overlay,
       side: [{ title: 'Direction', html: s.n > 2 ? (s.dir === 1 ? 'Clockwise' : 'Counter-clockwise') : 'Two players' }],

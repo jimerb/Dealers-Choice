@@ -1,7 +1,7 @@
 // Old Maid (4 players). One queen is removed, so one queen can never pair: whoever is left
 // holding it is the Old Maid. Draw a card from the player on your right; pairs are discarded.
 import { deck, shuffle, sortCards, rngOf, lo } from '../core/cards.js';
-import { clone, log, fx, who, must, seatsVM } from './lib/common.js';
+import { clone, log, fx, who, must, seatsVM, plural } from './lib/common.js';
 import { panel, btn, cw } from '../core/table.js';
 import { backHTML, cardHTML } from '../skin.js';
 
@@ -119,7 +119,7 @@ export default {
     return {
       subtitle: `${alive(s).length} players still holding cards`,
       scores: [],
-      seats: seatsVM(s, 4, (i) => ({ partner: false, tag: s.hands[i].length ? `${s.pairs[i].length} pairs` : 'Out', tagMuted: !s.hands[i].length, count: myTurn && i === from ? 0 : i ? s.hands[i].length : 0, extra: i ? drawRow(i) : '' })),
+      seats: seatsVM(s, 4, (i) => ({ partner: false, tag: s.hands[i].length ? plural(s.pairs[i].length, 'pair') : 'Out', tagMuted: !s.hands[i].length, count: myTurn && i === from ? 0 : i ? s.hands[i].length : 0, extra: i ? drawRow(i) : '' })),
       hand: { cards: s.hands[0], legal: null },
       center: `<div class="pile" style="--card-w:${cw(64)}">${s.lastDrawn ? `<span>You last drew:</span>${cardHTML(s.lastDrawn)}` : '<span>Pairs are set aside automatically.</span>'}</div>`,
       banner, overlay,

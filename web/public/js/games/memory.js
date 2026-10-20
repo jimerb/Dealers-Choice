@@ -1,7 +1,7 @@
 // Memory Match: find pairs (same rank, same color). Solo for score, or race a computer player.
 // Options: deck difficulty, wild jokers, and for two players a race to a number of pairs and a peek.
 import { deck, shuffle, rngOf, isRed, RANKS } from '../core/cards.js';
-import { clone, log, fx, must } from './lib/common.js';
+import { clone, log, fx, must, plural } from './lib/common.js';
 import { panel, btn, scoreTable, cw } from '../core/table.js';
 import { cardHTML, backHTML } from '../skin.js';
 
@@ -243,8 +243,8 @@ export default {
     const extras = [s.opts.deck && s.opts.deck !== 'medium' ? DECK_NAME[s.opts.deck] : '', s.opts.wild === 'jokers' ? 'jokers' : '', race ? `race to ${race} · board ${s.board ?? 1}` : ''].filter(Boolean);
     return {
       subtitle: `${rows} × ${cols} grid${extras.length ? ` · ${extras.join(' · ')}` : ''}`,
-      scores: two(s) ? [{ label: 'You', value: `${s.matched[0]} pairs`, us: true }, { label: opp, value: `${s.matched[1]} pairs` }] : [{ label: 'Pairs', value: s.matched[0], us: true }, { label: 'Misses', value: s.misses }],
-      seats: two(s) ? [{ seat: 0, pos: 'south', name: s.names[0], mine: true, turn: s.turn === 0 }, { seat: 1, pos: 'north', name: opp, turn: s.turn === 1, tag: `${s.matched[1]} pairs` }] : [{ seat: 0, pos: 'south', name: s.names[0], mine: true }],
+      scores: two(s) ? [{ label: 'You', value: plural(s.matched[0], 'pair'), us: true }, { label: opp, value: plural(s.matched[1], 'pair') }] : [{ label: 'Pairs', value: s.matched[0], us: true }, { label: 'Misses', value: s.misses }],
+      seats: two(s) ? [{ seat: 0, pos: 'south', name: s.names[0], mine: true, turn: s.turn === 0 }, { seat: 1, pos: 'north', name: opp, turn: s.turn === 1, tag: plural(s.matched[1], 'pair') }] : [{ seat: 0, pos: 'south', name: s.names[0], mine: true }],
       hand: null,
       center: grid,
       banner: peek ? 'Memorize the cards!' : s.phase === 'pick' ? (s.turn === 0 ? (s.flipped.length ? 'Find its match' : 'Turn over a card') : `${opp} is thinking…`) : s.wildMatch ? 'Wild joker!' : '',

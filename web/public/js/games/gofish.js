@@ -1,6 +1,6 @@
 // Go Fish (4 players): ask a player for a rank you hold; collect books of four.
 import { deck, shuffle, sortCards, rngOf, lo } from '../core/cards.js';
-import { clone, log, fx, who, must, seatsVM } from './lib/common.js';
+import { clone, log, fx, who, must, seatsVM, plural } from './lib/common.js';
 import { panel, btn, scoreTable, cw } from '../core/table.js';
 import { backHTML } from '../skin.js';
 
@@ -165,8 +165,8 @@ export default {
       ${s.lastFish ? '<span>You fished a card.</span>' : ''}</div>`;
     return {
       subtitle: `${s.books.flat().length} of 13 books made`,
-      scores: s.names.map((n, i) => ({ label: i === 0 ? 'You' : n, value: `${s.books[i].length} books`, us: i === 0 })),
-      seats: seatsVM(s, 4, (i) => ({ partner: false, tag: `${s.books[i].length} books`, extra: i ? askBtn(i) : '' })),
+      scores: s.names.map((n, i) => ({ label: i === 0 ? 'You' : n, value: plural(s.books[i].length, 'book'), us: i === 0 })),
+      seats: seatsVM(s, 4, (i) => ({ partner: false, tag: plural(s.books[i].length, 'book'), extra: i ? askBtn(i) : '' })),
       hand: { cards: s.hands[0], legal: myTurn ? s.hands[0].map((c) => c.id) : [], mode: 'select', maxSelect: 1 },
       center, banner, overlay,
       side: [{ title: 'Books', html: s.names.map((n, i) => `<div>${i === 0 ? 'You' : n}: ${s.books[i].length ? s.books[i].map((r) => r).join(' ') : '—'}</div>`).join('') }],

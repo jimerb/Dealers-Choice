@@ -1,6 +1,6 @@
 // War (2 players). Flip; the higher card takes both. Ties mean war: three down, one up.
 import { deck, shuffle, hi, rngOf } from '../core/cards.js';
-import { clone, log, fx, must } from './lib/common.js';
+import { clone, log, fx, must, plural } from './lib/common.js';
 import { panel, btn, cw } from '../core/table.js';
 import { cardHTML, backHTML } from '../skin.js';
 
@@ -95,9 +95,9 @@ export default {
     const target = s.opts.ends;
     return {
       subtitle: target ? `First to win ${target} wars` : 'Win every card',
-      scores: [{ label: 'You', value: `${s.piles[0].length} cards · ${s.wars[0]} wars`, us: true }, { label: opp, value: `${s.piles[1].length} cards · ${s.wars[1]} wars` }],
-      seats: [{ seat: 0, pos: 'south', name: s.names[0], mine: true, tag: `${s.piles[0].length} cards` },
-        { seat: 1, pos: 'north', name: opp, count: Math.min(s.piles[1].length, 12), tag: `${s.piles[1].length} cards` }],
+      scores: [{ label: 'You', value: `${plural(s.piles[0].length, 'card')} · ${plural(s.wars[0], 'war')}`, us: true }, { label: opp, value: `${plural(s.piles[1].length, 'card')} · ${plural(s.wars[1], 'war')}` }],
+      seats: [{ seat: 0, pos: 'south', name: s.names[0], mine: true, tag: plural(s.piles[0].length, 'card') },
+        { seat: 1, pos: 'north', name: opp, count: Math.min(s.piles[1].length, 12), tag: plural(s.piles[1].length, 'card') }],
       hand: null,
       center, banner: s.inWar ? 'WAR!' : s.lastWinner === null ? 'Flip to start' : `${s.lastWinner === 0 ? 'You take' : `${opp} takes`} the cards`, overlay,
       side: [{ title: 'Wars won', html: `<div>You: ${s.wars[0]}</div><div>${opp}: ${s.wars[1]}</div>` }],

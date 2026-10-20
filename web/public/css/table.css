@@ -212,7 +212,9 @@ table.score small { color: var(--ink-3); font-size: 12px; }
 .bid-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
 .bid-btn { min-height: 36px; padding: 0 6px; }
 .bid-btn.red { color: #F08A80; }
-.bid-grid.by-level { display: grid; grid-template-rows: repeat(5, auto); grid-auto-flow: column; grid-auto-columns: minmax(46px, 1fr); gap: 4px; }
+.bid-grid.by-level { display: grid; grid-template-rows: repeat(5, auto); grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; }
+.bid-grid.by-level .bid-btn { min-width: 0; padding: 0 2px; }
+.bid-grid.by-level { min-width: min(100%, 300px); }
 table.auction td, table.auction th { text-align: center !important; }
 
 /* ---------- table pieces (js/core/pieces.js) ---------- */
@@ -412,6 +414,12 @@ table.auction td, table.auction th { text-align: center !important; }
 .cardgame .center:has(> .overlay) > :not(.overlay, .banner) { display: none; }
 .cardgame .felt:has(> .center > .overlay) .backs { display: none; }
 .cardgame .felt:has(> .center > .overlay) .seat .count { display: none; }
+/* panels keep their padding tight: every line they save goes to the cards */
+.cardgame .felt .card-panel { padding: 16px 18px; }
+.cardgame .felt .card-panel p { margin-bottom: 10px; }
+.cardgame .melds { gap: 8px; margin-bottom: 10px; }
+.cardgame .meld-box { padding: 8px 10px; }
+.cardgame .meld-box ul { margin-top: 4px; }
 /* on big tables the panels grow with the cards, so they read as part of the table */
 .cardgame .felt .card-panel { zoom: clamp(1, calc(var(--k, 1) * .78), 1.35); }
 .cardgame .felt:has(> .center > .overlay) .seat .faceup:not(:has(button)) { display: none; } /* the panel shows these cards */
@@ -451,6 +459,23 @@ table.auction td, table.auction th { text-align: center !important; }
   .cardgame .btn-label-long { display: none; }
   .cardgame .btn-label-short { display: inline; }
   .cardgame .felt { grid-template-columns: 64px minmax(0, 1fr) 64px; padding: 8px; }
+  .cardgame .felt:has(> .trump-plaque) { padding-top: 62px; } /* the plaque keeps its corner */
+  /* ...except under a panel (which names trump itself), where the side plates need that corner */
+  .cardgame .felt:has(> .center > .overlay) > .trump-plaque { display: none; }
+  .cardgame .felt:has(> .trump-plaque):has(> .center > .overlay) { padding-top: 8px; }
   .cardgame .felt .plate { font-size: 11px; }
   .cardgame .hand { padding-left: 0; padding-right: 0; }
+  /* with a panel up, the side players' plates flank the top one instead of taking a row of their own */
+  .cardgame .felt.generic:has(> .center > .overlay) { grid-template-areas: "west top east" "center center center" "south south south"; grid-template-rows: auto 1fr auto; }
+  .cardgame .felt.generic.with-board:has(> .center > .overlay) { grid-template-areas: "west top east" "board board board" "center center center" "south south south"; grid-template-rows: auto auto 1fr auto; }
+  .cardgame .felt:not(.generic):has(> .center > .overlay) { grid-template-areas: "west north east" "center center center" "south south south"; grid-template-rows: auto 1fr auto; }
+  /* Pinochle's meld: two boxes a row, so the panel and your hand fit the screen together */
+  .cardgame .melds { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-bottom: 10px; }
+  .cardgame .meld-box { padding: 7px 8px; font-size: 12.5px; }
+  .cardgame .meld-box ul { padding-left: 12px; margin-top: 3px; }
+  .cardgame .card-panel { padding: 14px 12px; }
+  .cardgame .card-panel h3 { font-size: 21px; }
+  .cardgame .bid-btn { min-height: 36px; font-size: 13px; }
+  .cardgame .card-panel .btn { padding: 0 12px; }
+  .cardgame .card-panel p { font-size: 13px; margin-bottom: 10px; }
 }
