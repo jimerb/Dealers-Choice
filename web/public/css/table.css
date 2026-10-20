@@ -402,6 +402,9 @@ table.auction td, table.auction th { text-align: center !important; }
 @media (min-width: 761px) { .cardgame .crib-board svg { flex-basis: calc(560px * var(--k, 1)); } } /* phones stack the board over its key */
 .cardgame .empty-slot { font-size: clamp(11px, calc(12px * var(--k, 1)), 15px); }
 
+/* side players' plates wrap inside their column (a long name or role tag goes to a second line) */
+.cardgame :is(.area-west, .area-east, .seat.west, .seat.east) { min-width: 0; }
+.cardgame :is(.area-west, .area-east, .seat.west, .seat.east) .plate { max-width: 100%; white-space: normal; flex-wrap: wrap; justify-content: center; text-align: center; row-gap: 3px; }
 /* big screens: names, bubbles and banners grow a little with the cards */
 .cardgame .plate { font-size: clamp(13px, calc(14px * var(--k, 1)), 18px); }
 .cardgame .plate .avatar { width: clamp(26px, calc(28px * var(--k, 1)), 40px); height: clamp(26px, calc(28px * var(--k, 1)), 40px); }
@@ -452,6 +455,13 @@ table.auction td, table.auction th { text-align: center !important; }
 }
 /* phones: the top bar keeps to two short rows */
 .cardgame .btn-label-short { display: none; }
+/* tablets: short button labels and slimmer chips keep the top bar to one row */
+@media (max-width: 1199px) {
+  .cardgame .btn-label-long { display: none; }
+  .cardgame .btn-label-short { display: inline; }
+  .cardgame .table-top { gap: 8px 10px; }
+  .cardgame .table-top .score-chip { padding: 6px 10px; font-size: 14px; }
+}
 @media (max-width: 760px) {
   .cardgame.table-page { padding: 6px 6px 16px; }
   .cardgame .table-top { gap: 6px 8px; margin-bottom: 6px; }
