@@ -73,6 +73,9 @@ export default {
   hideButtons: ['rebet'],          // optional: bet-bar buttons the game never uses are not shown
                                    // (machines hide Undo, Clear and Rebet by default)
   optionsChanged(opts) {},         // optional: the player saved new options (apply next round)
+  optionsShown(opts) {},           // optional: the values the Options form opens with (a preset's own rules)
+  optionsInput(key, form) {},      // optional: a field changed in the form; return { key: value } to set
+                                   // other fields (a preset fills in its rules; a rule makes it Custom)
   bannerAt: 'middle',              // optional: where the result banner sits ('top', 'middle', 'bottom')
 };
 ```

@@ -1136,7 +1136,8 @@ function showStats() {
   dialog('Your casino record', `<p>Bank <b>${money(s.bank)}</b> · ${tierBadge(t)}${s.loan ? ` · loan ${money(s.loan)}` : ''} · this visit <b>${bank.sessionNet > 0 ? '+' : ''}${money(bank.sessionNet)}</b></p>
     ${pct != null ? `<p class="cz-next">Next tier: ${TIERS[s.tier + 1].name} at ${money(t.next)} <span class="cz-meterbar" role="img" aria-label="${pct}% of the way"><span style="width:${pct}%"></span></span></p>` : ''}
     ${rows ? `<div class="cz-stats-wrap"><table class="score cz-stats"><thead><tr><th>Game</th><th>Hands</th><th>Bet</th><th>Paid</th><th>Net</th><th>Best</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="muted">No hands played yet.</p>'}`,
-  [{ label: 'Loan desk', run: () => loanDesk({ back: showStats }) }, { label: 'Hall of Fame', run: () => showHall() }, { label: 'Close', primary: true }]);
+  [{ label: 'Loan desk', run: () => loanDesk({ back: showStats }) }, { label: 'Hall of Fame', run: () => showHall() },
+    { label: 'Reset bank…', run: () => confirmReset({ back: showStats }) }, { label: 'Close', primary: true }]);
 }
 
 /** The Hall of Fame: a walnut board with a brass plate per player who reached a billion. */
@@ -1160,28 +1161,46 @@ function showOptions() {
       <ul>${(mod.options ?? []).map((o) => `<li>${esc(o)}</li>`).join('') || '<li>None yet.</li>'}</ul>`, [{ label: 'Close', primary: true }]);
     return;
   }
-  const o = c.ctx.opts;
+  // a game may show its options filled in (a rule set's own rules) and keep the form consistent
+  // while it is edited (picking a rule set fills in its rules; changing a rule makes it Custom)
+  const o = mod.optionsShown ? mod.optionsShown({ ...c.ctx.opts }) : c.ctx.opts;
   const field = (s) => (s.type === 'check'
     ? `<label class="choice"><input type="checkbox" data-opt="${esc(s.key)}" ${o[s.key] ? 'checked' : ''}> ${esc(s.label)}</label>`
     : `<label class="cz-opt">${esc(s.label)} <select data-opt="${esc(s.key)}">${s.options.map(([v, l]) => `<option value="${esc(String(v))}" ${v === o[s.key] ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`);
+  const input = (s) => dlg.querySelector(`[data-opt="${CSS.escape(s.key)}"]`);
+  const readForm = () => {
+    const next = {};
+    for (const s of settings) {
+      const el = input(s);
+      if (!el) continue;
+      next[s.key] = s.type === 'check' ? el.checked : s.options.find(([v]) => String(v) === el.value)?.[0] ?? s.default;
+    }
+    return next;
+  };
   dialog(`${mod.name} options`, `<div class="cz-opts">${settings.map(field).join('')}</div><p class="muted">Changes apply from the next round.</p>`, [
     { label: 'Cancel' },
     {
       label: 'Save', primary: true,
       run: () => {
         if (current !== c) return;
-        const next = {};
-        for (const s of settings) {
-          const el = dlg.querySelector(`[data-opt="${CSS.escape(s.key)}"]`);
-          if (!el) continue;
-          next[s.key] = s.type === 'check' ? el.checked : s.options.find(([v]) => String(v) === el.value)?.[0] ?? s.default;
-        }
-        writeJSON(optsKey(mod.id), next);
+        writeJSON(optsKey(mod.id), readForm());
         c.ctx.opts = readOpts(mod);
         mod.optionsChanged?.(c.ctx.opts);
       },
     },
   ]);
+  if (mod.optionsInput) {
+    dlg.querySelector('.cz-opts').addEventListener('change', (e) => {
+      const key = e.target.closest('[data-opt]')?.dataset.opt;
+      const patch = key ? mod.optionsInput(key, readForm()) : null;
+      for (const [k, v] of Object.entries(patch ?? {})) {
+        const s = settings.find((x) => x.key === k);
+        const el = s && input(s);
+        if (!el) continue;
+        if (s.type === 'check') el.checked = Boolean(v); else el.value = String(v);
+      }
+    });
+  }
 }
 
 function howtoBody(mod) {
