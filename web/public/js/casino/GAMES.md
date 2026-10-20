@@ -71,6 +71,7 @@ export default {
   // optional; without them Clear, Rebet and Undo go to your ctx.bets() helper:
   clear() {}, rebet(times) {}, undo() {},
   optionsChanged(opts) {},         // optional: the player saved new options (apply next round)
+  bannerAt: 'middle',              // optional: where the result banner sits ('top', 'middle', 'bottom')
 };
 ```
 
@@ -90,9 +91,11 @@ variables you reset in `mount`.
 | `ctx.chip()` | the chip picked on the rack |
 | `ctx.play(name)` | a sound: `chips`, `card`, `deal`, `flip`, `shuffle`, `win`, `lose`, `error`, `click`, `score` ... |
 | `ctx.message(text)` | the message line under the felt (read out by screen readers) |
-| `ctx.banner(title, { tone, detail })` | the result banner over the felt; tone `win`, `lose`, `push` or `info`; `ctx.banner(null)` hides it. Placing a chip hides it too |
+| `ctx.banner(title, { tone, detail, at, ms })` | the result banner over the felt; tone `win`, `lose`, `push` or `info`; `at` `'top'` (over the crest), `'middle'` or `'bottom'` (over the betting area; default: the module's `bannerAt`, else middle); it fades after `ms` (default 4500; `0` keeps it). `ctx.banner(null)` hides it. Placing a chip hides it too |
 | `ctx.toast(text)` | a short note at the bottom of the screen |
-| `ctx.setTotal(n)` | the bet total in the bet bar (the bets helper does this for you) |
+| `ctx.setTotal(n, { staged, debit })` | the bet total in the bet bar (the bets helper does this for you); with `staged` it also shows "Bank after bet", taking `debit` (default `n`) off the bank |
+| `ctx.saveOpt(key, value)` / `ctx.saveOpt({ ... })` | save options the game changed itself (a preset filling in its rules, a machine picked beside the cabinet); `ctx.opts` follows. Never write `dc.casino.opts.*` yourself |
+| `ctx.bigWin(title, detail)` | the big-win card, shown once the reveal is over (the shell already shows it for a table round that nets 50× the table minimum, and a machine round that nets 100 credits) |
 | `ctx.setButtons({ action, clear, rebet, undo, label })` | enable or disable the bet bar's buttons; `label` renames the main one ("Draw") |
 | `ctx.actions([...])` | your own buttons above the bet bar (see below) |
 | `ctx.setActions({ id: true \| false \| {...} })` | enable/disable/hide/relabel them |
@@ -100,7 +103,7 @@ variables you reset in `mount`.
 | `ctx.showRack(bool)` | show or hide the chip rack |
 | `ctx.bets(spec)` | staged chips on your layout's spots (see below) |
 | `ctx.wager / refund / pay / settle / apply / setReturnable / onTable` | the round's money (see Money) |
-| `ctx.machine` | the credit meter, only when the module has `credits: true` |
+| `ctx.machine` | the credit meter, only when the module has `credits: true` (see Machines) |
 | `ctx.cards(stage, svg, opts)` | a card layer over your SVG (see Cards) |
 | `ctx.holdBank()` | keep the bank pill showing its old figure; returns `release()` |
 | `ctx.checkBroke()` | after a round: offers a loan / reset / leave if the bank can't cover `minBuyIn` |
@@ -139,8 +142,17 @@ action() {
 bets.release();
 ```
 
-Also: `bets.amounts()`, `bets.total()`, `bets.place(key, n)`, `bets.remove(key, n)`, `bets.lock()`,
-`bets.sync()`. Rebet fits as much of the last layout as the bank allows and says so with a toast;
+Also: `bets.amounts()`, `bets.total()` (the staged chips), `bets.cost()` (what committing takes),
+`bets.shown()` (the bet bar's figure), `bets.place(key, n)`, `bets.remove(key, n)`, `bets.lock()`,
+`bets.sync()`.
+
+**When a bet is not just its chips.** `cost: (amounts) => dollars` says what a staged layout takes
+from the bank when it is committed, if that is not the sum of the spots. Let It Ride stages one stack
+that goes out three times (`cost: (a) => 3 * (a.base ?? 0)`); Caribbean Stud's $1 bonus is not a
+chip but rides with the Ante (`cost: (a) => (a.ante ?? 0) + bonus`). The bank check at placement,
+Rebet, the bet bar, "On the felt" and `commit` (which takes the whole cost) all follow it.
+`withTable: true` makes the bet bar and "On the felt" count the bets already up as well as the
+staged chips (craps). Rebet fits as much of the last layout as the bank allows and says so with a toast;
 Shift+R doubles it. Bets that are added during a round (Double, Split, Play, odds) are not staged
 chips: take them with `ctx.wager()` and draw them yourself.
 
@@ -171,6 +183,12 @@ nothing (keep your old state).
 `kit/round.js` (`createRound(bank, id)`) is the same thing without the shell, for engine tests
 against a bank made with `createBank({ storage: memoryStorage, win: null })`.
 
+**Bank news is the shell's.** A tier climbed ("Welcome to Gold"), the Hall of Fame moment, a loan
+repaid and the big-win card all wait for `release()` (or `ctx.machine.hold()`'s release), so they
+never spoil a reveal: hold the bank before you settle. When the saved bank comes from a newer version
+of the casino (another tab after an update), the bank is read-only: `ctx.wager` and `bets.commit`
+fail and the shell says why; nothing for a game to do.
+
 ## Your own buttons
 
 ```js
@@ -186,7 +204,9 @@ ctx.actions([]);   // none (betting phase)
 ```
 
 Each button can have `primary`, `small`, `title`, `pressed` (a toggle, e.g. Hold) and `key`. Keys run
-only while the button is shown and enabled. The bet bar's main button keeps working too; set it with
+only while the button is shown and enabled; a hidden or disabled button's key goes on to the shell, so
+an action may share a letter with a shell key (Caribbean Stud's Raise is R: it raises during a hand,
+and R rebets between hands). The bet bar's main button keeps working too; set it with
 `ctx.setButtons({ action: true, label: 'Draw' })`.
 
 ## Keyboard (handled by the shell)
@@ -211,6 +231,20 @@ ctx.machine.pay(won);                   // onto the meter; the round is recorded
 
 Between `bet` and `pay` the bet is at risk if the player leaves (they are asked first). Also
 `ctx.machine.credits`, `ctx.machine.denom`, `ctx.machine.insert()`, `ctx.machine.cashOut()`.
+
+A machine pays at once and then shows the result (reels stopping, cards turning). So that the shell's
+credit meter doesn't give the result away, hold it:
+
+```js
+if (!ctx.machine.bet(coins)) return;
+const release = ctx.machine.hold();     // the meter (and Cash out) keep the figure shown now
+ctx.machine.pay(won);
+// ... the reveal ...
+release();                              // the meter catches up; a big-win card shows now
+```
+
+`ctx.machine.onChange(fn)` calls `fn(credits)` whenever the meter changes (bills in, cash out,
+another window); it stops listening when the game closes. Don't write to `#cz-credits` yourself.
 Keno is not a credit machine: it takes dollars per game through `ctx.wager` / `ctx.settle`.
 
 ## Cards
@@ -228,7 +262,10 @@ layer.mark('p0', 'win');   // classes: win, held, dim
 await layer.gather();      // sweep to the discard tray and clear
 ```
 
-Positions are in the SVG's own units, so cards line up with `cardSlot()` outlines. A card is never
+Positions are in the SVG's own units, so cards line up with `cardSlot()` outlines. The layer covers
+the drawing itself, wherever it sits in the SVG's box: when the shared height cap (or your CSS)
+letterboxes the drawing, the cards still land on it, so a game needs no CSS of its own to size the
+SVG for the card layer. A card is never
 drawn narrower than `minWidth` (40 px), so they stay readable at 375 px (they overlap more instead).
 With `clickable: true` each card is a button (Video Poker holds): listen for clicks on
 `[data-card]`. Animations are skipped under reduced motion. The layer is removed when the game
@@ -252,7 +289,9 @@ closes.
 Layouts are SVG strings built with `svg.js` (`svg`, `rect`, `circle`, `path`, `text`, `arcText`,
 `cardSlot`, `spot`, `tableRail`, `seatAngles`, `polar`), dressed with `tableart.js` (`railBand`,
 `tableCrest`, `shoe`, `discardTray`, `dieFace`, `puck`) and `pokertable.js` for the half-moon poker
-tables. Every number and word on a layout is live text drawn by code; pictures never carry text.
+tables. `pokerTable({ seats: 5, seat: 2, spotWrap(s, i, inner) })` draws only one seat's spots (a
+single-seat table) and lets you wrap each spot's drawing (keys, roles, labels) instead of editing the
+SVG string. Every number and word on a layout is live text drawn by code; pictures never carry text.
 Chips on a spot: `chipSVG(cx, cy, r, amount)` from `chips.js`.
 
 Pictures come from `art.js`: use `ART.<name>` paths and `svgArt(href, x, y, w, h, fallbackSVG)` /
