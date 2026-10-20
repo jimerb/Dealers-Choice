@@ -156,3 +156,19 @@ test('the casino code and the game guide stay in our own words', { skip: WORDS ?
   for (const f of files) assert.doesNotMatch(readFileSync(f, 'utf8'), re, f.pathname);
   assert.ok(existsSync(pub('js/casino/GAMES.md')), 'the guide for game authors is there');
 });
+
+test('Keno is a room, not a machine, in its stakes', () => {
+  assert.equal(stakesLabel(MACHINE_STAKES[1], gameById('keno')), '$5 room');
+  assert.equal(stakesLabel(MACHINE_STAKES[1], gameById('slots')), '$5 machine');
+});
+
+test('the card layer covers the drawing, not a letterboxed box', async () => {
+  const { drawnRect } = await import('../public/js/casino/kit/cards.js');
+  // a 1000 x 708 table capped at 428 px high in a 1000 px wide box: drawn 604 px wide, centred
+  const r = drawnRect(1000, 428, 1000, 708);
+  assert.ok(Math.abs(r.w - 604.52) < 0.01 && r.h === 428 && Math.abs(r.x - 197.74) < 0.01 && r.y === 0);
+  assert.equal(r.scale, 428 / 708);
+  assert.deepEqual(drawnRect(500, 354, 1000, 708), { x: 0, y: 0, w: 500, h: 354, scale: 0.5 });
+  assert.equal(drawnRect(1000, 428, 1000, 708, 'xMinYMin meet').x, 0);
+  assert.deepEqual(drawnRect(1000, 428, 1000, 708, 'none'), { x: 0, y: 0, w: 1000, h: 428, scale: 1 });
+});

@@ -63,3 +63,25 @@ test('rebet fits as much as the bank allows, in the order placed, and doubles', 
   assert.deepEqual(poor.rebet(saved), { placed: 80, short: true });
   assert.deepEqual(poor.amounts(), { ante: 50, pairplus: 30 });
 });
+
+test('cost: one stack of chips that goes out three times (Let It Ride), and a side bet that is not a chip', () => {
+  let bank = 100;
+  const st = createStaging({ available: () => bank, cost: (a) => 3 * (a.base ?? 0) });
+  assert.equal(st.place('base', 25).ok, true);
+  assert.equal(st.total(), 25, 'the staged chips');
+  assert.equal(st.cost(), 75, 'what Deal takes');
+  const r = st.place('base', 25);
+  assert.equal(r.ok, false, '$150 is more than the bank');
+  assert.match(r.error, /Not enough/);
+  // Rebet fits as much as the bank covers at three times
+  const back = st.rebet([{ spot: 'base', amount: 40 }]);
+  assert.deepEqual(back, { placed: 33, short: true });
+  assert.equal(st.cost(), 99);
+  bank = 1000;
+  assert.deepEqual(st.rebet([{ spot: 'base', amount: 40 }], 2), { placed: 80, short: false });
+  const side = createStaging({ available: () => 6, cost: (a) => (a.ante ?? 0) + (a.ante ? 1 : 0) });
+  assert.equal(side.place('ante', 5).ok, true);
+  assert.equal(side.cost(), 6);
+  assert.equal(side.costOf({ ante: 10 }), 11);
+  assert.equal(side.place('ante', 5).ok, false);
+});
