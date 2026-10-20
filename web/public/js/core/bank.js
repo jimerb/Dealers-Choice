@@ -144,6 +144,15 @@ export function takeLoanState(prev) {
   return { state: { ...state, loan: amount }, events: [{ type: 'loan', amount }, ...events] };
 }
 
+/** Pay the loan back by hand (needs the whole loan in the bank). A tier the loan was holding back
+ *  comes through at once. No change if there is no loan or the bank is short. */
+export function repayLoanState(prev) {
+  if (!(prev.loan > 0) || prev.bank < prev.loan) return { state: prev, events: [] };
+  const amount = prev.loan;
+  const { state, events } = applyChange({ ...prev, loan: 0 }, -amount);
+  return { state, events: [{ type: 'repaid', amount, manual: true }, ...events] };
+}
+
 /** Start over at $5,000 on Brass: the loan and stats go, the Hall of Fame stays. */
 export const resetState = (prev) => ({ state: freshState(prev.hall), events: [{ type: 'reset' }] });
 
@@ -174,7 +183,10 @@ export function createBank({ storage = defaultStorage(), name = defaultName, now
   let sessionNet = 0; // this page visit's winnings and losses at the tables (not saved)
 
   const notices = []; // news from loading (a corrupt save), for the page to show once it is listening
-  const write = () => { try { storage?.setItem(KEY, JSON.stringify(state)); } catch { /* memory only */ } };
+  // A save written by a newer version of the casino (another tab, after an update) is shown but never
+  // overwritten: every change is refused until the page is reloaded.
+  let readOnly = false;
+  const write = () => { if (readOnly) return; try { storage?.setItem(KEY, JSON.stringify(state)); } catch { /* memory only */ } };
   const read = () => {
     let raw = null;
     try { raw = storage?.getItem(KEY) ?? null; } catch { return null; }
@@ -185,6 +197,11 @@ export function createBank({ storage = defaultStorage(), name = defaultName, now
       try { storage.setItem(CORRUPT_KEY, raw); } catch { /* ignore */ }
       notices.push({ type: 'corrupt' });
       return { state: freshState(), repaired: true };
+    }
+    if (parsed && typeof parsed === 'object' && Number.isSafeInteger(parsed.v) && parsed.v > VERSION) {
+      if (!readOnly) notices.push({ type: 'readonly' });
+      readOnly = true;
+      return { state: normalize({ ...parsed, v: VERSION }), repaired: false };
     }
     const fixed = normalize(parsed);
     return { state: fixed, repaired: JSON.stringify(fixed) !== JSON.stringify(parsed) };
@@ -199,18 +216,22 @@ export function createBank({ storage = defaultStorage(), name = defaultName, now
   if (win?.addEventListener) {
     win.addEventListener('storage', (e) => {
       if (e.key !== KEY) return;
+      const was = readOnly;
       const got = read();
+      if (was && !readOnly) return; // stay read-only until reloaded
       state = got?.state ?? freshState(state.hall);
       emit([{ type: 'sync' }, ...notices.splice(0)]);
     });
   }
 
-  const amountOk = (n) => Number.isSafeInteger(n) && n > 0;
+  const amountOk = (n) => Number.isSafeInteger(n) && n > 0 && !readOnly;
   return {
     get: () => state,
     get balance() { return state.bank; },
     get tier() { return TIERS[state.tier]; },
     get sessionNet() { return sessionNet; },
+    /** True when the save came from a newer version of the casino: nothing can change until a reload. */
+    get readOnly() { return readOnly; },
     canAfford: (n) => Number.isSafeInteger(n) && n >= 0 && n <= state.bank,
     /** Take a wager (whole dollars). Returns false, changing nothing, if the bank can't cover it. */
     debit(n, { game } = {}) {
@@ -228,9 +249,10 @@ export function createBank({ storage = defaultStorage(), name = defaultName, now
       commit(applyChange(state, n, { game, refund, name: name(), now: now() }));
       return true;
     },
-    recordHand(game, net) { state = recordHandState(state, game, net); write(); emit([{ type: 'hand', game, net }]); },
+    recordHand(game, net) { if (readOnly) return; state = recordHandState(state, game, net); write(); emit([{ type: 'hand', game, net }]); },
     /** A round played on a machine's credits (no money moved through the bank): wagered and won in dollars. */
     recordRound(game, round) {
+      if (readOnly) return;
       state = recordRoundState(state, game, round);
       sessionNet += (round.won ?? 0) - (round.wagered ?? 0);
       write();
@@ -244,6 +266,7 @@ export function createBank({ storage = defaultStorage(), name = defaultName, now
      *  meter. Returns { ok, credits (added), reason: 'other-machine' | 'bad-amount' | 'insufficient' | 'full' }. */
     machineIn(game, denom, dollars) {
       const m = state.machine;
+      if (readOnly) return { ok: false, credits: 0, reason: 'readonly' };
       if (m && (m.game !== game || m.denom !== denom)) return { ok: false, credits: 0, reason: 'other-machine' };
       if (!DENOMS.includes(denom) || !Number.isSafeInteger(dollars) || dollars <= 0) return { ok: false, credits: 0, reason: 'bad-amount' };
       const room = MAX_CREDITS - (m?.credits ?? 0);
@@ -258,7 +281,7 @@ export function createBank({ storage = defaultStorage(), name = defaultName, now
      *  `game` doesn't hold the machine (cashed out in another tab) or the meter would go below zero. */
     machineAdjust(game, delta) {
       const m = state.machine;
-      if (!m || m.game !== game || !Number.isSafeInteger(delta)) return false;
+      if (readOnly || !m || m.game !== game || !Number.isSafeInteger(delta)) return false;
       const credits = m.credits + delta;
       if (credits < 0) return false;
       state = { ...state, machine: { ...m, credits: Math.min(credits, MAX_CREDITS * 100) } };
@@ -270,7 +293,7 @@ export function createBank({ storage = defaultStorage(), name = defaultName, now
      *  Returns { game, credits, dollars } (credits 0 when no machine held any). */
     machineOut() {
       const m = state.machine;
-      if (!m) return { game: null, credits: 0, dollars: 0 };
+      if (!m || readOnly) return { game: null, credits: 0, dollars: 0 };
       const { machine, ...rest } = state;
       const dollars = m.credits * m.denom;
       commit(applyChange(rest, dollars, { name: name(), now: now() }));
@@ -278,8 +301,15 @@ export function createBank({ storage = defaultStorage(), name = defaultName, now
     },
     loanEligible: () => loanEligible(state),
     loanAmount: () => loanAmount(state),
-    takeLoan() { return commit(takeLoanState(state)).some((e) => e.type === 'loan'); },
-    reset() { sessionNet = 0; commit(resetState(state)); },
+    takeLoan() { return !readOnly && commit(takeLoanState(state)).some((e) => e.type === 'loan'); },
+    /** Pay the loan back now. False (nothing changes) without a loan, or when the bank can't cover it. */
+    repayLoan() {
+      if (readOnly || !(state.loan > 0) || state.bank < state.loan) return false;
+      commit(repayLoanState(state));
+      return true;
+    },
+    canRepay: () => !readOnly && state.loan > 0 && state.bank >= state.loan,
+    reset() { if (readOnly) return; sessionNet = 0; commit(resetState(state)); },
     /** News from loading the bank (e.g. { type: 'corrupt' }), handed over once. */
     drainNotices: () => notices.splice(0),
     /** Call fn(state, events) on every change; returns a function that stops listening. */

@@ -90,6 +90,37 @@
 .cz-result.win b { color: var(--brass-2); }
 .cz-result.lose { border-color: #8E2F2F; }
 @keyframes cz-pop { from { transform: translate(-50%, -50%) scale(.85); opacity: 0; } }
+/* where the banner sits (ctx.banner(..., { at }) or the module's bannerAt): over the crest, the
+   middle of the felt, or the betting area, so the cards it reports on stay in view */
+.cz-result.at-top { top: 17%; padding: 8px 22px; }
+.cz-result.at-bottom { top: 76%; }
+.cz-result.out { opacity: 0; transition: opacity .4s ease; }
+
+/* a big win: a card with a brass burst over the table, gone after a few seconds or any click */
+.cz-bigwin { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; pointer-events: none; transition: opacity .4s ease; }
+.cz-bigwin.out { opacity: 0; }
+.cz-bigwin-card { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 22px 40px; max-width: calc(100vw - 32px); border-radius: 20px; background: radial-gradient(ellipse at 50% 30%, #2A6B55, #0E2A21 75%); border: 3px solid var(--brass-2); box-shadow: 0 0 0 6px rgba(226,194,122,.25), 0 24px 60px rgba(0,0,0,.6); text-align: center; animation: cz-big-in .35s cubic-bezier(.2,1.4,.4,1); }
+.cz-bigwin-card b { position: relative; font-family: var(--font-display); font-weight: 400; font-size: clamp(30px, 6vw, 52px); line-height: 1.1; color: var(--brass-2); }
+.cz-bigwin-card span:not(.cz-bigwin-burst) { position: relative; font-size: 18px; font-weight: 700; color: var(--ink); }
+.cz-bigwin-burst { position: absolute; left: 50%; top: 50%; width: 140%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, rgba(226,194,122,.32) 0 6deg, transparent 6deg 18deg); -webkit-mask: radial-gradient(circle, #000 20%, transparent 68%); mask: radial-gradient(circle, #000 20%, transparent 68%); animation: cz-burst 4s linear; z-index: -1; }
+@keyframes cz-big-in { from { transform: scale(.6); opacity: 0; } }
+@keyframes cz-burst { from { transform: translate(-50%, -50%) rotate(0deg) scale(.4); } 20% { transform: translate(-50%, -50%) rotate(30deg) scale(1); } to { transform: translate(-50%, -50%) rotate(120deg) scale(1.05); } }
+
+/* the Hall of Fame moment: full screen */
+.cz-fame { position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(5,14,11,.86); }
+.cz-fame-card { display: flex; flex-direction: column; align-items: center; gap: 8px; max-width: 520px; padding: 28px 24px; border-radius: 22px; border: 3px solid var(--brass-2); background: linear-gradient(160deg, #4F3B2A, #2A1C10); box-shadow: 0 30px 80px rgba(0,0,0,.6); text-align: center; animation: cz-big-in .4s ease-out; }
+.cz-fame-card h2 { margin: 4px 0 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(32px, 7vw, 48px); color: var(--brass-2); }
+.cz-fame-card p { margin: 0; color: var(--ink); font-size: 17px; }
+.cz-fame-card .muted { color: var(--ink-3); font-size: 14px; margin-bottom: 8px; }
+.cz-fame-medal { position: relative; width: 96px; height: 96px; border-radius: 50%; background: radial-gradient(circle, var(--card-paper) 0 40%, #2B2B30 42%); }
+.cz-fame-medal > img { position: absolute; inset: -9%; width: 118%; height: 118%; display: block; }
+
+/* the tier-up dialog */
+.cz-tierup { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+.cz-tierup .cz-card { width: 260px; max-width: 100%; animation: cz-big-in .4s ease-out; }
+.cz-tierup p { margin: 0; }
+body.cz-readonly .cz-felt { filter: grayscale(.6); }
 
 /* the game's own buttons (Hit, Stand, Hold, Draw ...) above the bet bar */
 .cz-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 10px; }
@@ -137,7 +168,7 @@ button.cz-c:focus-visible { outline: 3px solid var(--brass-2); outline-offset: 2
 .cz-c.dim .card { filter: brightness(.6); }
 @media (prefers-reduced-motion: reduce) {
   .cz-c, .cz-c-in { transition: none; }
-  .cz-result { animation: none; }
+  .cz-result, .cz-bigwin-card, .cz-bigwin-burst, .cz-fame-card, .cz-tierup .cz-card { animation: none; }
 }
 
 /* stub tables */
@@ -289,6 +320,8 @@ table.cz-stats { font-size: 14px; white-space: nowrap; }
 /* the header pill gives way to the table's own bank display on narrow screens, and both pills
    use the short amount ($12.4K) there */
 @media (max-width: 719px) {
+  /* the bet bar's buttons (five with Remove on touch screens) wrap instead of running off the side */
+  .cz-betbtns { flex-wrap: wrap; justify-content: flex-end; min-width: 0; max-width: 100%; }
   body.cz-playing .cz-pill { display: none; }
   .cz-amt-full { display: none; }
   .cz-amt-short { display: inline; }
@@ -327,7 +360,8 @@ table.cz-stats { font-size: 14px; white-space: nowrap; }
   .cz-chip { scroll-snap-align: start; width: 44px; height: 44px; }
   .cz-after { display: none; }
   .cz-meter-read { font-size: 14px; padding: 4px 10px; }
-  .cz-result { padding: 10px 16px; top: 38%; }
+  .cz-result { padding: 10px 16px; }
+  .cz-result.at-middle { top: 38%; }
 }
 @media (pointer: coarse) {
   .cz-betbtns .btn.sm, .cz-meter .btn.sm { min-height: 44px; }

@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   KEY, CORRUPT_KEY, MAX_BANK, START, TIERS, HALL_OF_FAME_AT, freshState, normalize, applyChange, takeLoanState, resetState,
-  recordHandState, loanEligible, loanAmount, createBank, money,
+  recordHandState, loanEligible, loanAmount, createBank, money, repayLoanState,
 } from '../public/js/core/bank.js';
 
 const memStorage = (init = {}) => {
@@ -263,4 +263,44 @@ test('money formats whole dollars', () => {
   assert.equal(money(5000), '$5,000');
   assert.equal(money(0), '$0');
   assert.equal(money(-25), '−$25');
+});
+
+test('paying a loan back by hand: needs the whole loan, then a held-back tier comes through', () => {
+  assert.deepEqual(repayLoanState(at({ bank: 2000, loan: 2500 })).events, [], 'short: nothing changes');
+  assert.deepEqual(repayLoanState(at({ bank: 2000 })).events, [], 'no loan: nothing changes');
+  const r = repayLoanState(at({ bank: 3000, loan: 2500 }));
+  assert.equal(r.state.bank, 500);
+  assert.equal(r.state.loan, 0);
+  assert.deepEqual(r.events, [{ type: 'repaid', amount: 2500, manual: true }]);
+  // Brass with a $2,500 loan and $60,000 (the loan was blocking upgrades): repay, then Silver at once
+  const up = repayLoanState(at({ bank: 60_000, loan: 2500 }));
+  assert.equal(up.state.bank, 57_500);
+  assert.equal(up.state.tier, 2);
+  assert.deepEqual(up.events.map((e) => e.type), ['repaid', 'upgrade']);
+  const storage = memStorage();
+  const bank = createBank({ storage, win: null });
+  bank.debit(4500);
+  assert.equal(bank.takeLoan(), true);
+  assert.equal(bank.canRepay(), true);
+  assert.equal(bank.repayLoan(), true);
+  assert.equal(bank.balance, 500);
+  assert.equal(bank.get().loan, 0);
+  assert.equal(bank.repayLoan(), false, 'nothing left to repay');
+});
+
+test('a save from a newer version is shown read-only and never overwritten', () => {
+  const raw = JSON.stringify({ v: 9, bank: 12_345, tier: 1, loan: 0, stats: {}, hall: [], extra: 'new field' });
+  const storage = memStorage({ [KEY]: raw });
+  const bank = createBank({ storage, win: null });
+  assert.equal(bank.readOnly, true);
+  assert.equal(bank.balance, 12_345, 'the newer bank is shown');
+  assert.deepEqual(bank.drainNotices(), [{ type: 'readonly' }]);
+  assert.equal(bank.debit(10), false);
+  assert.equal(bank.credit(10), false);
+  assert.equal(bank.takeLoan(), false);
+  assert.equal(bank.machineIn('slots', 1, 100).ok, false);
+  bank.reset();
+  bank.recordHand('roulette', 5);
+  assert.equal(bank.balance, 12_345);
+  assert.equal(storage.getItem(KEY), raw, 'the newer save is untouched');
 });

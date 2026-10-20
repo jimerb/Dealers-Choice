@@ -61,27 +61,14 @@ function setActions() {
 
 function onChange(a) {
   draw();
-  // the staged amount is one bet; three of them go out
   const base = a.base ?? 0;
-  if (phase === 'bet' && base) {
-    ctx.setTotal(3 * base, { staged: true });
-    ctx.message(`Three bets of ${money(base)}: ${money(3 * base)} on the felt.`);
-  }
+  if (phase === 'bet' && base) ctx.message(`Three bets of ${money(base)}: ${money(3 * base)} on the felt.`);
 }
 
 function action() {
   if (phase !== 'bet') return;
   bets.commit((amounts, release) => {
-    const base = amounts.base;
-    // the staged chips are one bet: the other two go out now (the limits check made room for them)
-    if (!ctx.wager(2 * base)) {
-      ctx.refund(base);
-      release();
-      bets.release();
-      ctx.play('error');
-      ctx.message('The bank can\'t cover three bets of that size.');
-      return;
-    }
+    const base = amounts.base; // the staged chips are one bet; commit took all three (spec.cost)
     ctx.setReturnable(2 * base); // bets 1 and 2 may still come down
     hand = E.deal(base, ctx.rng);
     phase = 'dealing';
@@ -202,7 +189,7 @@ export default {
     bets = ctx.bets({
       root: el,
       spot: (key) => (phase === 'bet' && key === 'base' ? { label: 'Each bet' } : null),
-      validate: (a) => (3 * (a.base ?? 0) > ctx.bank.balance ? `Three bets of ${money(a.base)} need ${money(3 * a.base)}: lower the bet.` : null),
+      cost: (a) => 3 * (a.base ?? 0), // one stack of chips is all three bets
       onChange,
     });
     draw();

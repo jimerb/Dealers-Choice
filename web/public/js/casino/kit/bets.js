@@ -11,10 +11,14 @@
 //
 // spot(key) says whether a spot takes chips now and its limits: null = closed (wrong phase, not a
 // spot). min/max default to the table limits (max null = no limit).
+//
+// cost(amounts) is what a layout takes from the bank when it is committed, when that is not simply
+// the sum of the spots: Let It Ride stages one bet that goes out three times (a => 3 * a.base), a
+// side bet that isn't a staged chip adds its price. The bank check at placement and Rebet use it.
 
 const usd = (n) => `$${n.toLocaleString('en-US')}`;
 
-export function createStaging({ spot = () => ({}), limits = { min: 0, max: null }, available = () => Infinity, validate = null } = {}) {
+export function createStaging({ spot = () => ({}), limits = { min: 0, max: null }, available = () => Infinity, validate = null, cost = null } = {}) {
   const amounts = new Map(); // key -> dollars, in the order first placed
   let history = [];          // [{ key, delta }] for Undo
   let locked = false;
@@ -26,12 +30,19 @@ export function createStaging({ spot = () => ({}), limits = { min: 0, max: null 
   };
   const total = () => [...amounts.values()].reduce((t, v) => t + v, 0);
   const set = (key, v) => { if (v > 0) amounts.set(key, v); else amounts.delete(key); };
+  /** What these amounts would take from the bank (default: their sum). */
+  const costOf = (obj) => (cost ? cost(obj) : Object.values(obj).reduce((t, v) => t + v, 0));
+  const costWith = (key, v) => costOf({ ...Object.fromEntries(amounts), [key]: v });
 
   const self = {
     get locked() { return locked; },
     /** Lock while the round plays (committed chips can't be moved); unlock for the next bet. */
     lock(on = true) { locked = on; },
     total,
+    /** What the staged layout takes from the bank when committed (the sum, unless `cost` says otherwise). */
+    cost: () => costOf(Object.fromEntries(amounts)),
+    /** What any layout ({ spot: dollars }) would take from the bank. */
+    costOf,
     amount: (key) => amounts.get(key) ?? 0,
     amounts: () => Object.fromEntries(amounts),
     /** The staged layout for Rebet: [{ spot, amount }] in the order placed. */
@@ -45,7 +56,7 @@ export function createStaging({ spot = () => ({}), limits = { min: 0, max: null 
       if (!Number.isSafeInteger(chip) || chip <= 0) return { ok: false, error: 'Pick a chip first.' };
       const now = self.amount(key);
       if (s.max != null && now + chip > s.max) return { ok: false, error: `Table max is ${usd(s.max)} on ${s.label}.` };
-      if (total() + chip > available()) return { ok: false, error: `Not enough in the bank for another ${usd(chip)} chip.` };
+      if (costWith(key, now + chip) > available()) return { ok: false, error: `Not enough in the bank for another ${usd(chip)} chip.` };
       set(key, now + chip);
       history.push({ key, delta: chip });
       return { ok: true, amount: now + chip };
@@ -97,8 +108,12 @@ export function createStaging({ spot = () => ({}), limits = { min: 0, max: null 
         const s = info(key);
         const want = amount * times;
         if (!s || !Number.isSafeInteger(want) || want <= 0) { short = true; continue; }
-        const room = Math.min(available() - total(), s.max == null ? Infinity : s.max);
-        const put = Math.max(0, Math.min(want, room));
+        const cap = Math.min(want, s.max == null ? Infinity : s.max);
+        // the most of `cap` the bank can still cover (cost only grows with the amount on a spot)
+        let lo = 0, hi = cap;
+        if (costWith(key, cap) <= available()) lo = cap;
+        else while (lo < hi) { const mid = Math.ceil((lo + hi) / 2); if (costWith(key, mid) <= available()) lo = mid; else hi = mid - 1; }
+        const put = lo;
         if (put < want) short = true;
         if (put > 0) { set(key, put); placed += put; }
       }

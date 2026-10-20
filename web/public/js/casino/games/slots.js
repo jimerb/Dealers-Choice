@@ -95,7 +95,7 @@ export function payCard(coins = 1, lit = null) {
 }
 
 // ------------------------------------------------------------------ the machine at play
-let root = null, ctx = null, unsub = null;
+let root = null, ctx = null, meterRelease = null;
 let coins = 1;                 // remembered between visits
 let pos = [0, 11, 22];         // the stop on the pay line of each reel (fractional while spinning)
 let spinning = null;           // { result, finish() } while the reels turn
@@ -153,18 +153,6 @@ function placeReel(i, p) {
   if (g) g.setAttribute('transform', `translate(0 ${stripY(wrap(p)).toFixed(1)})`);
 }
 
-// The shell's own credit meter (beside Insert bills) would show the win the moment it is paid;
-// while the reels turn it shows what the cabinet shows, and Cash out waits for the reels.
-function shellMeter() {
-  const doc = root?.ownerDocument;
-  if (!doc || !ctx?.machine) return;
-  const c = doc.getElementById('cz-credits'), usd = doc.getElementById('cz-credits-usd'), out = doc.getElementById('cz-cashout');
-  const n = shownCredits ?? credits();
-  if (c) c.textContent = fmt(n);
-  if (usd) usd.textContent = `= ${money(n * ctx.machine.denom)}`;
-  if (out) out.disabled = shownCredits != null || !credits();
-}
-
 function setButtons() {
   if (!ctx) return;
   const busy = Boolean(spinning);
@@ -206,9 +194,10 @@ function go() {
   // decided and paid now; the reels only show it
   const r = spin(ctx.rng, coins);
   const before = credits();
+  // the shell's meter (and Cash out) wait for the reels, as the cabinet's meters do
+  meterRelease = ctx.machine.hold();
   ctx.machine.pay(r.won);
   shownCredits = before;
-  shellMeter();
   if (auto > 0) auto--;
   setLit(null); setHits([]); setTag('');
   paintMeters({ win: 0 });
@@ -272,7 +261,7 @@ function reveal(r) {
   const settle = () => {
     shownCredits = null;
     paintMeters({ win: r.won });
-    shellMeter();
+    meterRelease?.(); meterRelease = null;
     setButtons();
     next();
   };
@@ -351,7 +340,8 @@ export default {
     fit();
     el.addEventListener('click', onClick);
     el.addEventListener('keydown', onKey);
-    unsub = ctx.bank.subscribe(() => { if (root && shownCredits == null) paintMeters(); });
+    meterRelease = null;
+    ctx.machine.onChange(() => { if (root && shownCredits == null) paintMeters(); });
     ctx.actions([
       { id: 'one', label: 'Bet one', key: 'b', run: betOne },
       { id: 'max', label: 'Bet max', key: 'm', run: betMax },
@@ -368,7 +358,7 @@ export default {
     if (countT) ctx?.cancel(countT);
     spinning = null; auto = 0; shownCredits = null;
     pos = pos.map((p) => Math.round(wrap(p)));
-    unsub?.(); unsub = null;
+    meterRelease = null;
     mq?.removeEventListener('change', fit); mq = null;
     if (root) { root.removeEventListener('click', onClick); root.removeEventListener('keydown', onKey); root.innerHTML = ''; }
     root = null; ctx = null;

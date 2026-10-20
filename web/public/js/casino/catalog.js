@@ -16,7 +16,8 @@ export const MACHINE_STAKES = [
 ];
 
 const fmt = (n) => `$${n.toLocaleString('en-US')}`;
-export const stakesLabel = (s) => (s.denom ? `${fmt(s.denom)} machine` : `${fmt(s.min)}–${s.max == null ? 'no limit' : fmt(s.max)}`);
+/** "$5–$1,000", "$5 machine"; Keno (a `room`, not a machine) is "$5 room". */
+export const stakesLabel = (s, game = null) => (s.denom ? `${fmt(s.denom)} ${game?.room ? 'room' : 'machine'}` : `${fmt(s.min)}–${s.max == null ? 'no limit' : fmt(s.max)}`);
 export const stakesShort = (s) => (s.denom ? fmt(s.denom) : `${fmt(s.min)}–${s.max == null ? '∞' : s.max >= 1000 ? `$${s.max / 1000}K` : fmt(s.max)}`);
 
 /** Chip denominations on the rack. */
@@ -58,7 +59,7 @@ export const CASINO = [
   {
     id: 'lounge', title: 'Lounge', blurb: 'Take it easy',
     games: [
-      { id: 'keno', felt: '#3F5A2A', name: 'Keno', blurb: 'Mark up to ten numbers of 80 and watch twenty come up.', action: 'Play', icon: 'keno', machine: true },
+      { id: 'keno', felt: '#3F5A2A', name: 'Keno', blurb: 'Mark up to ten numbers of 80 and watch twenty come up.', action: 'Play', icon: 'keno', machine: true, room: true },
     ],
   },
 ];

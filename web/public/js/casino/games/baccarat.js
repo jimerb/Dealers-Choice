@@ -266,6 +266,7 @@ export default {
   name: 'Baccarat',
   ready: true,
   css: 'css/casino/baccarat.css',
+  bannerAt: 'bottom',   // over the betting area, so the hands stay in view
   layout,
   settings: engine.OPTIONS,
   minBuyIn: engine.minBuyIn,

@@ -27,11 +27,13 @@ export const seatPoint = (r) => [500, TABLE_CY + r];
  * empty <g class="pk-dyn"> on top for chips, hand names and results.
  */
 export function seatTable(cfg, bettable = [], labels = {}, rename = {}) {
-  const s = pokerTable({ ...cfg, extras: (cx, cy, a, i) => (i === SEAT ? '<g class="pk-dyn"></g>' : '') });
-  return s.replace(/<g data-spot="([\w-]+):(\d)">([\s\S]*?)<\/g>/g, (m, key, i, inner) => {
-    if (Number(i) !== SEAT) return '';
-    if (!bettable.includes(key)) return `<g class="pk-spot fixed" data-pk="${key}">${inner}</g>`;
-    return `<g class="pk-spot" data-spot="${rename[key] ?? key}" data-pk="${key}" role="button" tabindex="0" aria-label="${esc(labels[key] ?? key)}">${inner}</g>`;
+  return pokerTable({
+    ...cfg,
+    seat: SEAT,
+    extras: (cx, cy, a, i) => (i === SEAT ? '<g class="pk-dyn"></g>' : ''),
+    spotWrap: ({ key }, i, inner) => (bettable.includes(key)
+      ? `<g class="pk-spot" data-spot="${rename[key] ?? key}" data-pk="${key}" role="button" tabindex="0" aria-label="${esc(labels[key] ?? key)}">${inner}</g>`
+      : `<g class="pk-spot fixed" data-pk="${key}">${inner}</g>`),
   });
 }
 

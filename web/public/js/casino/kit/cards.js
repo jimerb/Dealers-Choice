@@ -18,6 +18,20 @@ import { cardHTML, backHTML, cardName } from '../../skin.js';
 
 export const reducedMotion = () => globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 
+/**
+ * Where an SVG draws its viewBox (vw x vh) inside a box of bw x bh pixels, for a
+ * preserveAspectRatio value (default "xMidYMid meet"). Returns { x, y, w, h, scale } in pixels.
+ */
+export function drawnRect(bw, bh, vw, vh, par = null) {
+  if (!vw || !vh || !bw || !bh) return { x: 0, y: 0, w: bw, h: bh, scale: bw / (vw || 1) };
+  const [align = 'xMidYMid', mode = 'meet'] = String(par || 'xMidYMid meet').trim().split(/\s+/);
+  if (align === 'none') return { x: 0, y: 0, w: bw, h: bh, scale: bw / vw };
+  const scale = mode === 'slice' ? Math.max(bw / vw, bh / vh) : Math.min(bw / vw, bh / vh);
+  const w = vw * scale, h = vh * scale;
+  const pick = (axis, free) => (align.includes(`${axis}Min`) ? 0 : align.includes(`${axis}Max`) ? free : free / 2);
+  return { x: pick('x', bw - w), y: pick('Y', bh - h), w, h, scale };
+}
+
 export const DEAL_MS = 300;
 export const FLIP_MS = 260;
 
@@ -34,12 +48,16 @@ export function cardLayer(stage, svg, { from = { x: 875, y: 80 }, minWidth = 40,
   const cards = new Map(); // id -> { el, card, face }
   let vb = svg.viewBox?.baseVal ?? { x: 0, y: 0, width: 1000, height: 560 };
 
-  // Keep the layer exactly over the SVG; --u is pixels per layout unit.
+  // Keep the layer exactly over the drawing; --u is pixels per layout unit. When the SVG's box is
+  // not the drawing's shape (its height capped so the bet bar stays on screen, or a width set by
+  // CSS), the drawing is letterboxed inside the box as preserveAspectRatio says: the layer covers
+  // the drawing itself, not the box.
   const fit = () => {
     vb = svg.viewBox?.baseVal?.width ? svg.viewBox.baseVal : vb;
     const s = svg.getBoundingClientRect(), h = stage.getBoundingClientRect();
-    Object.assign(layer.style, { left: `${s.left - h.left + stage.scrollLeft}px`, top: `${s.top - h.top + stage.scrollTop}px`, width: `${s.width}px`, height: `${s.height}px` });
-    layer.style.setProperty('--u', String(s.width / (vb.width || 1)));
+    const r = drawnRect(s.width, s.height, vb.width, vb.height, svg.getAttribute('preserveAspectRatio'));
+    Object.assign(layer.style, { left: `${s.left - h.left + stage.scrollLeft + r.x}px`, top: `${s.top - h.top + stage.scrollTop + r.y}px`, width: `${r.w}px`, height: `${r.h}px` });
+    layer.style.setProperty('--u', String(r.scale));
   };
   const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(fit) : null;
   ro?.observe(svg);

@@ -7,9 +7,12 @@ import { railBand, tableCrest, shoe, discardTray, CREST_TOP } from './tableart.j
 /**
  * name: the game's name, written in the crest.
  * spots: [{ r, label, shape: 'circle' | 'box' | 'diamond', key }] at radius r from the dealer's edge.
+ * seats: how many seat positions the arc is divided into (default 5).
+ * seat: draw only this seat's spots (a single-seat table, e.g. 2 = the middle of five); null = all.
+ * spotWrap(s, i, inner): the element around one spot's drawing (default <g data-spot="key:i">).
  * extras(cx, cy, a, i): more SVG for seat i at angle a (card boxes and so on).
  */
-export function pokerTable({ name, label, dealerCards = 3, dealerNote = '', spots, payLines = [], arcLine = '', extras = () => '' }) {
+export function pokerTable({ name, label, dealerCards = 3, dealerNote = '', spots, payLines = [], arcLine = '', extras = () => '', seats: count = 5, seat = null, spotWrap = null }) {
   const W = 1000, H = 560;
   const { cx, cy, r, d, edge } = tableRail(W, H, 30);
   const dealer = Array.from({ length: dealerCards }, (_, i) => cardSlot(500 + (i - (dealerCards - 1) / 2) * 54, 90, 44)).join('');
@@ -18,10 +21,11 @@ export function pokerTable({ name, label, dealerCards = 3, dealerNote = '', spot
     if (s.shape === 'diamond') return path(`M${x} ${y - 30} L${x + 30} ${y} L${x} ${y + 30} L${x - 30} ${y} Z`) + text(x, y, s.label, { size: s.size ?? 11 });
     return circle(x, y, s.radius ?? 27) + text(x, y, s.label, { size: s.size ?? 16, weight: 700 });
   };
-  const seats = seatAngles(5, 152, 28).map((a, i) => spots.map((s) => {
+  const wrap = spotWrap ?? ((s, i, inner) => `<g data-spot="${s.key}:${i}">${inner}</g>`);
+  const seats = seatAngles(count, 152, 28).map((a, i) => (seat != null && i !== seat ? extras(cx, cy, a, i) : spots.map((s) => {
     const [x, y] = polar(cx, cy, s.r, a);
-    return `<g data-spot="${s.key}:${i}">${shape(x, y, s, a)}</g>`;
-  }).join('') + extras(cx, cy, a, i)).join('');
+    return wrap(s, i, shape(x, y, s, a));
+  }).join('') + extras(cx, cy, a, i))).join('');
   const pays = payLines.map((t, i) => text(500, 168 + i * 21, t, { size: i === 0 ? 15 : 14, weight: i === 0 ? 700 : 500, cls: i === 0 ? 'cz-tx' : 'cz-tx dim' })).join('');
   return svg(W, H, `${railBand(edge, d, W, H)}${path(d, { cls: 'cz-rail' })}${tableCrest(name)}${discardTray()}${shoe()}${dealer}
     ${dealerNote ? text(500, 140, dealerNote, { size: 15, cls: 'cz-tx dim' }) : ''}

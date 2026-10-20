@@ -90,11 +90,10 @@ export function layout({ machine = 'jacks', coins = 5, win = -1, held = [], stat
 }
 
 // ------------------------------------------------------------------ the machine on the page
-const OPTS_KEY = 'dc.casino.opts.video-poker';
 let root = null, ctx = null, stage = null, svgEl = null, layer = null;
 let state = null, busy = false, lastCoins = 5, wonShown = 0, hint = null, hintFor = 0, handNo = 0;
 let worker = null, workerBroken = false, pending = new Map(), seq = 0;
-let unsub = null, mqTall = null, mqNarrow = null, revealing = false;
+let mqTall = null, mqNarrow = null, revealing = false;
 
 const machine = () => machineOf(state.machine);
 const speed = () => (ctx.reduced() ? 0 : ctx.opts.speed === 'normal' ? 160 : 70);
@@ -281,6 +280,7 @@ async function draw() {
   const r = apply('draw');
   // paid now, before the cards turn: leaving during the reveal never loses a win
   revealing = true;
+  const release = ctx.machine.hold(); // the shell's meter waits for the cards too
   ctx.machine.pay(r.done.won);
   busy = true;
   hint = hint && { ...hint, shown: false };
@@ -297,6 +297,7 @@ async function draw() {
   }
   busy = false;
   revealing = false;
+  release();
   const res = state.result;
   wonShown = res.credits;
   set('.vp-heldrow', heldSVG([]));
@@ -373,11 +374,7 @@ function pickMachine(id) {
   if (busy || state.phase === 'hold' || !MACHINES[id] || id === state.machine) return;
   apply({ type: 'machine', id });
   leavePaid();
-  try {
-    const saved = JSON.parse(localStorage.getItem(OPTS_KEY) || '{}');
-    localStorage.setItem(OPTS_KEY, JSON.stringify({ ...saved, machine: id }));
-  } catch { /* storage may be off: the choice lasts this visit */ }
-  if (ctx.opts) ctx.opts.machine = id;
+  ctx.saveOpt('machine', id); // remembered as the Options dialog's choice too
   ctx.play('click');
   paintTopper(); paintPay(); paintStatus(statusText());
   const m = machine();
@@ -472,7 +469,7 @@ export default {
     const keys = { d: () => action(), c: () => { if (!busy && state.phase !== 'hold') ctx.machine.cashOut(); } };
     for (let i = 1; i <= 5; i++) keys[String(i)] = () => toggle(i - 1);
     ctx.keys(keys);
-    unsub = ctx.bank.subscribe(() => { if (root) { paintMeters(); if (state.phase !== 'hold' && !busy) paintStatus(statusText()); } });
+    ctx.machine.onChange(() => { if (root) { paintMeters(); if (state.phase !== 'hold' && !busy) paintStatus(statusText()); } });
     syncControls();
     ctx.message(ctx.machine.credits
       ? `${machine().name}: ${ctx.machine.credits} credits on the meter. Bet One or Bet Max, then Deal.`
@@ -480,7 +477,6 @@ export default {
     if (ctx.opts.hint) getWorker()?.postMessage({ warm: state.machine });
   },
   unmount() {
-    unsub?.(); unsub = null;
     mqTall?.removeEventListener('change', onMedia);
     mqNarrow?.removeEventListener('change', onMedia);
     worker?.terminate(); worker = null; pending.clear();

@@ -1,13 +1,5 @@
 /* The single-seat poker tables: Three Card Poker, Let It Ride and Caribbean Stud share this sheet. */
 
-/* Size the table's SVG box to its drawing (no letterboxing), so the card layer laid over the box
-   lines up with the drawn card slots at any height. 1000 x 708 is the half-moon table's viewBox. */
-.cz-stage.pk-table > .cz-svg {
-  width: min(100%, 1000px, calc(max(240px, 100vh - 372px) * 1000 / 708));
-  height: auto;
-  max-height: none;
-}
-
 .pk-spot { cursor: pointer; }
 .pk-spot:focus { outline: none; }
 .pk-spot:focus-visible > :first-child { stroke: var(--brass-2); stroke-width: 4; }

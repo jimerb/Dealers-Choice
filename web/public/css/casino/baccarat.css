@@ -1,8 +1,5 @@
 /* Baccarat: betting spots, hand totals, results and the scorecard (js/casino/games/baccarat.js) */
-/* The shared rule caps the drawing's height; cap its width to match, so the SVG's box is the
-   drawing itself (no letterbox) and the card layer lines up with it. Ratios are the viewBoxes. */
-.cz-stage > .bc-table.wide { width: min(100%, 1000px, calc(max(240px, 100vh - 372px) * 1000 / 708)); }
-.cz-stage > .bc-table.tall { width: min(100%, 520px, calc(max(240px, 100vh - 372px) * 600 / 810)); }
+.cz-stage > .bc-table.tall { max-width: 520px; }
 .bc-spot { cursor: pointer; outline: none; }
 .bc-spot:hover .cz-area { stroke: var(--brass-2); stroke-width: 3; }
 .bc-spot:focus-visible .cz-area { stroke: var(--brass-2); stroke-width: 5; }
@@ -21,5 +18,3 @@
 .bc-res.push { fill: #F4EFE3; }
 .bc-res.lose { fill: #E8A49C; }
 .bc-chip.lost { opacity: .45; }
-/* the result banner sits over the betting area, so the hands stay in view */
-[data-game="baccarat"] .cz-result { top: 74%; }

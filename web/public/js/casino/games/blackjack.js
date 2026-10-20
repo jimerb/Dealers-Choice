@@ -339,7 +339,6 @@ function finish() {
 }
 
 // ------------------------------------------------------------------ options
-const OPTS_KEY = 'dc.casino.opts.blackjack';
 /** Picking a preset fills in its rules; changing a single rule switches the preset to Custom. */
 function syncPreset(next) {
   const prev = lastOpts ?? next;
@@ -351,7 +350,7 @@ function syncPreset(next) {
   }
   const changed = Object.keys(o).some((k) => o[k] !== next[k]);
   if (changed) {
-    try { localStorage.setItem(OPTS_KEY, JSON.stringify(o)); } catch { /* the options just won't be remembered */ }
+    ctx.saveOpt(o);
     if (o.preset === 'custom' && next.preset !== 'custom') ctx.toast('Rules set to Custom.');
   }
   lastOpts = o;

@@ -212,8 +212,8 @@ function next() {
   }
   run.played++;
   const result = play([...marks].sort((a, b) => a - b), price, ctx.rng);
+  const release = ctx.holdBank(); // before settling, so the pill keeps the figure from before the draw
   ctx.settle({ returned: result.returned });
-  const release = ctx.holdBank();
   ctx.banner(null);
   last = null;
   const ms = ctx.reduced() ? 0 : SPEED[ctx.opts.speed] ?? SPEED.normal;

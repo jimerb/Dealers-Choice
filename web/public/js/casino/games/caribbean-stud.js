@@ -76,10 +76,9 @@ function setActions() {
   });
 }
 
-function onChange(a) {
-  draw();
-  if (phase === 'bet' && bonusOn && bonusOffered() && a.ante) ctx.setTotal((a.ante ?? 0) + 1, { staged: true });
-}
+function onChange() { draw(); }
+/** The $1 bonus rides with the Ante when it is on: not a staged chip, but part of what Deal takes. */
+const bonusFor = (a) => (a.ante && bonusOn && bonusOffered() ? E.BONUS_BET : 0);
 
 function toggleBonus() {
   if (phase !== 'bet' || !bonusOffered()) return;
@@ -95,8 +94,7 @@ function action() {
   if (phase !== 'bet') return;
   bets.commit((amounts) => {
     const ante = amounts.ante;
-    let bonus = bonusOn && bonusOffered() ? E.BONUS_BET : 0;
-    if (bonus && !ctx.wager(bonus)) { bonus = 0; ctx.toast('No bonus bet this hand: the bank is short.'); }
+    const bonus = bonusFor(amounts); // taken with the Ante (spec.cost)
     committed = { ante, bonus };
     hand = E.deal({ ante, bonus }, ctx.rng);
     phase = 'dealing';
@@ -209,7 +207,7 @@ export default {
     ['Bet pays', 'Royal flush 100 to 1, straight flush 50 to 1, four of a kind 20 to 1, full house 7 to 1, flush 5 to 1, straight 4 to 1, three of a kind 3 to 1, two pair 2 to 1, a pair or less 1 to 1. Hands rank as in poker; an ace is high, or low in 5-4-3-2-A.'],
     ['Bonus bet', 'One dollar, paid on your own hand whatever the dealer holds: royal flush $200,000, straight flush $20,000, four of a kind $500, full house $100, flush $50 (your dollar comes back too). It is lost if you fold. Options can take the bonus ring off the table.'],
     ['Strategy', 'Raise with any pair or better; fold with less than ace-king. With exactly ace-king, raise when one of your cards matches the dealer\'s card (2 to queen), when the dealer shows an ace or king and you hold a queen or jack, or when you hold a queen and the dealer\'s card is lower than your fourth-best card. Turn on the Hint button in Options to be told for each hand.'],
-    ['Keys', 'Number keys 1 to 8 pick a chip, Enter deals, A raises, F folds, B turns the bonus bet on or off, H shows the hint (when it is on), C clears, R rebets (Shift+R doubled) and Backspace undoes.'],
+    ['Keys', 'Number keys 1 to 8 pick a chip, Enter deals, R raises (during a hand), F folds, B turns the bonus bet on or off, H shows the hint (when it is on), C clears, R rebets between hands (Shift+R doubled) and Backspace undoes.'],
   ]),
 
   mount(el, c) {
@@ -220,7 +218,7 @@ export default {
     el.addEventListener('click', onClick);
     el.addEventListener('keydown', onKey);
     ctx.actions([
-      { id: 'raise', label: 'Raise', key: 'a', primary: true, hidden: true, run: () => decide('raise') },
+      { id: 'raise', label: 'Raise', key: 'r', primary: true, hidden: true, run: () => decide('raise') },
       { id: 'fold', label: 'Fold', key: 'f', hidden: true, run: () => decide('fold') },
       { id: 'hint', label: 'Hint', key: 'h', small: true, hidden: true, run: hint },
       { id: 'bonus', label: '$1 bonus', key: 'b', small: true, hidden: true, pressed: bonusOn, run: toggleBonus },
@@ -228,6 +226,7 @@ export default {
     bets = ctx.bets({
       root: el,
       spot: (key) => (phase === 'bet' && key === 'ante' ? { label: 'Ante' } : null),
+      cost: (a) => (a.ante ?? 0) + bonusFor(a),
       validate: (a) => {
         const ante = a.ante ?? 0;
         const need = 3 * ante + (bonusOn && bonusOffered() ? 1 : 0);

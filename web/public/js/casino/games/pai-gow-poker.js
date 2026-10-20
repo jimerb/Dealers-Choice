@@ -316,6 +316,7 @@ export default {
   name: 'Pai Gow Poker',
   ready: true,
   css: 'css/casino/pai-gow-poker.css',
+  bannerAt: 'top',      // over the crest, so both hands stay in view
   layout,
   settings: engine.OPTIONS,
   minBuyIn: engine.minBuyIn,

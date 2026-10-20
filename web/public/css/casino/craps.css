@@ -41,11 +41,6 @@
 .cz-cr-props > .cz-svg { max-width: 360px; }
 @keyframes cz-cr-up { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
 
-/* narrow touch screens: the bet bar's five buttons (with Remove) wrap instead of running off the side */
-@media (max-width: 719px) {
-  [data-game="craps"] .cz-betbtns { flex-wrap: wrap; justify-content: flex-end; min-width: 0; max-width: 100%; }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .cz-cr-dice.rolling, .cz-cr-drawer { animation: none; }
   .cz-cr-spot > .cz-area { transition: none; }

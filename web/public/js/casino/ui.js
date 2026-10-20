@@ -92,20 +92,87 @@ function paintBank() {
 $('cz-bank').addEventListener('click', () => showStats());
 
 const EVENT_TEXT = {
-  repaid: (e) => `Your ${money(e.amount)} loan has been repaid from your winnings.`,
-  upgrade: (e) => `Credit extended! You're now ${TIERS[e.to].name}.`,
-  hall: (e) => `Hall of Fame! ${e.entry.name} reached ${money(e.entry.bank)}. The bank starts over at $5,000.`,
+  repaid: (e) => (e.manual ? `Loan of ${money(e.amount)} paid back. Thanks for settling up.` : `Your ${money(e.amount)} loan has been repaid from your winnings.`),
   loan: (e) => `${money(e.amount)} loan added to your bank.`,
   reset: () => 'Bank reset to $5,000.',
   corrupt: () => 'Your casino bank couldn\'t be read, so it was reset to $5,000.',
 };
+/** Bank news: toasts, and one dialog for a tier climbed (naming the highest tier reached), the Hall
+ *  of Fame overlay, or the read-only notice. */
 const announce = (events) => {
-  for (const e of events) {
-    if (!EVENT_TEXT[e.type]) continue;
-    const tier = e.type === 'upgrade' ? TIERS[e.to] : e.type === 'hall' ? TIERS[TIERS.length - 1] : null;
-    toast(EVENT_TEXT[e.type](e), e.type === 'upgrade' || e.type === 'hall', tier);
-  }
+  for (const e of events) if (EVENT_TEXT[e.type]) toast(EVENT_TEXT[e.type](e));
+  const fame = events.filter((e) => e.type === 'hall').pop();
+  const ups = events.filter((e) => e.type === 'upgrade');
+  if (events.some((e) => e.type === 'readonly')) readOnlyNotice();
+  else if (fame) hallOfFameMoment(fame.entry);
+  else if (ups.length) tierUp(Math.max(...ups.map((e) => e.to)));
 };
+
+/** "Welcome to Gold": the tier's card and what the new tier lends. */
+function tierUp(to) {
+  const t = TIERS[to];
+  play('win');
+  dialog(`Welcome to ${t.name}`, `<div class="cz-tierup" style="--tier:${t.color}">${tierCard(t)}
+    <p>Your bank passed <b>${money(TIERS[to - 1].next)}</b>. ${t.name} members can borrow up to <b>${money(t.loan)}</b>.</p>
+    <p class="muted">${to < TIERS.length - 1 ? `Next: ${TIERS[to + 1].name} at ${money(t.next)}.` : `At ${money(t.next)} your name goes on the Hall of Fame.`}</p></div>`,
+  [{ label: 'Nice', primary: true }]);
+}
+
+/** A billion dollars: a full-screen moment, then the Hall of Fame. */
+function hallOfFameMoment(entry) {
+  document.querySelector('.cz-fame')?.remove();
+  const o = document.createElement('div');
+  o.className = 'cz-fame';
+  o.setAttribute('role', 'alertdialog');
+  o.setAttribute('aria-modal', 'true');
+  o.setAttribute('aria-labelledby', 'cz-fame-title');
+  o.innerHTML = `<div class="cz-fame-card">${medal(TIERS[TIERS.length - 1], 'cz-fame-medal')}
+    <h2 id="cz-fame-title">Hall of Fame</h2>
+    <p>You've reached a billion dollars, ${esc(entry.name)}! Your name goes on the wall.</p>
+    <p class="muted">Your bank starts over at $5,000 on the Brass tier.</p>
+    <button class="btn primary" type="button">See the Hall of Fame</button></div>`;
+  document.body.append(o);
+  play('score');
+  const btn = o.querySelector('button');
+  btn.addEventListener('click', () => { o.remove(); showHall(); });
+  o.addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.preventDefault(); o.remove(); } });
+  btn.focus();
+}
+
+/** The save came from a newer version of the casino (another tab): nothing changes until a reload. */
+function readOnlyNotice() {
+  document.body.classList.add('cz-readonly');
+  dialog('The casino was updated', '<p>The casino was updated in another tab. Reload to keep playing.</p><p class="muted">Until then your bank is shown but can\'t change.</p>',
+    [{ label: 'Not now' }, { label: 'Reload', primary: true, run: () => location.reload() }]);
+}
+
+// ---- big wins: a brief card with a brass burst once the result is revealed
+let bigQueue = null;
+let meterHeld = false; // a machine's meter is showing the old figure while its result is revealed
+function queueBigWin(w) {
+  bigQueue = w;
+  setTimeout(flushBigWin, 0); // a game may hold the bank just after it settles
+}
+function flushBigWin() {
+  if (!bigQueue || held || meterHeld || !current) return;
+  const { title = 'Big win!', detail = '' } = bigQueue;
+  bigQueue = null;
+  document.querySelector('.cz-bigwin')?.remove();
+  const o = document.createElement('div');
+  o.className = 'cz-bigwin';
+  o.setAttribute('role', 'status');
+  o.innerHTML = `<div class="cz-bigwin-card"><span class="cz-bigwin-burst" aria-hidden="true"></span><b>${esc(title)}</b>${detail ? `<span>${esc(detail)}</span>` : ''}</div>`;
+  document.body.append(o);
+  play('score');
+  const done = () => { o.classList.add('out'); setTimeout(() => o.remove(), 400); document.removeEventListener('pointerdown', done, true); document.removeEventListener('keydown', done, true); };
+  setTimeout(() => { document.addEventListener('pointerdown', done, true); document.addEventListener('keydown', done, true); }, 250);
+  setTimeout(done, reducedMotion() ? 2500 : 4000);
+}
+/** A settled round worth a fanfare: a net win of 50 times the table minimum or more. */
+function bigCheck(c, settled) {
+  if (settled && settled.net > 0 && settled.net >= 50 * c.stakes.min) queueBigWin({ title: 'Big win!', detail: `+${money(settled.net)}` });
+  return settled;
+}
 bank.subscribe((_, events) => {
   if (held) { heldEvents.push(...events); if (current) { paintMeter(); } return; }
   paintBank();
@@ -124,11 +191,12 @@ function holdBank() {
     done = true;
     held = null;
     paintBank();
+    flushBigWin();
     announce(heldEvents.splice(0));
   };
 }
 
-function toast(msg, big = false, tier = null) {
+function toast(msg, { big = false, tier = null } = {}) {
   const t = document.createElement('div');
   t.className = `cz-toast${big ? ' big' : ''}${tier ? ' medal' : ''}`;
   t.setAttribute('role', 'status');
@@ -165,7 +233,7 @@ function renderBankPanel() {
   const s = bank.get();
   const t = TIERS[s.tier];
   const next = s.tier < TIERS.length - 1 ? `Next tier at ${money(t.next)}` : `Hall of Fame at ${money(t.next)}`;
-  const loanLine = s.loan ? `Loan outstanding: <b>${money(s.loan)}</b>. It is repaid automatically once your bank reaches ${money(t.next)}.`
+  const loanLine = s.loan ? `Loan outstanding: <b>${money(s.loan)}</b>. It is repaid automatically once your bank reaches ${money(t.next)}${bank.canRepay() ? ', or pay it back now at the loan desk' : ''}.`
     : bank.loanEligible() ? `The loan desk can lend you <b>${money(bank.loanAmount())}</b>.` : `Loans are offered when the bank drops under $1,000.`;
   el.style.setProperty('--tier', t.color);
   el.innerHTML = `<div class="cz-bank-main">${tierCard(t)}
@@ -181,10 +249,10 @@ function renderBankPanel() {
 const coverable = (s) => bank.balance >= s.min;
 /** The stakes to show picked on a tile: the saved one if the bank covers it, else the first it does. */
 const pickStakes = (g, saved) => { const st = stakesById(g, saved); return coverable(st) ? st : stakesFor(g).find(coverable) ?? st; };
-const stakeButton = (s, on) => {
+const stakeButton = (s, on, g) => {
   const ok = coverable(s);
   return `<button type="button" role="radio" aria-checked="${on}" data-stakes="${s.id}" ${ok ? '' : 'disabled'}
-    title="${ok ? stakesLabel(s) : `${stakesLabel(s)}: your bank can't cover the ${money(s.min)} ${s.denom ? 'credit' : 'minimum'}`}">${stakesShort(s)}</button>`;
+    title="${ok ? stakesLabel(s, g) : `${stakesLabel(s, g)}: your bank can't cover the ${money(s.min)} ${s.denom && !g?.room ? 'credit' : 'minimum'}`}">${stakesShort(s)}</button>`;
 };
 const netLine = (id) => {
   const g = bank.get().stats[id];
@@ -196,7 +264,7 @@ function refreshStakes() {
   chooser.querySelectorAll('.cz-tile[data-game]').forEach((tile) => {
     const g = gameById(tile.dataset.game);
     const st = pickStakes(g, readStakes()[g.id]);
-    tile.querySelector('.cz-stakes').innerHTML = stakesFor(g).map((s) => stakeButton(s, s.id === st.id)).join('');
+    tile.querySelector('.cz-stakes').innerHTML = stakesFor(g).map((s) => stakeButton(s, s.id === st.id, g)).join('');
     tile.querySelector('.cz-sit').href = `casino.html?g=${g.id}&s=${st.id}`;
     const net = tile.querySelector('.cz-tile-netslot');
     if (net) net.innerHTML = netLine(g.id);
@@ -228,7 +296,7 @@ function renderChooser() {
         <div class="tile-art cz-tile-art" style="--felt:${g.felt}"><svg viewBox="0 0 64 64" aria-hidden="true">${ICONS[g.icon]}</svg>${imgArt(ART.tile(g.id))}<span class="tile-badge"></span></div>
         <div class="tile-body"><b>${esc(g.name)}</b>${g.subtitle ? `<span class="cz-tile-sub">${esc(g.subtitle)}</span>` : ''}<span>${esc(g.blurb)}</span>
           <span class="cz-tile-netslot">${netLine(g.id)}</span>
-          <div class="cz-stakes" style="--n:${stakesFor(g).length}" role="radiogroup" aria-label="${g.machine ? 'Denomination' : 'Table limits'} for ${esc(g.name)}">${stakesFor(g).map((s) => stakeButton(s, s.id === st.id)).join('')}</div>
+          <div class="cz-stakes" style="--n:${stakesFor(g).length}" role="radiogroup" aria-label="${g.machine ? 'Denomination' : 'Table limits'} for ${esc(g.name)}">${stakesFor(g).map((s) => stakeButton(s, s.id === st.id, g)).join('')}</div>
           <a class="btn sm cz-sit" href="casino.html?g=${g.id}&s=${st.id}" data-open="${g.id}">Sit down</a>
         </div></div>`;
     }).join('')}</div></div>`).join('')}`;
@@ -300,7 +368,7 @@ async function openGame(id, stakesId, { push = false } = {}) {
     game, stakes, mod, live: true,
     round: createRound(bank, id),
     machine: mod.credits ? createMachine(bank, id, stakes.denom ?? stakes.min) : null,
-    bets: null, actions: [], keys: new Map(), layers: [], timers: new Set(), label: game.action,
+    bets: null, actions: [], keys: new Map(), layers: [], timers: new Set(), offs: [], label: game.action, meterShown: null,
   };
   loadCSS(mod.css);
   setAddress(`casino.html?g=${id}&s=${stakes.id}`, push);
@@ -309,7 +377,7 @@ async function openGame(id, stakesId, { push = false } = {}) {
   room.hidden = false;
   $('cz-title').textContent = game.name;
   $('cz-subtitle').textContent = game.subtitle ?? '';
-  $('cz-stakes').textContent = game.machine ? `${stakesLabel(stakes)}` : `Table limits ${stakesLabel(stakes)}`;
+  $('cz-stakes').textContent = game.machine ? `${stakesLabel(stakes, game)}` : `Table limits ${stakesLabel(stakes)}`;
   $('cz-action').textContent = game.action;
   document.title = `${game.name} · Casino · Dealers Choice`;
   room.dataset.game = id;
@@ -347,8 +415,12 @@ function closeGame() {
     const out = c.machine.cashOut();
     if (out.credits) toast(`Cashed out ${out.credits.toLocaleString('en-US')} credits (${money(out.dollars)}).`);
   }
+  for (const off of c.offs) off();
   felt.innerHTML = '';
   held = null;
+  meterHeld = false;
+  bigQueue = null;
+  clearTimeout(bannerTimer);
   if (heldEvents.length) announce(heldEvents.splice(0));
   delete room.dataset.game;
   document.body.classList.remove('cz-playing');
@@ -392,7 +464,7 @@ function makeCtx(c) {
   const guard = (fn) => (...a) => (c.live ? fn(...a) : undefined);
   const ctx = {
     game, stakes, bank, rng,
-    stakesText: game.machine ? stakesLabel(stakes) : `table limits ${stakesLabel(stakes)}`,
+    stakesText: game.machine ? stakesLabel(stakes, game) : `table limits ${stakesLabel(stakes)}`,
     opts: readOpts(c.mod),
     reduced: reducedMotion,
     get live() { return live(); },
@@ -409,12 +481,22 @@ function makeCtx(c) {
     showRack: guard(showRack),
     checkBroke: guard((o) => checkBroke(o)),
     holdBank,
+    /** Save house-rule options the game changed itself (a preset filling in its rules, a machine
+     *  picked beside the cabinet): saveOpt('machine', 'deuces') or saveOpt({ ... }). ctx.opts follows. */
+    saveOpt: guard((key, value) => {
+      const patch = typeof key === 'object' && key ? key : { [key]: value };
+      writeJSON(optsKey(c.mod.id), { ...readJSON(optsKey(c.mod.id), {}), ...patch });
+      ctx.opts = readOpts(c.mod);
+      return ctx.opts;
+    }),
+    /** A win worth a fanfare: shown as the big-win card once the result is revealed. */
+    bigWin: guard((title, detail) => queueBigWin({ title, detail })),
     // money: debit at commit, settle at once (kit/round.js)
     wager: (n, o) => (live() ? c.round.wager(n, o) : false),
     refund: (n) => (live() ? c.round.refund(n) : 0),
     pay: (n) => (live() ? c.round.pay(n) : 0),
-    settle: (o) => (live() ? c.round.settle(o) : null),
-    apply: (r) => (live() ? c.round.apply(r) : { ok: false, error: 'The table is closed.' }),
+    settle: (o) => (live() ? bigCheck(c, c.round.settle(o)) : null),
+    apply: (r) => { if (!live()) return { ok: false, error: 'The table is closed.' }; const out = c.round.apply(r); if (out.settled) bigCheck(c, out.settled); return out; },
     setReturnable: (n) => { if (live()) c.round.setReturnable(n); },
     get onTable() { return c.round.onTable; },
     bets: guard((spec) => makeBets(c, spec)),
@@ -462,10 +544,12 @@ function setButtons({ action, clear, rebet, undo, label } = {}) {
   } else focusParked = false;
 }
 
-function setTotal(n, { staged = false } = {}) {
+/** The bet bar's total. With `staged`, also what the bank keeps once the staged bets go down:
+ *  `debit` is what they take (default n; less when n also counts bets already on the table). */
+function setTotal(n, { staged = false, debit = n } = {}) {
   $('cz-total').textContent = money(n);
   const after = $('cz-after');
-  after.textContent = staged && n > 0 ? `Bank after bet ${money(Math.max(0, bank.balance - n))}` : '';
+  after.textContent = staged && debit > 0 ? `Bank after bet ${money(Math.max(0, bank.balance - debit))}` : '';
 }
 
 function showRack(on = true) {
@@ -476,7 +560,7 @@ function showRack(on = true) {
 function paintRack() {
   if (!current) return;
   const rack = rackFor(current.stakes);
-  const staged = current.bets?.staging.total() ?? 0;
+  const staged = current.bets?.staging.cost() ?? 0;
   $('cz-rack').innerHTML = rack.map((v) => chipButtonHTML(v, { selected: v === chip, disabled: v > bank.balance - staged && v !== chip })).join('');
   $('cz-rack').querySelectorAll('[data-chip]').forEach((b) => { b.tabIndex = Number(b.dataset.chip) === chip ? 0 : -1; });
 }
@@ -538,13 +622,27 @@ $('cz-actions').addEventListener('click', (e) => {
 });
 
 // ---- result banner over the felt (aria-live), cleared by the next bet
-function showBanner(title, { tone = 'info', detail = '' } = {}) {
+// Where it sits: `at` 'middle' (default), 'top' (over the crest) or 'bottom' (over the betting
+// area), per call or for the whole game with the module's `bannerAt`. It goes by itself after
+// `ms` (default 4.5 s; 0 = stays until the next bet or a click).
+let bannerTimer = 0;
+const BANNER_AT = ['top', 'middle', 'bottom'];
+function showBanner(title, { tone = 'info', detail = '', at = current?.mod.bannerAt, ms = 4500 } = {}) {
   const b = $('cz-result');
-  b.className = `cz-result ${tone}`;
+  clearTimeout(bannerTimer);
+  b.className = `cz-result ${tone} at-${BANNER_AT.includes(at) ? at : 'middle'}`;
   b.innerHTML = `<b>${esc(title)}</b>${detail ? `<span>${esc(detail)}</span>` : ''}`;
   b.hidden = false;
+  if (ms > 0) bannerTimer = setTimeout(fadeBanner, ms);
 }
-function clearBanner() { const b = $('cz-result'); b.hidden = true; b.innerHTML = ''; }
+function fadeBanner() {
+  const b = $('cz-result');
+  if (b.hidden) return;
+  if (reducedMotion()) { clearBanner(); return; }
+  b.classList.add('out');
+  bannerTimer = setTimeout(clearBanner, 400);
+}
+function clearBanner() { clearTimeout(bannerTimer); const b = $('cz-result'); b.hidden = true; b.innerHTML = ''; b.classList.remove('out'); }
 $('cz-result').addEventListener('click', clearBanner);
 
 // ---- staged bets on the layout's spots: ctx.bets({ ... })
@@ -555,12 +653,19 @@ function makeBets(c, spec = {}) {
     limits: { min: stakes.min, max: stakes.max },
     available: () => bank.balance,
     validate: spec.validate ?? null,
+    cost: spec.cost ?? null,
   });
+  /** What the bet bar shows: what the staged chips will take (and, with withTable, the bets already up). */
+  const shown = () => staging.cost() + (spec.withTable ? c.round.onTable : 0);
   const helper = {
     staging, removeMode: false,
     amounts: () => staging.amounts(),
     amount: (k) => staging.amount(k),
     total: () => staging.total(),
+    /** What committing the staged layout takes from the bank (spec.cost, or the sum of the spots). */
+    cost: () => staging.cost(),
+    /** The bet bar's figure: cost(), plus the bets already on the table with spec.withTable. */
+    shown,
     get locked() { return staging.locked; },
     get last() { return readJSON(lastKey(game.id), null); },
     place: (key, n = chip) => place(key, n, 1),
@@ -574,7 +679,7 @@ function makeBets(c, spec = {}) {
       if (!r.placed) { play('error'); c.ctx.message(`Rebet needs more than the ${money(bank.balance)} in the bank.`); return; }
       play('chips');
       if (r.short) toast('Not enough in the bank to rebet everything.');
-      c.ctx.message(`${times > 1 ? 'Double the' : 'Same'} bets again: ${money(staging.total())}.`);
+      c.ctx.message(`${times > 1 ? 'Double the' : 'Same'} bets again. On the felt ${money(shown())}.`);
       clearBanner();
       changed();
     },
@@ -592,13 +697,13 @@ function makeBets(c, spec = {}) {
         const raise = problem.min - staging.amount(problem.key);
         dialog('Table minimum', `<p>${esc(problem.error)} Bet ${money(problem.min)}?</p>`, [
           { label: 'Cancel' },
-          { label: `Bet ${money(problem.min)}`, primary: true, disabled: raise > bank.balance - staging.total(), run: () => { staging.set({ ...staging.amounts(), [problem.key]: problem.min }); changed(); helper.commit(fn, { hold }); } },
+          { label: `Bet ${money(problem.min)}`, primary: true, disabled: raise <= 0 || staging.costOf({ ...staging.amounts(), [problem.key]: problem.min }) > bank.balance, run: () => { staging.set({ ...staging.amounts(), [problem.key]: problem.min }); changed(); helper.commit(fn, { hold }); } },
         ]);
         return false;
       }
       if (problem) { play('error'); c.ctx.message(problem.error); return false; }
       const amounts = staging.amounts();
-      const total = staging.total();
+      const total = staging.cost();
       if (!total) { play('error'); c.ctx.message('Place a bet first.'); return false; }
       const release = hold ? holdBank() : () => {};
       if (!c.round.wager(total)) { release(); play('error'); c.ctx.message('The bank can\'t cover those bets.'); return false; }
@@ -622,7 +727,7 @@ function makeBets(c, spec = {}) {
     play('chips');
     clearBanner();
     const label = spec.spot?.(key)?.label ?? key;
-    c.ctx.message(r.amount ? `${label}: ${money(r.amount)}. On the felt ${money(staging.total())}.` : `${label} cleared. On the felt ${money(staging.total())}.`);
+    c.ctx.message(r.amount ? `${label}: ${money(r.amount)}. On the felt ${money(shown())}.` : `${label} cleared. On the felt ${money(shown())}.`);
     changed();
   }
   function changed() {
@@ -644,7 +749,7 @@ function syncBets(c) {
   const h = c.bets;
   if (!h) return;
   const t = h.staging.total(), locked = h.staging.locked;
-  setTotal(locked ? c.round.onTable : t, { staged: !locked });
+  setTotal(locked ? c.round.onTable : h.shown(), { staged: !locked, debit: h.cost() });
   if (c.autoButtons === false) return;
   setButtons({ action: !locked && t > 0, clear: !locked && t > 0, undo: !locked && t > 0, rebet: !locked && t === 0 && Boolean(h.last?.length) });
   paintRack();
@@ -677,7 +782,37 @@ function makeMachineCtx(c) {
       return false;
     },
     /** The round is decided: `won` credits onto the meter, the round recorded in dollars. */
-    pay(won = 0) { if (!c.live) return null; const r = m.pay(won); paintMeter(); return r; },
+    pay(won = 0) {
+      if (!c.live) return null;
+      const r = m.pay(won);
+      paintMeter();
+      if (r.net >= 100) queueBigWin({ title: 'Big win!', detail: `${r.won.toLocaleString('en-US')} credits (${money(r.won * m.denom)})` });
+      return r;
+    },
+    /** Keep the shell's credit meter (and Cash out) on the figure it shows now while the game reveals
+     *  a result it has already paid; returns release(). Call it after bet() and before pay(). */
+    hold() {
+      if (!c.live) return () => {};
+      c.meterShown = m.credits;
+      meterHeld = true;
+      paintMeter();
+      let done = false;
+      return () => {
+        if (done || current !== c) return;
+        done = true;
+        c.meterShown = null;
+        meterHeld = false;
+        paintMeter();
+        flushBigWin();
+      };
+    },
+    /** Call fn(credits) whenever the meter changes (bills in, cash out, another window); returns a
+     *  function that stops listening (done for you when the game closes). */
+    onChange(fn) {
+      const off = bank.subscribe(() => { if (c.live) fn(m.credits); });
+      c.offs.push(off);
+      return off;
+    },
     insert: () => insertBills(),
     cashOut: () => cashOut(),
   };
@@ -689,9 +824,10 @@ function paintMeter() {
   if (!c?.machine) { box.hidden = true; return; }
   box.hidden = false;
   const m = c.machine;
-  $('cz-credits').textContent = m.credits.toLocaleString('en-US');
-  $('cz-credits-usd').textContent = `= ${money(m.credits * m.denom)}`;
-  $('cz-cashout').disabled = !m.credits || m.betting > 0;
+  const n = c.meterShown ?? m.credits;
+  $('cz-credits').textContent = n.toLocaleString('en-US');
+  $('cz-credits-usd').textContent = `= ${money(n * m.denom)}`;
+  $('cz-cashout').disabled = !m.credits || m.betting > 0 || c.meterShown != null;
 }
 
 function insertBills() {
@@ -734,6 +870,7 @@ function cashOut() {
   const c = current;
   if (!c?.machine) return;
   if (c.machine.betting) { c.ctx.message('Finish this hand before cashing out.'); return; }
+  if (c.meterShown != null) return; // a result is still being revealed
   const r = c.machine.cashOut();
   if (r.credits) { play('chips'); toast(`Cashed out ${r.credits.toLocaleString('en-US')} credits (${money(r.dollars)}).`); }
   paintMeter();
@@ -771,8 +908,9 @@ document.addEventListener('keydown', (e) => {
   if (e.target.closest?.('input, select, textarea, [contenteditable="true"]')) return;
   const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
   // the game's own keys come first (action buttons, then ctx.keys)
-  const d = c.actions.find((a) => a.key && a.key.toLowerCase() === k);
-  if (d) { if (runAction(d)) e.preventDefault(); return; }
+  // (a hidden or disabled button's key falls through, so R still rebets when Surrender is hidden)
+  const d = c.actions.find((a) => a.key && a.key.toLowerCase() === k && !a.hidden && !a.disabled);
+  if (d && runAction(d)) { e.preventDefault(); return; }
   const fn = c.keys.get(k);
   if (fn) { e.preventDefault(); fn(e); return; }
   const onControl = e.target.closest?.('button, a, [role="button"], [tabindex]:not(#cz-msg):not(#cz-felt)');
@@ -841,8 +979,15 @@ function loanDesk({ back } = {}) {
   const s = bank.get();
   const t = TIERS[s.tier];
   const head = `<div class="cz-dlg-art">${imgArt(ART.loanDesk)}</div><p>Bank <b>${money(s.bank)}</b> · ${tierBadge(t)}</p>`;
-  const terms = `It's repaid automatically once your bank reaches ${money(t.next)}. While a loan is out, your tier can't go up.`;
-  if (s.loan) return dialog('Loan desk', `${head}<p>You owe <b>${money(s.loan)}</b>. ${terms}</p>`, [{ label: 'Close', primary: true, run: back }]);
+  const terms = `It's repaid automatically once your bank reaches ${money(t.next)}, or pay it back any time. While a loan is out, your tier can't go up.`;
+  if (s.loan) {
+    const can = bank.canRepay();
+    return dialog('Loan desk', `${head}<p>You owe <b>${money(s.loan)}</b>. It's repaid automatically once your bank reaches ${money(t.next)}, or pay it back now. While a loan is out, your tier can't go up.</p>
+      ${can ? '' : `<p class="muted">You'll need ${money(s.loan)} in the bank to repay it.</p>`}`, [
+      { label: 'Close', run: back },
+      { label: 'Pay it back now', primary: can, disabled: !can, run: () => { if (!bank.repayLoan()) toast('The bank can\'t cover the loan yet.'); } },
+    ]);
+  }
   if (s.machine) return dialog('Loan desk', `${head}<p>Cash out of ${esc(gameById(s.machine.game)?.name ?? 'the machine')} first: it is holding ${money(s.machine.credits * s.machine.denom)} of your money.</p>`, [{ label: 'Close', primary: true, run: back }]);
   if (!bank.loanEligible()) return dialog('Loan desk', `${head}<p>Loans are for balances under $1,000.</p>`, [{ label: 'Close', primary: true, run: back }]);
   const amount = bank.loanAmount();
