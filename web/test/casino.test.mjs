@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readdirSync, existsSync, readFileSync } from 'node:fs';
 import { CASINO, ALL_GAMES, TABLE_STAKES, MACHINE_STAKES, stakesFor, stakesById, stakesLabel, rackFor, gameById } from '../public/js/casino/catalog.js';
 import { loadAll } from '../public/js/casino/games/index.js';
-import { layout as rouletteLayout, areas, wheelHTML } from '../public/js/casino/games/roulette.js';
+import { layout as rouletteLayout, areas, zones, wheelHTML } from '../public/js/casino/games/roulette.js';
 import { allArt, ART, TILE_IDS } from '../public/js/casino/art.js';
 
 const MODULES = await loadAll();
@@ -171,4 +171,27 @@ test('the card layer covers the drawing, not a letterboxed box', async () => {
   assert.deepEqual(drawnRect(500, 354, 1000, 708), { x: 0, y: 0, w: 500, h: 354, scale: 0.5 });
   assert.equal(drawnRect(1000, 428, 1000, 708, 'xMinYMin meet').x, 0);
   assert.deepEqual(drawnRect(1000, 428, 1000, 708, 'none'), { x: 0, y: 0, w: 1000, h: 428, scale: 1 });
+});
+
+test('roulette: every bet on the lines has its own hit area, on both wheels and both ways round', async () => {
+  const { allBets, isBetKey } = await import('../public/js/casino/engines/roulette.js');
+  for (const wheel of ['american', 'european']) {
+    const z = zones(wheel);
+    const keys = new Set([...areas(wheel), ...z].map((a) => a.key));
+    assert.deepEqual([...keys].sort(), [...allBets(wheel)].sort(), `${wheel}: the layout offers every bet`);
+    for (const a of z) assert.ok(isBetKey(a.key, wheel), a.key);
+    // no two line areas overlap
+    for (let i = 0; i < z.length; i++) for (let j = i + 1; j < z.length; j++) {
+      const a = z[i], b = z[j];
+      const apart = a.u + a.du <= b.u + 1e-9 || b.u + b.du <= a.u + 1e-9 || a.v + a.dv <= b.v + 1e-9 || b.v + b.dv <= a.v + 1e-9;
+      assert.ok(apart, `${a.key} overlaps ${b.key}`);
+    }
+    for (const tall of [false, true]) {
+      const s = rouletteLayout({ tall, wheel, bets: { 'corner:13-14-16-17': 10 } });
+      assert.ok(s.includes('data-bet="corner:13-14-16-17"') && s.includes('chip-'), 'a chip on a corner');
+      assert.equal(s.includes('data-bet="n:00"'), wheel === 'american');
+      assert.doesNotMatch(s, /NaN|undefined/);
+    }
+  }
+  assert.equal((wheelHTML(0, 'european').match(/data-pocket=/g) ?? []).length, 37);
 });
