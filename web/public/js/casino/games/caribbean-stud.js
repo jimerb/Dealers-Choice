@@ -59,8 +59,9 @@ function draw() {
   if (bonus) out += chipSVG(...seatPoint(BONUS_R), 15, 1);
   const r = hand?.result;
   if (hand) out += text(342, 442, describe(evaluate(hand.player)), { size: 17, weight: 700, cls: 'cz-tx pk-hand' });
+  root.querySelector('.cz-stage > svg')?.classList.toggle('pk-dealt', Boolean(r));
   if (r) {
-    out += text(648, 90, `${r.dealerHand}${r.qualifies ? '' : ' · doesn\'t qualify'}`, { size: 16, anchor: 'start', weight: 700, cls: 'cz-tx pk-hand' });
+    out += text(500, 142, `${r.dealerHand}${r.qualifies ? '' : ' · doesn\'t qualify'}`, { size: 18, weight: 700, cls: 'cz-tx pk-hand' });
     out += betLines(r.lines, 590, 350);
   }
   g.innerHTML = out;

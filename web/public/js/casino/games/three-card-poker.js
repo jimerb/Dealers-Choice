@@ -51,7 +51,7 @@ export const pause = (ctx, ms) => new Promise((r) => ctx.after(ctx.reduced() ? 0
 
 /** The banner, message and sound for a settled hand. */
 export function showResult(ctx, r, title, detail = '') {
-  const tail = `${money(r.returned)} back from ${money(r.wagered)} bet`;
+  const tail = r.returned ? `${money(r.returned)} back from ${money(r.wagered)} bet` : `${money(r.wagered)} bet lost`;
   const tone = r.net > 0 ? 'win' : r.net < 0 ? 'lose' : 'push';
   ctx.banner(title, { tone, detail: detail || tail });
   ctx.message(`${title}. ${detail ? `${detail}. ` : ''}${tail}.`);
@@ -101,7 +101,10 @@ function draw() {
   for (const [k, s] of Object.entries(SPOTS)) if (a[k]) out += chipSVG(...seatPoint(s.r), 21, a[k]);
   const r = hand?.result;
   if (hand) out += text(333, 448, describe3(evaluate3(hand.player)), { size: 18, weight: 700, cls: 'cz-tx pk-hand' });
-  if (r && r.outcome !== 'none') out += text(590, 90, `${r.dealerHand}${r.qualifies ? '' : ' · doesn\'t qualify'}`, { size: 17, anchor: 'start', weight: 700, cls: 'cz-tx pk-hand' });
+  // the dealer's hand goes under the dealer's cards, in place of the house rule written there
+  const dealt = Boolean(r && r.outcome !== 'none');
+  root.querySelector('.cz-stage > svg')?.classList.toggle('pk-dealt', dealt);
+  if (dealt) out += text(500, 142, `${r.dealerHand}${r.qualifies ? '' : ' · doesn\'t qualify'}`, { size: 18, weight: 700, cls: 'cz-tx pk-hand' });
   if (r) out += betLines(r.lines, 590, 350);
   g.innerHTML = out;
 }
@@ -180,14 +183,14 @@ async function reveal(v, release) {
   for (let i = 0; i < 3; i++) layer.mark(`p${i}`, 'win', win.length > 0 && r.net > 0);
   draw();
   // the headline follows the money: a hand the dealer won can still leave you up on Pair Plus
-  const hand = { lose: 'Dealer wins the hand', push: 'The hand pushes', fold: 'You folded' }[r.outcome];
+  const handWord = { lose: 'Dealer wins the hand', push: 'The hand pushes', fold: 'You folded' }[r.outcome];
   const titles = {
     win: `You win ${money(r.net)}`, lose: 'Dealer wins', push: 'Push', fold: 'Folded',
     noqualify: 'Dealer doesn\'t qualify', none: r.net > 0 ? `Pair Plus wins ${money(r.net)}` : 'Pair Plus loses',
   };
   let title = titles[r.outcome];
   let detail = r.outcome === 'noqualify' ? `Ante pays 1 to 1, Play pushes${r.net > 0 ? `: you win ${money(r.net)}` : ''}` : '';
-  if (hand && r.net > 0) { title = `You win ${money(r.net)}`; detail = `${hand}, Pair Plus pays`; }
+  if (handWord && r.net > 0) { title = `You win ${money(r.net)}`; detail = `${handWord}, Pair Plus pays`; }
   else if (r.outcome === 'win' && r.net < 0) { title = 'You win the hand'; detail = `Pair Plus loses: down ${money(-r.net)} in all`; }
   showResult(ctx, r, title, detail);
   committed = null;

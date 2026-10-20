@@ -381,16 +381,35 @@ body.cz-playing main.table-page { max-width: 1840px; }
 #room.cz-side .cz-betbtns .btn.primary { grid-column: 1 / -1; order: 9; min-height: 52px; font-size: 18px; }
 
 /* ---------- phones ---------- */
+.cz-back-short { display: none; }
 @media (max-width: 640px) {
+  /* the table's top bar in two rows: back, name and bank; then the limits and the three dialogs */
+  #room > .table-top { gap: 8px 10px; margin-bottom: 8px; }
+  #room > .table-top h1 { font-size: 22px; }
+  .cz-back-long { display: none; }
+  .cz-back-short { display: inline; }
+  #room > .table-top .cz-subtitle { display: none; }
+  #room > .table-top #cz-stakes { order: 5; flex: 1 1 auto; font-size: 13px; }
+  #room > .table-top .row { order: 6; gap: 6px; }
+  #room > .table-top .row .btn { padding: 0 10px; min-height: 36px; font-size: 13.5px; }
+  .cz-actions { flex-wrap: nowrap; }
+  .cz-actions .btn { font-size: 13px; padding: 0 6px; min-height: 40px; white-space: nowrap; }
+  /* a machine shows its bet on its own meters */
+  #room.cz-credits .cz-betinfo { display: none; }
   .felt.cz-felt { padding: 10px 8px; border-radius: 18px; }
   .cz-rl { gap: 10px; }
-  .cz-rl-wheel { width: 230px; }
+  /* phones: a small wheel beside the last numbers, so the layout starts on the first screen */
+  .cz-rl { display: grid; grid-template-columns: 124px minmax(0, 1fr); align-items: center; gap: 8px 12px; }
+  .cz-rl-main { display: contents; }
+  .cz-rl-wheel { width: 124px; grid-row: 1; grid-column: 1; }
+  .cz-rl-history { grid-row: 1; grid-column: 2; margin: 0; justify-content: flex-start; }
+  .cz-rl-grid { grid-row: 2; grid-column: 1 / -1; }
+  .cz-wheel-marker { top: -7px; border-width: 6px; border-top-width: 10px; }
   .cz-card { width: 150px; }
   .cz-card-tier { font-size: 17px; }
   .cz-card-name { font-size: 10px; }
   .cz-hall-board { padding: 10px; border-width: 20px; border-image-width: 20px; }
   .cz-rl-main { flex-basis: 100%; }
-  .cz-rl-history { justify-content: center; }
   .cz-chip b { font-size: 13px; }
   .cz-betbar { padding: 8px 10px; gap: 8px 12px; }
   /* the message and bet bar stay on screen while the layout scrolls under them */
@@ -398,20 +417,25 @@ body.cz-playing main.table-page { max-width: 1840px; }
   .cz-msg { margin-top: 0; padding-top: 12px; font-size: 14px; }
   .cz-rack { padding-top: 4px; }
   .cz-betbtns { margin-left: auto; flex: 1 1 auto; justify-content: flex-end; gap: 6px; }
-  .cz-betbtns .btn.sm { padding: 0 10px; }
-  .cz-betbtns .btn.primary { flex: 1 1 auto; }
+  /* one row of buttons, the main one taking what is left, so the docked bar stays short */
+  .cz-betbtns { flex-wrap: nowrap; flex-basis: 100%; }
+  .cz-betbtns .btn.sm { padding: 0 8px; min-width: 0; font-size: 14px; }
+  .cz-betbtns .btn.primary { flex: 1 1 auto; min-width: 72px; padding: 0 10px; }
   .cz-bankpanel { padding: 16px; }
   .cz-bank-next { display: block; margin: 4px 0 0; }
   .cz-pill { min-height: 36px; padding: 0 10px 0 5px; font-size: 14px; gap: 6px; }
   .cz-pill-chip { width: 22px; height: 22px; }
   .cz-actions { gap: 6px; margin-top: 6px; }
-  .cz-actions .btn { min-width: 0; flex: 1 1 auto; padding: 0 10px; }
+  .cz-actions .btn { min-width: 0; flex: 1 1 auto; padding: 0 6px; }
   .cz-actions kbd { display: none; }
   .cz-rack { flex-wrap: nowrap; overflow-x: auto; scroll-snap-type: x mandatory; max-width: 100%; padding-bottom: 2px; }
   .cz-chip { scroll-snap-align: start; width: 44px; height: 44px; }
   .cz-after { display: none; }
   .cz-meter-read { font-size: 14px; padding: 4px 10px; }
-  .cz-result { padding: 10px 16px; }
+  .cz-result { padding: 8px 14px; max-width: calc(100% - 40px); }
+  .cz-result b { font-size: 20px; }
+  .cz-result span { font-size: 13px; }
+  .cz-result.at-top { top: 10%; }
   .cz-result.at-middle { top: 38%; }
 }
 @media (pointer: coarse) {

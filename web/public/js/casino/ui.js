@@ -977,6 +977,17 @@ function cashOut() {
 }
 
 // ------------------------------------------------------------------ commands: buttons and keys
+/** Phones: when play starts, bring the whole table up between the top of the screen and the docked
+ *  bet bar (if it fits there), so the cards and the bets aren't under the bar. */
+function phoneToTable() {
+  if (!PHONE_MQ.matches) return;
+  const f = room.querySelector('.cz-feltwrap').getBoundingClientRect();
+  const dockH = dockEl.getBoundingClientRect().height;
+  if (f.height + dockH > innerHeight) return;
+  const y = scrollY + f.top - Math.max(4, innerHeight - dockH - f.height - 4);
+  if (y > scrollY + 2) scrollTo({ top: y, behavior: reducedMotion() ? 'auto' : 'smooth' });
+}
+
 function command(cmd, { times = 1 } = {}) {
   const c = current;
   if (!c) return;
@@ -987,7 +998,7 @@ function command(cmd, { times = 1 } = {}) {
   if (cmd === 'stats') return showStats();
   if (cmd === 'insert') return insertBills();
   if (cmd === 'cashout') return cashOut();
-  if (cmd === 'action') return mod.action();
+  if (cmd === 'action') { phoneToTable(); return mod.action(); }
   if (cmd === 'clear') return mod.clear ? mod.clear() : c.bets?.clear();
   if (cmd === 'rebet') return mod.rebet ? mod.rebet(times) : c.bets?.rebet(times);
   if (cmd === 'undo') return mod.undo ? mod.undo() : c.bets?.undo();
