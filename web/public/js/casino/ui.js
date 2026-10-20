@@ -65,16 +65,27 @@ const medal = (t, cls) => `<span class="${cls}" aria-hidden="true">${imgArt(ART.
 const tierCard = (t) => `<span class="cz-card" style="--tier:${t.color};--tier-ink:${TIER_INK[t.id]}" aria-hidden="true">${imgArt(ART.tierCard(t.id))}
   <span class="cz-card-tier">${t.name}</span><span class="cz-card-name">${esc(playerName())}</span></span>`;
 
+/** Dollars sitting in a machine as credits, as the meter shows them (a held meter keeps a spin's
+ *  result back until the reels stop). The pills count them, so every spin moves the balance. */
+function machineDollars(s) {
+  const m = s.machine;
+  if (!m) return 0;
+  const shown = meterHeld && current?.machine && current.meterShown != null ? current.meterShown : m.credits;
+  return shown * m.denom;
+}
+
 /** The pill's insides: full amount (or $1.25M from a million up) and a short one for phones. */
 function pillHTML(s, t) {
   const loan = s.loan ? `<span class="cz-loan-mark" title="Loan ${money(s.loan)} outstanding">L</span>` : '';
-  return `${medal(t, 'cz-pill-chip')}<span class="visually-hidden">Bank, ${t.name} tier: </span><b class="cz-amt-full">${moneyPill(s.bank)}</b><b class="cz-amt-short" aria-hidden="true">${moneyShort(s.bank)}</b>${loan}`;
+  const total = s.bank + machineDollars(s);
+  return `${medal(t, 'cz-pill-chip')}<span class="visually-hidden">Balance, ${t.name} tier: </span><b class="cz-amt-full">${moneyPill(total)}</b><b class="cz-amt-short" aria-hidden="true">${moneyShort(total)}</b>${loan}`;
 }
 
 function paintBank() {
   const s = held ?? bank.get();
   const t = TIERS[s.tier];
-  const label = `Bank ${money(s.bank)}, ${t.name} tier${s.loan ? `, loan ${money(s.loan)} outstanding` : ''}. Open your casino stats.`;
+  const inMachine = machineDollars(s);
+  const label = `${inMachine ? `Balance ${money(s.bank + inMachine)}: bank ${money(s.bank)} plus ${money(inMachine)} in the machine` : `Bank ${money(s.bank)}`}, ${t.name} tier${s.loan ? `, loan ${money(s.loan)} outstanding` : ''}. Open your casino stats.`;
   pill.style.setProperty('--tier', t.color);
   pill.innerHTML = pillHTML(s, t);
   pill.title = label;
@@ -787,6 +798,7 @@ function makeMachineCtx(c) {
       c.meterShown = m.credits;
       meterHeld = true;
       paintMeter();
+      paintBank();
       let done = false;
       return () => {
         if (done || current !== c) return;
@@ -794,6 +806,7 @@ function makeMachineCtx(c) {
         c.meterShown = null;
         meterHeld = false;
         paintMeter();
+        paintBank();
         flushBigWin();
       };
     },
