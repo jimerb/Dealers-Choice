@@ -110,6 +110,12 @@ export function autoFit(felt) {
   if (bar && 'ResizeObserver' in window) new ResizeObserver(later).observe(bar);
   const main = felt.closest('.cardgame');
   if (main) new MutationObserver(later).observe(main, { childList: true });
+  // A frame can learn its new size after the resize event (rotating a tablet, the shell's frame
+  // resizing): watch the page box too, and refit whenever the window's size has really changed.
+  let seen = '';
+  const sized = () => { const k = `${window.innerWidth}x${window.innerHeight}`; if (k !== seen) { seen = k; later(); } };
+  if ('ResizeObserver' in window) new ResizeObserver(sized).observe(document.documentElement);
+  window.addEventListener('resize', () => setTimeout(sized, 120));
   return fit;
 }
 
