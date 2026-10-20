@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Card games · Dealers Choice</title>
+<meta name="description" content="Every card game at Dealers Choice: trick-taking, melding, casino and family games.">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/art/brand/logo-mark-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="assets/art/brand/logo-mark-64.png">
+<link rel="icon" type="image/png" sizes="512x512" href="assets/art/brand/logo-mark-512.png">
+<link rel="apple-touch-icon" href="assets/art/brand/logo-mark-180.png">
+<script src="js/frame.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+<header id="site-header"></header>
+<main class="wrap games-page" id="top">
+  <section class="hero" aria-labelledby="games-page-title">
+    <div class="hero-copy">
+      <span class="eyebrow">The card room</span>
+      <h1 id="games-page-title">Card games</h1>
+      <p id="games-intro"></p>
+      <p class="games-back"><a href="lobby.html">← Back to the lobby</a></p>
+    </div>
+    <div class="feature">
+      <a class="feature-art" href="pinochle.html" aria-label="Play Pinochle">
+        <img src="assets/art/lobby/hero-pinochle.webp" width="1536" height="960" alt="" fetchpriority="high" decoding="async">
+        <div class="feature-head"><h2>Pinochle</h2><span class="pill">5 Variants!</span></div>
+      </a>
+      <div class="feature-info">
+      <div class="stats">
+        <div class="stat"><span>Players</span><b>2 or 4</b></div>
+        <div class="stat"><span>Deck</span><b>48 or 80</b></div>
+        <div class="stat"><span>Variants</span><b>5</b></div>
+      </div>
+      <ul class="chips" id="pinochle-variants" aria-label="Pinochle variants"></ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="games" aria-labelledby="games-title">
+    <div class="section-head">
+      <h2 id="games-title">Every table</h2>
+      <div class="filters" role="group" aria-label="Filter games" id="filters"></div>
+    </div>
+    <p class="games-note" id="games-note"></p>
+    <div id="groups"></div>
+  </section>
+</main>
+<footer id="site-footer"></footer>
+<script type="module" src="js/games-page.js"></script>
+</body>
+</html>
