@@ -304,6 +304,18 @@ Pictures come from `art.js`: use `ART.<name>` paths and `svgArt(href, x, y, w, h
 write an `assets/art/casino/...` path by hand; if you need a picture that isn't in `ART`, ask the
 coordinator. A test checks that every picture the casino asks for exists.
 
+## Fitting the screen
+
+On a tablet or a computer the whole table, the message line and the bet bar fit on the screen, and
+the table takes all the room that is left. The shell works this out and sets **`--cz-fit`** on
+`#room`: the height (px) a drawing on the felt may take. An SVG straight inside `.cz-stage` is
+capped to it already; size anything else that should grow with the screen from it, e.g.
+`max-height: max(260px, var(--cz-fit, calc(100vh - 372px)))`. Extra things you put on the felt above
+or below the drawing are allowed for: the shell measures and takes them off. Where the screen is
+wide for its height, the shell puts the message, your buttons and the bet bar in a column beside
+the felt (`#room.cz-side`) when that makes the biggest drawing on the felt bigger. Phones (640 px and
+narrower) don't get `--cz-fit`: the page scrolls there, with the bet bar docked at the bottom.
+
 ## A tiny example game
 
 A coin toss: bet on Heads or Tails, even money.

@@ -38,3 +38,5 @@
   .cz-sl-row.lit, .cz-sl-hit.on { animation: none; }
   .cz-sl-col { transition: none; }
 }
+/* tablets and computers: the machine as tall as the screen allows (its width follows) */
+@media (min-width: 641px) { .cz-sl-stage > .cz-svg.cz-sl:not(.crop) { max-width: 100%; } }
