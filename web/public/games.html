@@ -18,34 +18,21 @@
 <body>
 <header id="site-header"></header>
 <main class="wrap games-page" id="top">
-  <section class="hero" aria-labelledby="games-page-title">
-    <div class="hero-copy">
-      <span class="eyebrow">The card room</span>
+  <section class="gp-head" aria-labelledby="games-page-title">
+    <div class="gp-title">
+      <a class="gp-back" href="lobby.html">← Lobby</a>
       <h1 id="games-page-title">Card games</h1>
       <p id="games-intro"></p>
-      <p class="games-back"><a href="lobby.html">← Back to the lobby</a></p>
     </div>
-    <div class="feature">
-      <a class="feature-art" href="pinochle.html" aria-label="Play Pinochle">
-        <img src="assets/art/lobby/hero-pinochle.webp" width="1536" height="960" alt="" fetchpriority="high" decoding="async">
-        <div class="feature-head"><h2>Pinochle</h2><span class="pill">5 Variants!</span></div>
-      </a>
-      <div class="feature-info">
-      <div class="stats">
-        <div class="stat"><span>Players</span><b>2 or 4</b></div>
-        <div class="stat"><span>Deck</span><b>48 or 80</b></div>
-        <div class="stat"><span>Variants</span><b>5</b></div>
-      </div>
-      <ul class="chips" id="pinochle-variants" aria-label="Pinochle variants"></ul>
-      </div>
-    </div>
+    <a class="gp-pinochle" href="pinochle.html" aria-label="Play Pinochle, the house favorite">
+      <img src="assets/art/lobby/tile-pinochle.webp" width="1200" height="750" alt="" decoding="async">
+      <span><span class="eyebrow">House favorite</span><b>Pinochle</b><span>Five ways to play, from Partnership Auction to Cutthroat</span></span>
+    </a>
   </section>
 
   <section id="games" aria-labelledby="games-title">
-    <div class="section-head">
-      <h2 id="games-title">Every table</h2>
-      <div class="filters" role="group" aria-label="Filter games" id="filters"></div>
-    </div>
+    <h2 class="visually-hidden" id="games-title">Every card game</h2>
+    <div class="filters gp-filters" role="group" aria-label="Filter games" id="filters"></div>
     <p class="games-note" id="games-note"></p>
     <div id="groups"></div>
   </section>

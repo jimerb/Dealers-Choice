@@ -7,9 +7,9 @@ import { mountChrome, esc, playerName, hasName } from './header.js';
 import { gameTile, variantChips } from './tiles.js';
 
 // Old links to a game or a kind of game in the lobby (lobby.html#hearts, #trick) now live on the
-// card games page.
+// card games page. The lobby's own rooms (#games, #solitaire, #casino) stay here.
 const hash = location.hash.slice(1);
-if (GAMES.some((g) => g.id === hash) || CATEGORIES.some((c) => c.id === hash)) location.replace(`games.html#${hash}`);
+if (hash && !document.getElementById(hash) && (GAMES.some((g) => g.id === hash) || CATEGORIES.some((c) => c.id === hash))) location.replace(`games.html#${hash}`);
 
 mountChrome('lobby');
 

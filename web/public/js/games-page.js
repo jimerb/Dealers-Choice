@@ -1,7 +1,7 @@
 // The card games page: every card game, grouped by kind, with a filter.
-import { CATEGORIES, GAMES, PINOCHLE_VARIANTS } from './catalog.js';
+import { CATEGORIES, GAMES } from './catalog.js';
 import { mountChrome } from './header.js';
-import { gameTile, variantChips } from './tiles.js';
+import { gameTile } from './tiles.js';
 
 mountChrome('games');
 
@@ -16,7 +16,6 @@ document.getElementById('games-intro').textContent =
   `${GAMES.length} card games to sit down at: bid and take tricks, meld and peg, play a hand of draw poker, or deal a quick family game. Pick a table and a cast of characters fills the other seats.`;
 document.getElementById('games-note').textContent =
   `${withVariants.slice(0, -1).join(', ')} and ${withVariants.at(-1)} come in ${variantCount} variants between them: choose one when you sit down.`;
-document.getElementById('pinochle-variants').innerHTML = variantChips(PINOCHLE_VARIANTS);
 
 function render() {
   document.getElementById('filters').innerHTML = FILTERS.map(([id, label]) =>

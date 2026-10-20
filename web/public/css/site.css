@@ -418,8 +418,27 @@ html:has(main.lobby) { scroll-behavior: smooth; }
 }
 
 /* ---------- card games page (games.html) ---------- */
-.games-page .games-back { font-size: 15px; }
-.games-page .games-back a { text-decoration: none; font-weight: 600; }
-.games-page .games-note { margin: 0; color: var(--ink-3); font-size: 15px; }
+.gp-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 20px 40px; padding: 36px 0 28px; }
+.gp-title { flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.gp-back { align-self: flex-start; font-size: 15px; font-weight: 600; text-decoration: none; }
+.gp-title h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 4.6vw, 56px); line-height: 1.05; }
+.gp-title p { margin: 0; max-width: 620px; font-size: 17px; color: var(--ink-2); }
+/* the house favorite: a slim card with Pinochle's art */
+.gp-pinochle { flex: 0 1 420px; min-width: 0; display: grid; grid-template-columns: 132px minmax(0, 1fr); align-items: center; gap: 16px; padding: 10px 18px 10px 10px; border-radius: 18px; border: 2px solid var(--brass-2); background: linear-gradient(150deg, #1F6E57 0%, #0F3B30 80%); color: var(--ink); text-decoration: none; box-shadow: 0 10px 30px rgba(0,0,0,.3); transition: transform .15s ease; }
+.gp-pinochle:hover { transform: translateY(-2px); color: var(--ink); }
+.gp-pinochle img { width: 132px; height: 84px; object-fit: cover; border-radius: 12px; display: block; background: var(--felt); }
+.gp-pinochle > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.gp-pinochle b { font-family: var(--font-display); font-weight: 400; font-size: 26px; line-height: 1.1; }
+.gp-pinochle > span > span:last-child { font-size: 14px; color: var(--ink-2); }
+.gp-filters { padding: 4px 0 10px; border-top: 1px solid var(--line); padding-top: 20px; }
+.games-page .games-note { margin: 4px 0 0; color: var(--ink-3); font-size: 15px; }
+@media (max-width: 520px) {
+  .gp-head { padding: 24px 0 20px; }
+  .gp-pinochle { grid-template-columns: 96px minmax(0, 1fr); gap: 12px; }
+  .gp-pinochle img { width: 96px; height: 62px; }
+  .gp-pinochle b { font-size: 22px; }
+  .gp-filters button { min-height: 40px; padding: 0 12px; }
+}
+@media (hover: none) { .gp-pinochle:hover { transform: none; } }
 .games-page .tile { scroll-margin-top: 24px; }
 
