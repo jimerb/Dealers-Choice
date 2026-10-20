@@ -197,7 +197,9 @@ function action() {
   if (drawing) { drawing.finish(); return; }
   if (run || !marks.length) { if (!marks.length) spotsMessage(); return; }
   run = { total: games, played: 0, stop: false };
+  // phones: bring the whole board above the bet bar (its scroll margin is the bar's height) to watch the draw
   next();
+  if (matchMedia('(max-width: 640px)').matches) root?.querySelector('.cz-kn-board')?.scrollIntoView({ block: 'nearest' });
 }
 
 /** Start the next game of the run: pay for it, draw and settle at once, then reveal. */

@@ -103,8 +103,8 @@ let auto = 0;                  // spins left in an autoplay run
 let shownCredits = null;       // the credits the meters show while a result is being revealed
 let frame = 0, countT = null;
 
-// Phones show the reels, meters and deck only (the pay table is in How to play), so the machine
-// fits above the bet bar.
+// Phones show the reels, meters and deck only, so the machine fits above the bet bar; the pay
+// card (hidden beside the full cabinet on mid-size screens) shows under it instead.
 const PHONE = '(max-width: 640px)';
 let mq = null;
 function fit() {

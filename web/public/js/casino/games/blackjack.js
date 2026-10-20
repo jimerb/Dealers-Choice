@@ -29,9 +29,9 @@ export function layout(opts = {}) {
   return svg(W, H, `${railBand(edge, d, W, H)}${path(d, { cls: 'cz-rail' })}${tableCrest('Blackjack')}
     ${shoe(SHOE_AT.x, SHOE_AT.y)}${discardTray(TRAY_AT.x, TRAY_AT.y)}
     ${cardSlot(DEALER_X, DEALER_Y, 48)}${cardSlot(DEALER_X + 60, DEALER_Y, 48)}
-    ${arcText(cx, cy, 180, 160, 20, 'BLACKJACK PAYS 3 TO 2', { size: 26 })}
+    ${arcText(cx, cy, 180, 160, 20, 'BLACKJACK PAYS 3 TO 2', { size: 26, cls: 'cz-tx bjk-arc bjk-arc-pays' })}
     ${arcText(cx, cy, 215, 160, 20, ruleLine(rules), { size: 17, weight: 500, cls: 'cz-tx bjk-rule' })}
-    ${arcText(cx, cy, 252, 150, 30, 'INSURANCE PAYS 2 TO 1', { size: 18 })}
+    ${arcText(cx, cy, 252, 150, 30, 'INSURANCE PAYS 2 TO 1', { size: 18, cls: 'cz-tx bjk-arc bjk-arc-ins' })}
     ${spot(cx, SPOT_Y, 38, 'BET', { key: 'main' })}
     <g class="bjk-dyn"></g>`, { label: 'Blackjack table: the dealer at the top, your betting spot at the front', top: CREST_TOP });
 }

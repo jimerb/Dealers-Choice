@@ -260,7 +260,7 @@ function drawDice() {
 function sync() {
   if (!ctx?.live) return;
   const s = bets?.total() ?? 0;
-  ctx.setTotal(E.onTable(shown ?? table) + s); // while the dice roll, the table as it was
+  ctx.setTotal(E.onTable(shown ?? table) + s, { staged: !rolling, debit: s }); // while the dice roll, the table as it was
   ctx.setButtons({ action: !rolling, clear: !rolling && s > 0, undo: !rolling && s > 0, rebet: !rolling && s === 0 && Boolean(bets?.last?.length), label: 'Roll' });
   const numbered = Object.keys(table.bets).some((k) => /^(come|dc):\d+$/.test(k));
   ctx.setActions({

@@ -11,6 +11,12 @@
 .cz-sl-card tr.lit { background: rgba(226,194,122,.34); outline: 2px solid #E2C27A; }
 .cz-sl-card p { margin: 8px 0 0; font-size: 12px; color: #A9C2B7; }
 @media (max-width: 899px) { .cz-sl-card { display: none; } }
+/* phones crop the cabinet to its reels, which leaves the glass pay table off: the card comes back
+   under the machine instead */
+@media (max-width: 640px) {
+  .cz-sl-stage { flex-wrap: wrap; gap: 12px; }
+  .cz-sl-card { display: block; flex: 1 1 100%; width: auto; max-width: 460px; }
+}
 .cz-sl-stage > .cz-svg.crop { aspect-ratio: 800 / 599; height: auto; width: 100%; max-width: 460px; }
 .cz-svg.cz-sl { max-width: 440px; user-select: none; -webkit-user-select: none; }
 .cz-sl-col { fill: rgba(226,194,122,.13); stroke: rgba(226,194,122,.45); stroke-width: 1.5; transition: x .15s ease; }

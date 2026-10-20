@@ -11,3 +11,11 @@
 .bjk-info { margin: 6px 0 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 18px; font-size: 13px; color: var(--ink-3); text-align: center; }
 .bjk-count { color: var(--ink-2); }
 .bjk-count b { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* phones: the long rule line on the arc would be too small to read, so it gives way (the same rule is
+   in the line under the table) and the two short arcs get bigger, one line each */
+@media (max-width: 640px) {
+  .bjk-rule { display: none; }
+  .bjk-arc-pays { font-size: 30px; }
+  .bjk-arc-ins { font-size: 24px; }
+}
