@@ -1,6 +1,6 @@
 /* Video Poker: the machine picker beside the cabinet, and the cabinet's screen, pay table and meters. */
 .vp { display: flex; align-items: center; justify-content: center; gap: 18px 28px; }
-.vp-stage { flex: none; min-width: 0; position: relative; width: min(100%, max(300px, calc((100vh - 366px) * var(--vp-ratio, .93)))); }
+.vp-stage { flex: none; min-width: 0; position: relative; width: min(100%, max(300px, calc(var(--cz-fit, calc(100vh - 366px)) * var(--vp-ratio, .93)))); }
 
 /* the cabinet keeps its own proportions (the card layer lines up with it), sized to the height left */
 .vp-stage > .cz-svg.vp-cab {
@@ -54,7 +54,7 @@ button.cz-c:disabled { cursor: default; }
   .vp-pick-btn { flex: 1 1 0; min-width: 0; padding: 6px 8px; align-items: center; text-align: center; }
   .vp-pick-btn b { font-size: 13.5px; }
   .vp-pick-btn span { display: none; }
-  .vp-stage { width: min(100%, max(300px, calc((100vh - 410px) * var(--vp-ratio, .93)))); }
+  .vp-stage { width: min(100%, max(300px, calc((var(--cz-fit, calc(100vh - 372px)) - 38px) * var(--vp-ratio, .93)))); }
 }
 @media (max-width: 560px) {
   .vp-stage { width: 100%; }

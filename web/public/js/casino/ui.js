@@ -175,8 +175,10 @@ function flushBigWin() {
   o.setAttribute('role', 'status');
   o.innerHTML = `<div class="cz-bigwin-card"><span class="cz-bigwin-burst" aria-hidden="true"></span><b>${esc(title)}</b>${detail ? `<span>${esc(detail)}</span>` : ''}</div>`;
   document.body.append(o);
+  // the result banner gives way while the card is up, then comes back (it says what the card doesn't)
+  $('cz-result').classList.add('under-big');
   play('score');
-  const done = () => { o.classList.add('out'); setTimeout(() => o.remove(), 400); document.removeEventListener('pointerdown', done, true); document.removeEventListener('keydown', done, true); };
+  const done = () => { o.classList.add('out'); setTimeout(() => { o.remove(); if (!document.querySelector('.cz-bigwin')) unhideBanner(); }, 400); document.removeEventListener('pointerdown', done, true); document.removeEventListener('keydown', done, true); };
   setTimeout(() => { document.addEventListener('pointerdown', done, true); document.addEventListener('keydown', done, true); }, 250);
   setTimeout(done, reducedMotion() ? 2500 : 4000);
 }
@@ -391,11 +393,16 @@ async function openGame(id, stakesId, { push = false } = {}) {
   renderActions();
   clearBanner();
   setButtons({ action: false, clear: false, rebet: false, undo: false });
+  // buttons a game has no use for are not shown at all (a machine plays on credits: no Undo, Clear or Rebet)
+  const hide = new Set(mod.hideButtons ?? (current.machine ? ['undo', 'clear', 'rebet'] : []));
+  for (const b of ['undo', 'clear', 'rebet']) $(`cz-${b}`).hidden = hide.has(b);
   $('cz-erase').hidden = true;
   paintBank();
   current.ctx = makeCtx(current);
   current.mod.mount(felt, current.ctx);
   window.scrollTo(0, 0);
+  fitTable();
+  current.ctx.after(350, () => fitTable()); // pictures and fonts that arrived since
   if (!maybeShowHowto()) checkBroke();
 }
 
@@ -425,6 +432,8 @@ function closeGame() {
   clearTimeout(bannerTimer);
   if (heldEvents.length) announce(heldEvents.splice(0));
   delete room.dataset.game;
+  room.classList.remove('cz-side');
+  room.style.removeProperty('--cz-fit');
   document.body.classList.remove('cz-playing');
   for (const d of document.querySelectorAll('#cz-dialog, #cz-rules')) if (d.open) d.close();
 }
@@ -623,6 +632,79 @@ $('cz-actions').addEventListener('click', (e) => {
   if (b && current) runAction(current.actions[Number(b.dataset.act)]);
 });
 
+// ---- fitting the table to the screen
+// On a tablet or a computer the table, its message line and the bet bar all fit on the screen
+// without scrolling, and the table takes all the room that is left: the shell works out the height
+// a drawing on the felt may take and hands it to the CSS as --cz-fit (px). Where the screen is wide
+// for its height the controls go beside the felt instead of under it (#room.cz-side), when that
+// gives the table more room. Phones scroll, with the controls docked at the bottom, and keep their
+// own sizes.
+const PHONE_MQ = matchMedia('(max-width: 640px)');
+const SIDE_MIN_W = 1100;
+let fitMode = 'bottom', fitTimer = 0, fitDockH = 0;
+const dockEl = room.querySelector('.cz-dock');
+/** The area of the biggest drawing on the felt, as drawn (a letterboxed SVG counts its drawing only). */
+function drawnArea() {
+  let best = 0;
+  for (const s of felt.querySelectorAll('svg[viewBox]')) {
+    const r = s.getBoundingClientRect();
+    const vb = s.viewBox?.baseVal;
+    if (!r.width || !r.height || !vb?.width || !vb?.height) continue;
+    const k = Math.min(r.width / vb.width, r.height / vb.height);
+    best = Math.max(best, vb.width * k * vb.height * k);
+  }
+  return best;
+}
+/** Lay the room out in `mode` and size --cz-fit so nothing runs past the bottom of the screen. */
+function applyFit(mode) {
+  fitMode = mode;
+  room.classList.toggle('cz-side', mode === 'side');
+  const vh = innerHeight;
+  const fr = felt.getBoundingClientRect();
+  const cs = getComputedStyle(felt);
+  const pads = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+  const bar = room.querySelector('.cz-betbar');
+  const below = mode === 'side' ? 0 : bar.getBoundingClientRect().bottom - fr.bottom;
+  let fit = Math.floor(vh - (fr.top + scrollY) - pads - below - 10);
+  for (let i = 0; i < 3; i++) {
+    room.style.setProperty('--cz-fit', `${Math.max(240, fit)}px`);
+    const bottom = mode === 'side'
+      ? Math.max(felt.getBoundingClientRect().bottom, dockEl.getBoundingClientRect().bottom)
+      : bar.getBoundingClientRect().bottom;
+    const over = Math.ceil(bottom + scrollY + 10 - vh);
+    if (over <= 1 || fit <= 240) break;
+    fit -= over;
+  }
+  fitDockH = dockEl.getBoundingClientRect().height;
+}
+/** Pick the layout (controls under the felt or beside it) and fit the table to the screen. */
+function fitTable({ pick = true } = {}) {
+  if (!current || room.hidden) return;
+  if (PHONE_MQ.matches) {
+    room.classList.remove('cz-side');
+    room.style.removeProperty('--cz-fit');
+    fitMode = 'bottom';
+    return;
+  }
+  const y = scrollY;
+  if (!pick || innerWidth < SIDE_MIN_W) { applyFit(pick ? 'bottom' : fitMode); scrollTo(0, y); return; }
+  applyFit('side');
+  const side = drawnArea();
+  const sideOK = dockEl.getBoundingClientRect().bottom + scrollY <= innerHeight;
+  applyFit('bottom');
+  if (sideOK && side > drawnArea() * 1.1) applyFit('side');
+  scrollTo(0, y);
+}
+const refit = (o) => { cancelAnimationFrame(fitTimer); fitTimer = requestAnimationFrame(() => fitTable(o)); };
+addEventListener('resize', () => refit());
+// the controls under the felt grow (a second row of buttons): the table makes room
+if (typeof ResizeObserver === 'function') {
+  new ResizeObserver(() => {
+    if (!current || fitMode === 'side' || Math.abs(dockEl.getBoundingClientRect().height - fitDockH) < 2) return;
+    refit({ pick: false });
+  }).observe(dockEl);
+}
+
 // ---- result banner over the felt (aria-live), cleared by the next bet
 // Where it sits: `at` 'middle' (default), 'top' (over the crest) or 'bottom' (over the betting
 // area), per call or for the whole game with the module's `bannerAt`. It goes by itself after
@@ -643,6 +725,13 @@ function fadeBanner() {
   if (reducedMotion()) { clearBanner(); return; }
   b.classList.add('out');
   bannerTimer = setTimeout(clearBanner, 400);
+}
+/** After a big-win card: the banner shows again for a moment before it fades. */
+function unhideBanner() {
+  const b = $('cz-result');
+  if (!b.classList.contains('under-big')) return;
+  b.classList.remove('under-big');
+  if (!b.hidden) { clearTimeout(bannerTimer); bannerTimer = setTimeout(fadeBanner, 2500); }
 }
 function clearBanner() { clearTimeout(bannerTimer); const b = $('cz-result'); b.hidden = true; b.innerHTML = ''; b.classList.remove('out'); }
 $('cz-result').addEventListener('click', clearBanner);

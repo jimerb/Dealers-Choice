@@ -1,7 +1,7 @@
 /* Craps (js/casino/games/craps.js): the layout's spots, staged chips, the dice and the phone's
    Center bets drawer. Lines and lettering follow the felt through --cz-line and .cz-tx. */
 .cz-cr { position: relative; }
-.cz-cr-table > .cz-svg.wide { max-height: max(260px, calc(100vh - 372px)); max-width: 1080px; }
+.cz-cr-table > .cz-svg.wide { max-height: max(260px, var(--cz-fit, calc(100vh - 372px))); max-width: 1080px; }
 .cz-cr-table > .cz-svg.tall { max-width: 460px; }
 
 .cz-cr-spot { cursor: pointer; outline: none; }

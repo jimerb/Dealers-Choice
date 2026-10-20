@@ -70,6 +70,8 @@ export default {
   action() {},                     // the bet bar's main button (Deal, Spin, Roll, Draw, Play)
   // optional; without them Clear, Rebet and Undo go to your ctx.bets() helper:
   clear() {}, rebet(times) {}, undo() {},
+  hideButtons: ['rebet'],          // optional: bet-bar buttons the game never uses are not shown
+                                   // (machines hide Undo, Clear and Rebet by default)
   optionsChanged(opts) {},         // optional: the player saved new options (apply next round)
   bannerAt: 'middle',              // optional: where the result banner sits ('top', 'middle', 'bottom')
 };

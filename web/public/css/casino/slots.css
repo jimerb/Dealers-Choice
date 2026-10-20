@@ -1,6 +1,6 @@
 /* Slots: the Brass Crown machine (js/casino/games/slots.js). */
 .cz-sl-stage { align-items: center; gap: 28px; }
-.cz-sl-stage > .cz-svg { margin: 0; flex: 0 1 auto; min-width: 0; aspect-ratio: 2 / 3; width: auto; height: max(300px, calc(100vh - 372px)); max-width: 100%; }
+.cz-sl-stage > .cz-svg { margin: 0; flex: 0 1 auto; min-width: 0; aspect-ratio: 2 / 3; width: auto; height: max(300px, var(--cz-fit, calc(100vh - 372px))); max-width: 100%; }
 .cz-sl-card { flex: 0 0 auto; width: 360px; max-width: 100%; box-sizing: border-box; background: rgba(8,24,19,.82); border: 1px solid var(--brass); border-radius: 14px; padding: 12px 14px; color: #E2C27A; font-size: 14px; }
 .cz-sl-card h3 { margin: 0 0 6px; font-family: var(--font-display); font-size: 18px; color: #E2C27A; }
 .cz-sl-card table { width: 100%; border-collapse: collapse; }

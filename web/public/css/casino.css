@@ -95,6 +95,7 @@
 .cz-result.at-top { top: 17%; padding: 8px 22px; }
 .cz-result.at-bottom { top: 76%; }
 .cz-result.out { opacity: 0; transition: opacity .4s ease; }
+.cz-result.under-big { visibility: hidden; }
 
 /* a big win: a card with a brass burst over the table, gone after a few seconds or any click */
 .cz-bigwin { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; pointer-events: none; transition: opacity .4s ease; }
@@ -219,7 +220,7 @@ table.cz-stats { font-size: 14px; white-space: nowrap; }
 .cz-discard { fill: #6B2424; stroke: #F3ECDA; stroke-width: 1.5; }
 .cz-discard-in { fill: none; stroke: rgba(226,194,122,.7); stroke-width: 1; }
 /* a table never pushes the bet bar off the screen: the drawing scales down to the height left */
-.cz-stage > .cz-svg, .cz-keno > .cz-svg { max-height: max(240px, calc(100vh - 372px)); }
+.cz-stage > .cz-svg, .cz-keno > .cz-svg { max-height: max(240px, var(--cz-fit, calc(100vh - 372px))); }
 .cz-crest-fb { fill: #C9A24A; stroke: #1B1B1B; stroke-width: 2; }
 .cz-crest-tx { fill: #2A1E0E; }
 .cz-slot { fill: none; stroke: var(--cz-line); stroke-width: 2; stroke-dasharray: 6 5; }
@@ -295,7 +296,15 @@ table.cz-stats { font-size: 14px; white-space: nowrap; }
 .cz-rl-pearl { position: absolute; left: 48.34%; top: 4%; width: 3.32%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff, #cfcfcf); box-shadow: 0 1px 2px rgba(0,0,0,.6); }
 .cz-rl-pearl.art-ok { background: none; }
 .cz-rl-pearl > img { position: absolute; inset: -12.5%; width: 125%; height: 125%; display: block; }
-.cz-rl-main { flex: 1 1 560px; min-width: 0; max-width: 980px; }
+.cz-rl-main { flex: 1 1 520px; min-width: 0; }
+.cz-rl-history[hidden] { display: none; }
+/* tablets and computers: the wheel grows with the screen, the layout takes the rest of the width
+   (and no more height than the screen leaves) */
+@media (min-width: 641px) {
+  .cz-rl { flex-wrap: wrap; }
+  .cz-rl-wheel { width: clamp(280px, min(var(--cz-fit, 300px) - 20px, 34vw), 520px); }
+  .cz-rl-grid > .cz-svg { max-height: max(220px, calc(var(--cz-fit, 100vh) - 40px)); }
+}
 .cz-rl-history { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 30px; margin-bottom: 8px; }
 .cz-rl-hlabel { font-size: 13px; color: var(--ink-3); margin-right: 4px; }
 .cz-rl-ball { min-width: 28px; height: 28px; padding: 0 6px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #F4EFE3; box-shadow: 0 0 0 1px rgba(244,239,227,.4); }
@@ -333,6 +342,42 @@ table.cz-stats { font-size: 14px; white-space: nowrap; }
 }
 .cz-subtitle:empty { display: none; }
 .cz-msg:focus { outline: none; }
+
+/* ---------- the table fills the screen (tablets and computers) ----------
+   ui.js sets --cz-fit on #room: the height a drawing on the felt may take so that the felt, the
+   message line and the bet bar all fit on the screen. A table drawing is as big as that allows. */
+.cz-stage > .cz-svg:not(.cz-machine):not(.tall) { max-width: none; }
+body.cz-playing main.table-page { max-width: 1840px; }
+@media (min-width: 641px) {
+  .felt.cz-felt { padding: 12px 14px; }
+  .table-top { margin-bottom: 10px; }
+  /* the message and the game's own buttons share a row over the bet bar */
+  .cz-dock { display: flex; flex-wrap: wrap; align-items: center; column-gap: 16px; }
+  .cz-msg { flex: 1 1 280px; min-height: 44px; margin: 8px 2px 0; display: flex; align-items: center; }
+  .cz-actions { flex: 0 1 auto; margin-top: 8px; }
+  .cz-betbar { flex: 1 1 100%; margin-top: 8px; }
+}
+/* the header's bank pill would wrap the site header to two rows; the table's own pill shows it */
+@media (max-width: 1099px) { body.cz-playing .cz-pill { display: none; } }
+/* wide screens: the controls in a column beside the felt */
+#room.cz-side { display: grid; grid-template-columns: minmax(0, 1fr) 300px; column-gap: 16px; align-items: start; }
+#room.cz-side > .table-top { grid-column: 1 / -1; }
+#room.cz-side > .cz-feltwrap { grid-column: 1; min-width: 0; }
+#room.cz-side > .cz-dock { grid-column: 2; display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+#room.cz-side .cz-msg { flex: none; min-height: 3em; margin: 0; padding: 2px 2px 8px; border-bottom: 1px solid var(--line); align-items: flex-start; }
+#room.cz-side .cz-actions { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+#room.cz-side .cz-actions[hidden] { display: none; }
+#room.cz-side .cz-actions .btn { min-width: 0; padding: 0 8px; }
+#room.cz-side .cz-actions .btn.primary:first-child:nth-last-child(odd) { grid-column: 1 / -1; }
+#room.cz-side .cz-betbar { margin: 0; padding: 0; border: 0; background: none; flex-direction: column; align-items: stretch; gap: 12px; }
+#room.cz-side .cz-rack { justify-content: center; padding-top: 4px; }
+#room.cz-side .cz-meter { flex-direction: column; align-items: stretch; }
+#room.cz-side .cz-meter-read { text-align: center; }
+#room.cz-side .cz-betinfo { text-align: center; }
+#room.cz-side .cz-after { display: block; margin: 2px 0 0; }
+#room.cz-side .cz-betbtns { margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+#room.cz-side .cz-betbtns .btn { min-width: 0; padding: 0 6px; }
+#room.cz-side .cz-betbtns .btn.primary { grid-column: 1 / -1; order: 9; min-height: 52px; font-size: 18px; }
 
 /* ---------- phones ---------- */
 @media (max-width: 640px) {
