@@ -360,7 +360,8 @@ export default {
       subtitle: `Hand ${s.handNo} · to 5,000 · your first meld needs ${t0req}`,
       scores: [{ label: 'Us', value: s.scores[0], us: true }, { label: 'Them', value: s.scores[1] }],
       seats: seatsVM(s, 4, (i) => ({ tag: s.red3[team(i)].length && (i < 2) ? `${s.red3[team(i)].length} red 3${s.red3[team(i)].length > 1 ? 's' : ''}` : '' })),
-      hand: { cards: s.hands[0], legal: my ? s.hands[0].map((c) => c.id) : null, mode: my ? 'select' : 'play', maxSelect: 20 },
+      // at the count the panel takes the table (your leftover cards are in its 'Cards in hand' line)
+      hand: overlay ? null : { cards: s.hands[0], legal: my ? s.hands[0].map((c) => c.id) : null, mode: my ? 'select' : 'play', maxSelect: 20 },
       center, banner, overlay,
       side: [{ title: 'Red 3s', html: `<div>Us: ${s.red3[0].length} · Them: ${s.red3[1].length}</div>` },
         { title: 'Card values', html: '<div style="font-size:13px">Joker 50 · A, 2: 20 · 8–K: 10 · 4–7, black 3: 5</div>' }],

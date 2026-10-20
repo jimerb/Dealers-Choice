@@ -302,7 +302,8 @@ export default {
     const cardsOf = (x) => (x.kind === 'crib'
       ? `<div class="row" style="gap:10px">${trayHTML(x.cards.map((c) => cardHTML(c)).join(''), { width: cw(210) })}<div style="--card-w:${cw(40)}">${cardHTML(s.starter)}</div></div>` : cardsRow([...x.cards, s.starter], 40));
     const claimed = (x) => (x.claimed === undefined ? '' : `<div style="font-size:13px">You claimed ${x.claimed}${x.muggins ? ` · <b>Muggins!</b> ${opp} took the ${x.muggins} you missed` : ''}</div>`);
-    const counts = (x) => `<div style="margin-bottom:10px"><b>${whose(x.who)} ${x.kind}</b> · ${x.total} pts${cardsOf(x)}<div style="font-size:13px;color:var(--ink-2)">${x.items.map(([n, p]) => `${n} ${p}`).join(' · ') || 'Nineteen (nothing)'}</div>${claimed(x)}</div>`;
+    // one count: its cards with what they scored beside them
+    const counts = (x) => `<div class="crib-count"><b>${whose(x.who)} ${x.kind}</b> · ${x.total} pts<div class="crib-count-row">${cardsOf(x)}<div class="crib-count-items">${x.items.map(([n, p]) => `${n} ${p}`).join(' · ') || 'Nineteen (nothing)'}</div></div>${claimed(x)}</div>`;
     const matchLine = s.match ? `<p>Match (first to ${GAMES_TO_WIN} games): you ${s.match.games[0]}, ${opp} ${s.match.games[1]}</p>` : '';
     const ended = `<p>${s.scores[0]} – ${s.scores[1]}${s.skunk ? ` · a ${s.skunk}!` : ''}</p>${matchLine}${s.show ? s.show.map(counts).join('') : ''}`;
     if (s.phase === 'discard') overlay = panel(`${whose(s.dealer)} crib`, `<p>Choose two cards to lay away (${ui.selected.size}/2).</p><div class="row">${btn('Send to crib', 'crib', `data-with-sel ${ui.selected.size === 2 ? '' : 'disabled'}`, true)}</div>`);
@@ -328,6 +329,7 @@ export default {
       scores: [{ label: 'You', value: s.scores[0], us: true }, { label: opp, value: s.scores[1] }],
       seats: [{ seat: 0, pos: 'south', name: s.names[0], mine: true, turn: s.turn === 0, dealer: s.dealer === 0 }, { seat: 1, pos: 'north', name: opp, count: s.hands[1].length, turn: s.turn === 1, dealer: s.dealer === 1 }],
       hand: s.phase === 'discard' ? { cards: s.hands[0], legal: s.hands[0].map((c) => c.id), mode: 'select', maxSelect: 2 }
+        : overlay ? null // the count panels lay your cards out themselves
         : { cards: s.hands[0], legal: s.phase === 'peg' && s.turn === 0 ? canPlay(s, 0).map((c) => c.id) : null },
       center: overlay ? '' : center, banner, overlay, board, // a panel takes the center's place below the board
     };

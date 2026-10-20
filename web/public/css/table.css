@@ -399,7 +399,7 @@ table.auction td, table.auction th { text-align: center !important; }
 .cardgame .meld-row.tabled { --card-w: calc(40px * var(--k, 1)); min-height: 0; }
 .cardgame .stock-pile { --card-w: calc(56px * var(--k, 1)); }
 .cardgame .count-badge { width: calc(70px * var(--k, 1)); font-size: calc(28px * var(--k, 1)); }
-.cardgame .crib-board svg { flex-basis: calc(560px * var(--k, 1)); }
+@media (min-width: 761px) { .cardgame .crib-board svg { flex-basis: calc(560px * var(--k, 1)); } } /* phones stack the board over its key */
 .cardgame .empty-slot { font-size: clamp(11px, calc(12px * var(--k, 1)), 15px); }
 
 /* big screens: names, bubbles and banners grow a little with the cards */
@@ -417,6 +417,8 @@ table.auction td, table.auction th { text-align: center !important; }
 /* panels keep their padding tight: every line they save goes to the cards */
 .cardgame .felt .card-panel { padding: 16px 18px; }
 .cardgame .felt .card-panel p { margin-bottom: 10px; }
+.cardgame .felt .card-panel table.score { margin-bottom: 10px; }
+.cardgame .felt .card-panel table.score :is(th, td) { padding-top: 4px; padding-bottom: 4px; }
 .cardgame .melds { gap: 8px; margin-bottom: 10px; }
 .cardgame .meld-box { padding: 8px 10px; }
 .cardgame .meld-box ul { margin-top: 4px; }
@@ -431,6 +433,10 @@ table.auction td, table.auction th { text-align: center !important; }
 .showdown-row.won { background: rgba(226,194,122,.14); box-shadow: inset 0 0 0 1px var(--brass); }
 .showdown-row .row { flex-wrap: nowrap; }
 @media (max-width: 520px) { .showdown-row { grid-template-columns: auto minmax(0, 1fr); } .showdown-row .row { grid-column: 1 / -1; } }
+/* Cribbage's count: each hand's cards with what they scored beside them */
+.crib-count { margin-bottom: 8px; }
+.crib-count-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-top: 2px; }
+.crib-count-items { flex: 1 1 140px; font-size: 13px; color: var(--ink-2); }
 /* Gin's count: each player's melds side by side, the deadwood set apart */
 .meld-spread { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px 14px; }
 .meld-spread .row { flex-wrap: nowrap; gap: 2px !important; }
@@ -476,6 +482,9 @@ table.auction td, table.auction th { text-align: center !important; }
   .cardgame .card-panel { padding: 14px 12px; }
   .cardgame .card-panel h3 { font-size: 21px; }
   .cardgame .bid-btn { min-height: 36px; font-size: 13px; }
+  .cardgame .declare-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; } /* Skat's five games, two a row */
+  .cardgame .declare-opts .btn { min-height: 48px; padding: 4px 8px; }
+  .cardgame .felt:has(> .center > .overlay) .seat-chips { display: none; } /* Poker: the chip stacks wait under a panel */
   .cardgame .card-panel .btn { padding: 0 12px; }
   .cardgame .card-panel p { font-size: 13px; margin-bottom: 10px; }
 }

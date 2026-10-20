@@ -559,7 +559,7 @@ export default {
       const cards = [...s.hands[0], ...s.skat];
       const opt = (g) => { const m = matadors(cards, g); const v = BASE[g] * (m.n + 1 + (s.hand ? 1 : 0)); return btn(`${g === 'G' ? 'Grand' : `${suitSpan(g)} ${SUIT_TITLE[g]}`}<small style="display:block;font-weight:500">${m.with ? 'with' : 'without'} ${m.n} · ${v}${v < s.bid.value ? ' (too low)' : ''}</small>`, 'declare', `data-g="${g}"`); };
       overlay = panel('Declare your game', `<p>Bid: ${s.bid.value}. Base values shown with your current matadors${s.hand ? ' and hand' : ''}; schneider and schwarz add more.</p>
-        <div class="row">${['C', 'S', 'H', 'D', 'G'].map(opt).join('')}</div>
+        <div class="row declare-opts">${['C', 'S', 'H', 'D', 'G'].map(opt).join('')}</div>
         <div class="row" style="margin-top:8px">${btn(`Null (${s.hand ? 35 : 23})`, 'declare', 'data-g="null"')}${btn(`Null ouvert (${s.hand ? 59 : 46})`, 'declare', 'data-g="ouvert"')}</div>`, 'max-width:620px');
     } else if (s.phase === 'handOver' || s.phase === 'gameOver') {
       const r = s.result;
