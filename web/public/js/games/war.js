@@ -1,7 +1,7 @@
 // War (2 players). Flip; the higher card takes both. Ties mean war: three down, one up.
 import { deck, shuffle, hi, rngOf } from '../core/cards.js';
 import { clone, log, fx, must } from './lib/common.js';
-import { panel, btn } from '../core/table.js';
+import { panel, btn, cw } from '../core/table.js';
 import { cardHTML, backHTML } from '../skin.js';
 
 function newGame({ names, seed, opts }) {
@@ -87,7 +87,7 @@ export default {
   aiAct(state) { return flip(clone(state)); },
   view(s) {
     const opp = s.names[1];
-    const row = (p) => `<div class="row" style="--card-w:74px;gap:6px;justify-content:center;min-height:110px">${s.table[p].map((c) => (c.down ? backHTML() : cardHTML(c))).join('')}</div>`;
+    const row = (p) => `<div class="row" style="--card-w:${cw(74)};gap:6px;justify-content:center;min-height:${cw(110)}">${s.table[p].map((c) => (c.down ? backHTML() : cardHTML(c))).join('')}</div>`;
     let overlay = '';
     if (s.phase === 'gameOver') overlay = panel(s.gameWinner === 0 ? 'You win!' : `${opp} wins`, `<p>Wars won: you ${s.wars[0]}, ${opp} ${s.wars[1]}. Cards: you ${s.piles[0].length}, ${opp} ${s.piles[1].length}.</p><div class="row" style="justify-content:flex-end">${btn('Play again', 'again', '', true)}</div>`);
     const center = `<div style="display:flex;flex-direction:column;gap:14px;align-items:center">${row(1)}

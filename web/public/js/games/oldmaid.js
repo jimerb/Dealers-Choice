@@ -2,7 +2,7 @@
 // holding it is the Old Maid. Draw a card from the player on your right; pairs are discarded.
 import { deck, shuffle, sortCards, rngOf, lo } from '../core/cards.js';
 import { clone, log, fx, who, must, seatsVM } from './lib/common.js';
-import { panel, btn } from '../core/table.js';
+import { panel, btn, cw } from '../core/table.js';
 import { backHTML, cardHTML } from '../skin.js';
 
 const sortHand = (h) => sortCards(h, { rankFn: lo, bySuit: false, desc: false });
@@ -112,16 +112,16 @@ export default {
     let overlay = '', banner = '';
     if (s.phase === 'gameOver') {
       overlay = panel(s.loser === 0 ? 'You got the Old Maid!' : 'You escaped!', `<p>${s.loser === null ? '' : `${who(s, s.loser)} ${s.loser === 0 ? 'were' : 'was'} left holding the queen.`}</p>
-        ${s.loser !== null ? `<div class="row" style="--card-w:70px">${cardHTML(s.hands[s.loser][0])}</div>` : ''}<div class="row" style="justify-content:flex-end;margin-top:12px">${btn('Play again', 'again', '', true)}</div>`);
+        ${s.loser !== null ? `<div class="row" style="--card-w:${cw(70)}">${cardHTML(s.hands[s.loser][0])}</div>` : ''}<div class="row" style="justify-content:flex-end;margin-top:12px">${btn('Play again', 'again', '', true)}</div>`);
     } else banner = myTurn ? `Draw a card from ${s.names[from]}` : `${who(s, s.turn)} is drawing…`;
     const drawRow = (i) => (myTurn && i === from
-      ? `<div class="faceup" style="--card-w:44px" aria-label="Pick a card from ${s.names[i]}">${s.hands[i].map((_, k) => `<button class="pile-btn" data-act="draw" data-idx="${k}" aria-label="Card ${k + 1}">${backHTML()}</button>`).join('')}</div>` : '');
+      ? `<div class="faceup" style="--card-w:${cw(44)}" aria-label="Pick a card from ${s.names[i]}">${s.hands[i].map((_, k) => `<button class="pile-btn" data-act="draw" data-idx="${k}" aria-label="Card ${k + 1}">${backHTML()}</button>`).join('')}</div>` : '');
     return {
       subtitle: `${alive(s).length} players still holding cards`,
       scores: [],
       seats: seatsVM(s, 4, (i) => ({ partner: false, tag: s.hands[i].length ? `${s.pairs[i].length} pairs` : 'Out', tagMuted: !s.hands[i].length, count: myTurn && i === from ? 0 : i ? s.hands[i].length : 0, extra: i ? drawRow(i) : '' })),
       hand: { cards: s.hands[0], legal: null },
-      center: `<div class="pile" style="--card-w:64px">${s.lastDrawn ? `<span>You last drew:</span>${cardHTML(s.lastDrawn)}` : '<span>Pairs are set aside automatically.</span>'}</div>`,
+      center: `<div class="pile" style="--card-w:${cw(64)}">${s.lastDrawn ? `<span>You last drew:</span>${cardHTML(s.lastDrawn)}` : '<span>Pairs are set aside automatically.</span>'}</div>`,
       banner, overlay,
       side: [{ title: 'Pairs made', html: s.names.map((n, i) => `<div>${i === 0 ? 'You' : n}: ${s.pairs[i].length}</div>`).join('') }],
     };

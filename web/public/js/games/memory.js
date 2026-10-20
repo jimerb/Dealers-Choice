@@ -2,7 +2,7 @@
 // Options: deck difficulty, wild jokers, and for two players a race to a number of pairs and a peek.
 import { deck, shuffle, rngOf, isRed, RANKS } from '../core/cards.js';
 import { clone, log, fx, must } from './lib/common.js';
-import { panel, btn, scoreTable } from '../core/table.js';
+import { panel, btn, scoreTable, cw } from '../core/table.js';
 import { cardHTML, backHTML } from '../skin.js';
 
 const GRIDS = { 16: [4, 4], 24: [4, 6], 36: [6, 6] };
@@ -229,7 +229,7 @@ export default {
     const [rows, cols] = GRIDS[s.cells.length];
     const myTurn = s.phase === 'pick' && s.turn === 0;
     const peek = s.phase === 'peek';
-    const grid = `<div class="memory-grid" style="grid-template-columns:repeat(${cols},minmax(0,1fr));--card-w:${s.cells.length > 24 ? 50 : 60}px">${s.cells.map((c, i) =>
+    const grid = `<div class="memory-grid" style="grid-template-columns:repeat(${cols},minmax(0,1fr));--card-w:${cw(s.cells.length > 24 ? 50 : 60)}">${s.cells.map((c, i) =>
       c.state === 'gone' ? '<span class="empty-slot" aria-hidden="true"></span>'
         : c.state === 'up' || peek ? `<span>${cardHTML(c.card)}</span>`
           : `<button class="pile-btn" data-act="cell" data-i="${i}" ${myTurn ? '' : 'disabled'} aria-label="Face-down card ${i + 1}">${backHTML()}</button>`).join('')}</div>`;

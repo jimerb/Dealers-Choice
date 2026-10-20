@@ -91,9 +91,10 @@ export function cribbageBoardHTML(players) {
 }
 
 // ---------------------------------------------------------------- tray
-/** The walnut tray holding up to four cards (pass `inner` as card HTML), with a text label under it. */
+/** The walnut tray holding up to four cards (pass `inner` as card HTML), with a text label under it.
+ *  `width` is in px, or any CSS length (e.g. one that scales with the table). */
 export const trayHTML = (inner, { label = '', width = 220 } = {}) =>
-  `<figure class="tray-wrap"><div class="tray" style="--tray-w:${width}px">${inner}</div>${label ? `<figcaption>${label}</figcaption>` : ''}</figure>`;
+  `<figure class="tray-wrap"><div class="tray" style="--tray-w:${typeof width === 'number' ? `${width}px` : width}">${inner}</div>${label ? `<figcaption>${label}</figcaption>` : ''}</figure>`;
 
 // ---------------------------------------------------------------- trump plaque
 /** The brass trump plaque: suit art centred on it (or short text such as "NT"), caption below. */

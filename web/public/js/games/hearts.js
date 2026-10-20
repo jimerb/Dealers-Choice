@@ -1,7 +1,7 @@
 // Hearts: 4 players, no partners. Avoid hearts (1 each) and the Q♠ (13), or shoot the moon.
 import { deck, shuffle, sortCards, hi, rngOf, SYM } from '../core/cards.js';
 import { clone, log, fx, who, trickWinner, followSuit, seatsVM, trickPlays, must } from './lib/common.js';
-import { trickHTML, panel, btn, scoreTable } from '../core/table.js';
+import { trickHTML, panel, btn, scoreTable, cw } from '../core/table.js';
 import { trayHTML } from '../core/pieces.js';
 import { cardHTML } from '../skin.js';
 
@@ -213,7 +213,7 @@ export default {
       const n = ui.selected.size;
       // The chosen cards wait in the tray (in hand order); empty slots for the rest.
       const chosen = s.hands[0].filter((c) => ui.selected.has(c.id));
-      const tray = trayHTML(chosen.map((c) => cardHTML(c)).join('') + '<span class="empty-slot"></span>'.repeat(3 - chosen.length), { label: `Pass to ${s.names[s.passDir]}`, width: 230 });
+      const tray = trayHTML(chosen.map((c) => cardHTML(c)).join('') + '<span class="empty-slot"></span>'.repeat(3 - chosen.length), { label: `Pass to ${s.names[s.passDir]}`, width: cw(230) });
       overlay = panel(`Pass three cards ${DIR_NAME[s.passDir]}`, `<p>Pick three cards from your hand. (${n}/3 chosen)</p>${tray}
         <div class="row">${btn('Pass cards', 'pass', `data-with-sel ${n === 3 ? '' : 'disabled'}`, true)}</div>`);
     } else if (s.phase === 'handOver' || s.phase === 'gameOver') {
@@ -229,7 +229,7 @@ export default {
     return {
       subtitle: `Hand ${s.handNo} · to ${s.opts.target}`,
       scores: s.names.map((n, i) => ({ label: i === 0 ? 'You' : n, value: s.scores[i], us: i === 0 })),
-      seats: seatsVM(s, 4, (i) => ({ tag: s.taken[i] ? `${s.taken[i]} pts` : '', partner: false })),
+      seats: seatsVM(s, 4, (i) => ({ tag: s.taken[i] ? `${s.taken[i]} pt${s.taken[i] === 1 ? '' : 's'}` : '', partner: false })),
       hand: s.phase === 'pass'
         ? { cards: s.hands[0], legal: s.hands[0].map((c) => c.id), mode: 'select', maxSelect: 3 }
         : { cards: s.hands[0], legal: myTurn ? legal(s, 0).map((c) => c.id) : null },

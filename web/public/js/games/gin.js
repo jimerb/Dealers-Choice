@@ -1,7 +1,7 @@
 // Gin Rummy (2 players): draw, discard, knock with ≤10 deadwood (or the Oklahoma limit), gin bonus, undercuts.
 import { deck, shuffle, sortCards, rngOf, lo, pipValue, SYM } from '../core/cards.js';
 import { clone, log, fx, must } from './lib/common.js';
-import { panel, btn, scoreTable, cardsRow } from '../core/table.js';
+import { panel, btn, scoreTable, cardsRow, cw } from '../core/table.js';
 import { cardHTML, backHTML } from '../skin.js';
 
 const sortHand = (h) => sortCards(h, { rankFn: lo, desc: false });
@@ -106,6 +106,8 @@ function deal(s) {
   return s;
 }
 
+/** One player's hand at the count: the melds side by side, then the deadwood. */
+const spread = (title, melds, dead) => `<p style="margin:8px 0 4px">${title}:</p><div class="meld-spread">${melds.map((m) => cardsRow(m, 44)).join('')}${dead.length ? `<div class="dead"><small>Deadwood</small>${cardsRow(dead, 44)}</div>` : ''}</div>`;
 const name = (s, p) => (p === 0 ? 'You' : s.names[p]);
 
 function take(s, p) {
@@ -283,6 +285,7 @@ export default {
   },
   view(s, ui) {
     const my = s.turn === 0;
+    const over = s.phase === 'handOver' || s.phase === 'gameDone' || s.phase === 'gameOver';
     const sel = ui.selected.size === 1 ? [...ui.selected][0] : null;
     const myDw = s.hands[0].length > 10 ? (sel ? arrange(s.hands[0].filter((c) => c.id !== sel)).deadwood : bestDiscard(s.hands[0]).dw) : arrange(s.hands[0]).deadwood;
     let overlay = '', banner = '', actions = '';
@@ -297,8 +300,8 @@ export default {
       const m = s.match && matchRule(s.opts.match);
       const ended = s.phase !== 'handOver';
       const body = r.dead ? '<p>The stock ran down to two cards: no score.</p>' : `<div class="verdict ${r.winner === 0 ? 'good' : 'bad'}">${r.kind}: ${name(s, r.winner)} ${r.winner === 0 ? 'score' : 'scores'} ${r.pts}</div>
-        <p style="margin-bottom:4px">${name(s, r.knocker)} (${r.k.deadwood} deadwood):</p>${r.k.melds.map((m) => cardsRow(m, 40)).join('')}${r.k.dead.length ? `<p style="margin:4px 0">Deadwood:</p>${cardsRow(r.k.dead, 40)}` : ''}
-        <p style="margin:8px 0 4px">${name(s, 1 - r.knocker)} (${r.d.deadwood} deadwood${r.d.laid.length ? `, laid off ${r.d.laid.length}` : ''}):</p>${r.d.melds.map((m) => cardsRow(m, 40)).join('')}${r.d.dead.length ? cardsRow(r.d.dead, 40) : ''}`;
+        ${spread(`${name(s, r.knocker)} (${r.k.deadwood} deadwood)`, r.k.melds, r.k.dead)}
+        ${spread(`${name(s, 1 - r.knocker)} (${r.d.deadwood} deadwood${r.d.laid.length ? `, laid off ${r.d.laid.length}` : ''})`, r.d.melds, r.d.dead)}`;
       const fin = ended ? `<div class="verdict ${s.final.winner === 0 ? 'good' : 'bad'}">${s.final.winner === 0 ? 'You win the game' : `${s.names[1]} wins the game`} by ${s.final.total}${s.final.shutout ? ' (shutout!)' : ''}</div>` : '';
       const matchRow = m ? [m.kind === 'points' ? ['Match points', s.match.points[0], s.match.points[1]] : ['Games won', s.match.games[0], s.match.games[1]]] : [];
       const champ = m && s.phase === 'gameOver' ? `<div class="verdict ${s.final.winner === 0 ? 'good' : 'bad'}">${s.final.winner === 0 ? 'You win the match!' : `${s.names[1]} wins the match`}</div>` : '';
@@ -309,7 +312,7 @@ export default {
     }
     if (!banner) banner = s.phase === 'draw' && my ? 'Draw from the stock or take the discard' : s.phase === 'offer' && my ? '' : my ? '' : s.phase.startsWith('hand') || s.phase.startsWith('game') ? '' : `${s.names[1]} is thinking…`;
     const canDraw = s.phase === 'draw' && my;
-    const center = `<div class="row" style="gap:28px;--card-w:84px">
+    const center = `<div class="row" style="gap:28px;--card-w:${cw(84)}">
       <div class="pile"><button class="pile-btn" data-act="stock" ${canDraw ? '' : 'disabled'} aria-label="Draw from the stock">${backHTML()}</button><span>Stock · ${s.stock.length}</span></div>
       <div class="pile"><button class="pile-btn" data-act="take" ${canDraw ? '' : 'disabled'} aria-label="Take the discard">${s.discard.length ? cardHTML(s.discard.at(-1)) : '<span class="empty-slot"></span>'}</button><span>Discard</span></div></div>
       ${actions ? `<div class="hand-actions">${actions}</div>` : ''}`;
@@ -317,7 +320,7 @@ export default {
       subtitle: `${s.opts.type === 'oklahoma' ? `Oklahoma · knock ≤ ${s.knockLimit}` : 'Knock with 10 or less'} · game to 100${matchLabel(s)}`,
       scores: [{ label: 'You', value: s.scores[0], us: true }, { label: s.names[1], value: s.scores[1] }],
       seats: [{ seat: 0, pos: 'south', name: s.names[0], mine: true, turn: my, dealer: s.dealer === 0 }, { seat: 1, pos: 'north', name: s.names[1], count: s.hands[1].length, turn: s.turn === 1, dealer: s.dealer === 1 }],
-      hand: s.phase === 'discard' && my ? { cards: s.hands[0], legal: s.hands[0].map((c) => c.id), mode: 'select', maxSelect: 1 } : { cards: s.hands[0], legal: null },
+      hand: s.phase === 'discard' && my ? { cards: s.hands[0], legal: s.hands[0].map((c) => c.id), mode: 'select', maxSelect: 1 } : over && !s.result?.dead ? null : { cards: s.hands[0], legal: null }, // the results lay your cards out
       center, banner, overlay,
       side: [{ title: 'Your hand', html: `<div class="big">${myDw} deadwood</div><div style="font-size:13px;color:var(--ink-3)">${s.hands[0].length > 10 ? (sel ? 'If you discard the selected card' : 'After your best discard') : 'Best arrangement of your cards'}</div>` }],
     };

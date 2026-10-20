@@ -1,7 +1,7 @@
 // Contract Bridge with Rubber or Chicago (four-deal) scoring. You (South) partner North. When your side
 // declares you play both hands (or, by option, sit out as dummy while North declares).
 // The bidding AI uses a simplified natural (Standard American style) system.
-import { deck, shuffle, sortCards, hi, rngOf, SYM } from '../core/cards.js';
+import { deck, shuffle, sortCards, hi, rngOf, SYM, SUIT_NAME } from '../core/cards.js';
 import { clone, log, fx, who, trickWinner, followSuit, followPlay, seatsVM, must, POS4 } from './lib/common.js';
 import { trickHTML, panel, btn, scoreTable } from '../core/table.js';
 
@@ -350,12 +350,14 @@ export default {
     const ourDecl = s.declarer !== null && team(s.declarer) === 0;
     if (s.phase === 'auction' && s.turn === 0) {
       const legalSet = new Set(legalCalls(s, 0).map(callText));
-      const grid = [1, 2, 3, 4, 5, 6, 7].map((lv) => `<div class="bid-row">${STRAINS.map((st) => {
+      // One column per level still open (the lower ones are spent), the five strains down each column.
+      const open = [1, 2, 3, 4, 5, 6, 7].filter((lv) => STRAINS.some((st) => legalSet.has(callText({ type: 'bid', level: lv, strain: st }))));
+      const grid = open.map((lv) => STRAINS.map((st) => {
         const c = { type: 'bid', level: lv, strain: st };
         const ok = legalSet.has(callText(c));
-        return `<button class="btn sm bid-btn${st === 'H' || st === 'D' ? ' red' : ''}" data-act="call" data-type="bid" data-level="${lv}" data-strain="${st}" ${ok ? '' : 'disabled'}>${lv}${SNAME[st]}</button>`;
-      }).join('')}</div>`).join('');
-      overlay = panel('Your call', `<p>${hcp(s.hands[0])} high-card points.</p><div class="bid-grid">${grid}</div>
+        return `<button class="btn sm bid-btn${st === 'H' || st === 'D' ? ' red' : ''}" data-act="call" data-type="bid" data-level="${lv}" data-strain="${st}" ${ok ? '' : 'disabled'} aria-label="${lv} ${st === 'NT' ? 'no trump' : SUIT_NAME[st]}">${lv}${SNAME[st]}</button>`;
+      }).join('')).join('');
+      overlay = panel('Your call', `<p>${hcp(s.hands[0])} high-card points.</p>${open.length ? `<div class="bid-grid by-level" style="--levels:${open.length}">${grid}</div>` : ''}
         <div class="row" style="margin-top:10px">${btn('Pass', 'call', 'data-type="pass"', true)}${legalSet.has('Dbl') ? btn('Double', 'call', 'data-type="double"') : ''}${legalSet.has('Rdbl') ? btn('Redouble', 'call', 'data-type="redouble"') : ''}</div>`, 'max-width:440px');
     } else if (s.phase === 'handOver' || s.phase === 'gameOver') {
       const r = s.result;

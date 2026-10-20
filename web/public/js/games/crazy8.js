@@ -2,7 +2,7 @@
 // J = skip, K = reverse, 2 = draw two (stackable), red Q = draw five and skip.
 import { deck, shuffle, sortCards, rngOf, SUIT_TITLE, pipValue, SYM } from '../core/cards.js';
 import { clone, log, fx, who, must, posFor, suitSpan } from './lib/common.js';
-import { panel, btn, scoreTable } from '../core/table.js';
+import { panel, btn, scoreTable, cw } from '../core/table.js';
 import { cardHTML, backHTML } from '../skin.js';
 
 const pts = (c) => (c.rank === '8' ? 50 : ['J', 'Q', 'K'].includes(c.rank) ? 10 : pipValue(c));
@@ -220,7 +220,7 @@ export default {
         <div class="row" style="justify-content:flex-end">${s.phase === 'gameOver' ? btn('Play again', 'again', '', true) : btn('Next hand', 'next', '', true)}</div>`);
     } else if (myTurn) banner = s.pendingDraw ? `Play a 2 or draw ${s.pendingDraw}` : `Match ${SYM[s.suit]} or ${top(s).rank}, play an 8, or draw`;
     else banner = `${who(s, s.turn)} to play`;
-    const center = `<div class="row" style="gap:28px;--card-w:84px">
+    const center = `<div class="row" style="gap:28px;--card-w:${cw(84)}">
       <div class="pile"><button class="pile-btn" data-act="draw" ${myTurn ? '' : 'disabled'} aria-label="Draw a card">${s.stock.length ? backHTML() : '<span class="empty-slot">Empty</span>'}</button><span>${myTurn ? (s.pendingDraw ? `Draw ${s.pendingDraw}` : 'Draw') : 'Stock'} · ${s.stock.length}</span></div>
       <div class="pile">${cardHTML(top(s))}<span>Suit: ${suitSpan(s.suit)} ${SUIT_TITLE[s.suit]}</span></div></div>`;
     return {

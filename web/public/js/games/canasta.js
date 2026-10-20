@@ -1,7 +1,7 @@
 // Canasta (4 players, partners). Two decks + 4 jokers. Wilds: jokers and 2s. Red 3s are bonus cards.
 import { deck, shuffle, rngOf, SYM } from '../core/cards.js';
 import { clone, log, fx, who, must, seatsVM } from './lib/common.js';
-import { panel, btn, scoreTable } from '../core/table.js';
+import { panel, btn, scoreTable, cw } from '../core/table.js';
 import { cardHTML, backHTML } from '../skin.js';
 
 const team = (p) => p % 2;
@@ -350,7 +350,7 @@ export default {
     const up = s.pile.at(-1);
     const center = `<div class="canasta-table">
       ${meldRow(1)}
-      <div class="row" style="gap:24px;--card-w:70px;justify-content:center">
+      <div class="row" style="gap:24px;--card-w:${cw(70)};justify-content:center">
         <div class="pile">${s.stock.length ? backHTML() : '<span class="empty-slot">Empty</span>'}<span>Stock · ${s.stock.length}</span></div>
         <div class="pile">${up ? cardHTML(up) : '<span class="empty-slot">Pile</span>'}<span>Pile · ${s.pile.length}${s.frozen ? ' · <b>frozen</b>' : ''}</span></div>
       </div>

@@ -1,7 +1,7 @@
 // Cribbage (2 players) to 121: discard to the crib, peg to 31, count hands and crib.
 import { deck, shuffle, sortCards, rngOf, lo, pipValue, SYM } from '../core/cards.js';
 import { clone, log, fx, must } from './lib/common.js';
-import { panel, btn, cardsRow } from '../core/table.js';
+import { panel, btn, cardsRow, cw } from '../core/table.js';
 import { cardHTML, backHTML } from '../skin.js';
 import { cribbageBoardHTML, trayHTML } from '../core/pieces.js';
 
@@ -300,7 +300,7 @@ export default {
     const opp = s.names[1];
     const whose = (p) => (p === 0 ? 'Your' : `${opp}'s`);
     const cardsOf = (x) => (x.kind === 'crib'
-      ? `<div class="row" style="gap:10px">${trayHTML(x.cards.map((c) => cardHTML(c)).join(''), { width: 210 })}<div style="--card-w:40px">${cardHTML(s.starter)}</div></div>` : cardsRow([...x.cards, s.starter], 40));
+      ? `<div class="row" style="gap:10px">${trayHTML(x.cards.map((c) => cardHTML(c)).join(''), { width: cw(210) })}<div style="--card-w:${cw(40)}">${cardHTML(s.starter)}</div></div>` : cardsRow([...x.cards, s.starter], 40));
     const claimed = (x) => (x.claimed === undefined ? '' : `<div style="font-size:13px">You claimed ${x.claimed}${x.muggins ? ` · <b>Muggins!</b> ${opp} took the ${x.muggins} you missed` : ''}</div>`);
     const counts = (x) => `<div style="margin-bottom:10px"><b>${whose(x.who)} ${x.kind}</b> · ${x.total} pts${cardsOf(x)}<div style="font-size:13px;color:var(--ink-2)">${x.items.map(([n, p]) => `${n} ${p}`).join(' · ') || 'Nineteen (nothing)'}</div>${claimed(x)}</div>`;
     const matchLine = s.match ? `<p>Match (first to ${GAMES_TO_WIN} games): you ${s.match.games[0]}, ${opp} ${s.match.games[1]}</p>` : '';
@@ -316,13 +316,13 @@ export default {
     else if (s.phase === 'gameOver') overlay = panel(s.match ? (s.winner === 0 ? 'You win the match!' : `${opp} wins the match`) : s.winner === 0 ? 'You win!' : `${opp} wins`, `<div style="max-height:50vh;overflow:auto">${ended}</div><div class="row" style="justify-content:flex-end">${btn(s.match ? 'New match' : 'Play again', 'again', '', true)}</div>`);
     else banner = s.turn === 0 ? `Count is ${s.count}: play a card` : `${opp} is playing…`;
     const board = cribbageBoardHTML([{ name: 'You', score: s.scores[0], prev: s.prev?.[0] ?? 0, peg: 'brass' }, { name: opp, score: s.scores[1], prev: s.prev?.[1] ?? 0, peg: 'red' }]);
-    const crib = trayHTML(s.crib.length ? s.crib.map(() => backHTML()).join('') : '', { label: `${whose(s.dealer)} crib`, width: 170 });
+    const crib = trayHTML(s.crib.length ? s.crib.map(() => backHTML()).join('') : '', { label: `${whose(s.dealer)} crib`, width: cw(170) });
     const center = `<div style="display:flex;flex-direction:column;align-items:center;gap:8px">
-      <div class="row" style="--card-w:48px;gap:4px;min-height:68px">${s.played[1].map((c) => cardHTML(c)).join('')}</div>
-      <div class="row" style="gap:18px;--card-w:54px;justify-content:center;align-items:flex-end"><div class="pile">${s.starter ? cardHTML(s.starter) : backHTML()}<span>Starter</span></div>
-        <div class="pile"><span class="count-badge" style="width:54px;font-size:24px">${s.count}</span><span>Count</span></div>
+      <div class="row" style="--card-w:${cw(48)};gap:4px;min-height:${cw(68)}">${s.played[1].map((c) => cardHTML(c)).join('')}</div>
+      <div class="row" style="gap:18px;--card-w:${cw(54)};justify-content:center;align-items:flex-end"><div class="pile">${s.starter ? cardHTML(s.starter) : backHTML()}<span>Starter</span></div>
+        <div class="pile"><span class="count-badge" style="width:${cw(54)};font-size:${cw(24)}">${s.count}</span><span>Count</span></div>
         <div class="pile">${crib}</div></div>
-      <div class="row" style="--card-w:48px;gap:4px;min-height:68px">${s.played[0].map((c) => cardHTML(c)).join('')}</div></div>`;
+      <div class="row" style="--card-w:${cw(48)};gap:4px;min-height:${cw(68)}">${s.played[0].map((c) => cardHTML(c)).join('')}</div></div>`;
     return {
       subtitle: `Hand ${s.handNo} · to 121${s.match ? ` · game ${s.match.gameNo} · games ${s.match.games[0]}–${s.match.games[1]}` : ''}`,
       scores: [{ label: 'You', value: s.scores[0], us: true }, { label: opp, value: s.scores[1] }],
