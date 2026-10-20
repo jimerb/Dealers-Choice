@@ -25,8 +25,8 @@ function buildControls(v) {
   const home = v.how.home ?? (r.noFoundationDrops ? 'the best column for it' : 'its best spot, usually a foundation');
   const stock = { reshuffle: ' {Click} Reshuffle when you are stuck.', waste: ` {Click} the stock to turn ${r.draw > 1 ? 'cards' : 'a card'}.`, 'waste-forced': ' {Click} the stock to turn a card.', 'to-found': ' {Click} the stock to turn a card onto the pile.' }[r.stock] ?? (r.stock ? ' {Click} the stock to deal.' : '');
   return {
-    mouse: `Click a card${runs ? ' (or a card partway down a column to take the cards on top of it too)' : ''}, then click where it should go. Double-click a card to send it to ${home}.${stock}`.replace(/\{Click\}/g, 'Click'),
-    touch: `Tap a card, then tap where it should go. Tap the selected card again to send it to ${home}; tap the felt to let go of it.${stock}`.replace(/\{Click\}/g, 'Tap'),
+    mouse: `Click a card${runs ? ' (or a card partway down a column to take the cards on top of it too)' : ''}, then click where it should go, or drag it there. Double-click a card to send it to ${home}. Esc lets go of a selected card; Ctrl+Z undoes a move.${stock}`.replace(/\{Click\}/g, 'Click'),
+    touch: `Tap a card, then tap where it should go, or drag it there. Tap the selected card again to send it to ${home}; tap the felt to let go of it.${stock}`.replace(/\{Click\}/g, 'Tap'),
   };
 }
 
