@@ -15,3 +15,10 @@
 .pk-bonus.on .pk-bonus-ring { fill: rgba(226, 194, 122, .25); stroke: var(--brass-2); stroke-width: 3; }
 .pk-bonus:focus { outline: none; }
 .pk-bonus:focus-visible .pk-bonus-ring { stroke: var(--brass-2); stroke-width: 4; }
+
+/* phones: the one seat in use is in the middle of a table drawn for five, so the drawing runs wider
+   than the felt (its empty ends cut off) and the seat, the cards and the spots come out bigger */
+@media (max-width: 640px) {
+  .cz-stage.pk-table { overflow: hidden; }
+  .cz-stage.pk-table > .cz-svg { flex: none; width: 128%; max-width: none; margin: 0; }
+}

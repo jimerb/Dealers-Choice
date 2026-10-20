@@ -524,6 +524,7 @@ export default {
       },
       validate: (amounts) => E.checkStaged(table, amounts, ctx.stakes, { mins: false }),
       onChange: () => { if (!rolling) { hits = {}; draw(); } },
+      withTable: true, // the bet bar and "On the felt" count the bets already up too
       autoButtons: false,
     });
     unbind = bindSpots(el, 'data-spot', onSpot);
