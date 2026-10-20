@@ -69,3 +69,5 @@
   .cz-kn-blower { display: none; }
   .cz-kn-tray { max-width: none; }
 }
+/* tablets and computers: the board and the ticket side by side, the board as big as the screen allows */
+@media (min-width: 900px) { .cz-kn { flex-wrap: nowrap; } .cz-kn-side { flex-basis: 420px; } }

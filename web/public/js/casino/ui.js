@@ -38,6 +38,8 @@ const optsKey = (id) => `dc.casino.opts.${id}`;
 const howtoAuto = () => { try { return localStorage.getItem(HOWTO_AUTO) !== '0'; } catch { return true; } };
 
 const $ = (id) => document.getElementById(id);
+/** "1 credit", "1,250 credits". */
+const cr = (n) => `${Number(n).toLocaleString('en-US')} credit${n === 1 ? '' : 's'}`;
 const chooser = $('chooser');
 const room = $('room');
 const felt = $('cz-felt');
@@ -422,7 +424,7 @@ function closeGame() {
   if (c.machine) {
     c.machine.leave();
     const out = c.machine.cashOut();
-    if (out.credits) toast(`Cashed out ${out.credits.toLocaleString('en-US')} credits (${money(out.dollars)}).`);
+    if (out.credits) toast(`Cashed out ${cr(out.credits)} (${money(out.dollars)}).`);
   }
   for (const off of c.offs) off();
   felt.innerHTML = '';
@@ -868,7 +870,7 @@ function makeMachineCtx(c) {
       if (!m.held && bank.machine) { c.ctx.message('This machine was cashed out from another window. Insert bills to play.'); paintMeter(); return false; }
       if (m.bet(credits)) { paintMeter(); return true; }
       play('error');
-      c.ctx.message(m.credits ? `That needs ${credits} credits; the meter has ${m.credits}.` : 'Insert bills to play.');
+      c.ctx.message(m.credits ? `That needs ${cr(credits)}; the meter has ${m.credits}.` : 'Insert bills to play.');
       if (!m.credits) insertBills();
       return false;
     },
@@ -877,7 +879,7 @@ function makeMachineCtx(c) {
       if (!c.live) return null;
       const r = m.pay(won);
       paintMeter();
-      if (r.net >= 100) queueBigWin({ title: 'Big win!', detail: `${r.won.toLocaleString('en-US')} credits (${money(r.won * m.denom)})` });
+      if (r.net >= 100) queueBigWin({ title: 'Big win!', detail: `${cr(r.won)} (${money(r.won * m.denom)})` });
       return r;
     },
     /** Keep the shell's credit meter (and Cash out) on the figure it shows now while the game reveals
@@ -920,7 +922,12 @@ function paintMeter() {
   const n = c.meterShown ?? m.credits;
   $('cz-credits').textContent = n.toLocaleString('en-US');
   $('cz-credits-usd').textContent = `= ${money(n * m.denom)}`;
-  $('cz-cashout').disabled = !m.credits || m.betting > 0 || c.meterShown != null;
+  // mid-hand Cash out stays pressable and says why it can't pay out yet (a disabled button can't)
+  const out = $('cz-cashout'), busy = m.betting > 0;
+  out.disabled = c.meterShown != null || (!m.credits && !busy);
+  out.classList.toggle('cz-wait', busy);
+  out.setAttribute('aria-disabled', String(busy));
+  out.title = busy ? 'Finish this hand before cashing out' : '';
 }
 
 function insertBills() {
@@ -930,9 +937,9 @@ function insertBills() {
   if (m.blocked) {
     const other = bank.machine;
     const name = gameById(other.game)?.name ?? 'another machine';
-    dialog('Insert bills', `<p>${esc(name)} is holding ${other.credits.toLocaleString('en-US')} credits of your money. Cash out there first.</p>`, [
+    dialog('Insert bills', `<p>${esc(name)} is holding ${cr(other.credits)} of your money. Cash out there first.</p>`, [
       { label: 'Not now' },
-      { label: 'Cash it out now', primary: true, run: () => { const r = bank.machineOut(); toast(`Cashed out ${r.credits.toLocaleString('en-US')} credits (${money(r.dollars)}).`); paintMeter(); } },
+      { label: 'Cash it out now', primary: true, run: () => { const r = bank.machineOut(); toast(`Cashed out ${cr(r.credits)} (${money(r.dollars)}).`); paintMeter(); } },
     ]);
     return;
   }
@@ -954,7 +961,7 @@ function insertBills() {
       return;
     }
     play('chips');
-    current?.ctx.message(`${r.credits.toLocaleString('en-US')} credits added.`);
+    current?.ctx.message(`${cr(r.credits)} added.`);
     paintMeter();
   }
 }
@@ -962,10 +969,10 @@ function insertBills() {
 function cashOut() {
   const c = current;
   if (!c?.machine) return;
-  if (c.machine.betting) { c.ctx.message('Finish this hand before cashing out.'); return; }
+  if (c.machine.betting) { play('error'); c.ctx.message('Finish this hand before cashing out: the bet is still on the machine.'); return; }
   if (c.meterShown != null) return; // a result is still being revealed
   const r = c.machine.cashOut();
-  if (r.credits) { play('chips'); toast(`Cashed out ${r.credits.toLocaleString('en-US')} credits (${money(r.dollars)}).`); }
+  if (r.credits) { play('chips'); toast(`Cashed out ${cr(r.credits)} (${money(r.dollars)}).`); }
   paintMeter();
 }
 
@@ -994,6 +1001,21 @@ room.addEventListener('click', (e) => {
 /** A bet-bar button by its key, pressed only if it is there and enabled. */
 const press = (id, opts) => { const b = $(id); if (!b || b.disabled || b.closest('[hidden]')) return false; command(b.dataset.cmd, opts); return true; };
 
+// Enter and Space press the main button. A spot or card on the felt that has focus only because it
+// was clicked doesn't keep them: they go to the main button (Deal, Spin, Draw) as if nothing had
+// focus. Focus moved there with the keyboard (Tab, arrows) keeps them, so a spot can be bet by key.
+let pointerFocus = false;
+document.addEventListener('pointerdown', () => { pointerFocus = true; }, true);
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Tab' || e.key.startsWith('Arrow')) { pointerFocus = false; return; }
+  if ((e.key !== 'Enter' && e.key !== ' ') || !pointerFocus || !current || e.ctrlKey || e.metaKey || e.altKey) return;
+  const f = document.activeElement;
+  if (!f || f === felt || !felt.contains(f) || f.closest('input, select, textarea') || document.querySelector('dialog[open]')) return;
+  e.preventDefault();
+  e.stopPropagation();
+  press('cz-action');
+}, true);
+
 document.addEventListener('keydown', (e) => {
   const c = current;
   if (!c || e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return;
@@ -1021,6 +1043,16 @@ document.addEventListener('keydown', (e) => {
 
 // ------------------------------------------------------------------ dialogs
 const dlg = $('cz-dialog');
+// A closed dialog hands focus back to the button that opened it (How to play, Options, Stats), where
+// Enter would only open it again: at a table, focus goes to the play instead.
+function focusPlay() {
+  if (!current || room.hidden || document.querySelector('dialog[open]')) return;
+  const a = document.activeElement;
+  if (a && a !== document.body && !a.closest('.table-top, .site-header')) return;
+  const next = [$('cz-action'), ...$('cz-actions').querySelectorAll('button')].find((b) => !b.disabled && !b.hidden && !b.closest('[hidden]'));
+  (next ?? $('cz-msg')).focus({ preventScroll: true });
+}
+for (const d of [dlg, $('cz-rules')]) d.addEventListener('close', () => setTimeout(focusPlay, 0));
 /** Fill the shared dialog: title, body HTML and buttons [{ label, primary, run, disabled }]. */
 function dialog(title, body, buttons) {
   dlg.innerHTML = `<h2 id="cz-dialog-title">${esc(title)}</h2><div class="cz-dialog-body">${body}</div>
@@ -1189,7 +1221,7 @@ announce(bank.drainNotices());
 // tier reached that way gets its dialog: everything it needs is defined by now).
 if (bank.machine) {
   const r = bank.machineOut();
-  if (r.credits) toast(`Cashed out ${r.credits.toLocaleString('en-US')} credits (${money(r.dollars)}) left in a machine.`);
+  if (r.credits) toast(`Cashed out ${cr(r.credits)} (${money(r.dollars)}) left in a machine.`);
 }
 const params = new URLSearchParams(location.search);
 const deep = params.get('g') || location.hash.slice(1);

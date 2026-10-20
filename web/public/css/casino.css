@@ -139,6 +139,7 @@ body.cz-readonly .cz-felt { filter: grayscale(.6); }
 .cz-meter-read { font-size: 15px; color: var(--ink-2); padding: 6px 12px; border-radius: 10px; background: #0A1511; border: 1px solid #3C6B5A; white-space: nowrap; }
 .cz-meter-read b { color: #E2C27A; font-size: 18px; font-variant-numeric: tabular-nums; }
 #cz-credits-usd { font-size: 13px; color: #A9C2B7; }
+.cz-meter .btn.cz-wait { opacity: .55; }
 .cz-bills { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
 .cz-bill-amt { display: flex; align-items: center; gap: 10px; color: var(--ink-2); }
 .cz-bill-amt input, .cz-opt select { min-height: 40px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--panel); color: var(--ink); font: inherit; width: 9em; }

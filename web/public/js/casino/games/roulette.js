@@ -326,6 +326,7 @@ export default {
   id: 'roulette',
   name: 'Roulette',
   ready: true,
+  bannerAt: 'bottom', // over the outside bets, clear of the numbers and the wheel's result
   layout,
   settings: [
     ...OPTIONS,

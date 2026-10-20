@@ -165,7 +165,9 @@ async function reveal(v, release) {
     r.outcome === 'win' ? `${r.playerHand} beats ${r.dealerHand.toLowerCase()}` : r.outcome === 'lose' ? `${r.dealerHand} beats ${r.playerHand.toLowerCase()}` : '',
     bonusWin ? `Bonus pays ${money(bonusWin.back - 1)}` : '',
   ].filter(Boolean).join(' · ');
-  showResult(ctx, r, titles[r.outcome], detail);
+  // the bonus can leave you up on a hand the dealer won: the headline follows the money
+  const title = r.net > 0 && (r.outcome === 'lose' || r.outcome === 'fold') ? `You win ${money(r.net)}` : titles[r.outcome];
+  showResult(ctx, r, title, title === titles[r.outcome] ? detail : [r.outcome === 'fold' ? 'You folded' : 'Dealer wins the hand', detail].join(' · '));
   setActions();
   ctx.checkBroke();
 }
@@ -195,6 +197,7 @@ export default {
   id: 'caribbean-stud',
   name: 'Caribbean Stud',
   ready: true,
+  bannerAt: 'top',      // over the crest, so the dealer's cards and yours stay in view
   layout,
   settings: E.OPTIONS,
   css: CSS,

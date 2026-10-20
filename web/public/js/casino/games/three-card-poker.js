@@ -179,12 +179,17 @@ async function reveal(v, release) {
   const win = r.lines.filter((l) => l.back > l.stake);
   for (let i = 0; i < 3; i++) layer.mark(`p${i}`, 'win', win.length > 0 && r.net > 0);
   draw();
+  // the headline follows the money: a hand the dealer won can still leave you up on Pair Plus
+  const hand = { lose: 'Dealer wins the hand', push: 'The hand pushes', fold: 'You folded' }[r.outcome];
   const titles = {
     win: `You win ${money(r.net)}`, lose: 'Dealer wins', push: 'Push', fold: 'Folded',
     noqualify: 'Dealer doesn\'t qualify', none: r.net > 0 ? `Pair Plus wins ${money(r.net)}` : 'Pair Plus loses',
   };
-  const detail = r.outcome === 'noqualify' ? `Ante pays 1 to 1, Play pushes${r.net > 0 ? `: you win ${money(r.net)}` : ''}` : '';
-  showResult(ctx, r, titles[r.outcome], detail);
+  let title = titles[r.outcome];
+  let detail = r.outcome === 'noqualify' ? `Ante pays 1 to 1, Play pushes${r.net > 0 ? `: you win ${money(r.net)}` : ''}` : '';
+  if (hand && r.net > 0) { title = `You win ${money(r.net)}`; detail = `${hand}, Pair Plus pays`; }
+  else if (r.outcome === 'win' && r.net < 0) { title = 'You win the hand'; detail = `Pair Plus loses: down ${money(-r.net)} in all`; }
+  showResult(ctx, r, title, detail);
   committed = null;
   phase = 'bet';
   bets.release();
@@ -201,6 +206,7 @@ export default {
   id: 'three-card-poker',
   name: 'Three Card Poker',
   ready: true,
+  bannerAt: 'top',      // over the crest, so the dealer's cards and yours stay in view
   layout,
   settings: E.OPTIONS,
   css: CSS,

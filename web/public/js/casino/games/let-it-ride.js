@@ -146,8 +146,9 @@ async function reveal(v, release) {
   hand = shown; // keep the finished hand on the felt until the next deal
   draw();
   const riding = r.lines.length;
-  const title = r.mult ? `${r.hand} · You win ${money(r.net)}` : r.hand;
-  showResult(ctx, r, title, r.mult ? `${E.PAY_TABLE.find((x) => x[0] === r.key)[2]} to 1 on ${riding === 1 ? 'one bet' : `${riding} bets`}` : 'Pair of tens or better pays');
+  const title = r.mult ? `${r.hand} · You win ${money(r.net)}` : `${r.hand} doesn't pay`;
+  showResult(ctx, r, title, r.mult ? `${E.PAY_TABLE.find((x) => x[0] === r.key)[2]} to 1 on ${riding === 1 ? 'one bet' : `${riding} bets`}`
+    : `It takes a pair of tens or better · the house takes ${money(r.wagered - r.returned)}`);
   setActions();
   ctx.checkBroke();
 }
@@ -162,6 +163,7 @@ export default {
   id: 'let-it-ride',
   name: 'Let It Ride',
   ready: true,
+  bannerAt: 'top',      // over the crest, so the dealer's cards and yours stay in view
   layout,
   settings: E.OPTIONS,
   css: CSS,
