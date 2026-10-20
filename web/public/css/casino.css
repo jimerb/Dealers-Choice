@@ -314,6 +314,11 @@ table.cz-stats { font-size: 14px; white-space: nowrap; }
 .cz-bet:hover .cz-cell { stroke: var(--brass-2); stroke-width: 3; }
 .cz-bet:focus-visible .cz-cell { stroke: var(--brass-2); stroke-width: 5; }
 .cz-bet.hit .cz-cell { stroke: var(--brass-2); stroke-width: 6; }
+/* the bets on the lines: invisible until pointed at; the numbers they cover light up */
+.cz-zone-hit { fill: rgba(0,0,0,.001); stroke: none; }
+.cz-zone:hover .cz-zone-hit, .cz-zone:focus-visible .cz-zone-hit { fill: rgba(226,194,122,.55); }
+.cz-bet.cover .cz-cell { stroke: var(--brass-2); stroke-width: 5; }
+.cz-bet.cover .cz-numtx { fill: #FFF6D8; }
 .cz-roulette.tall { max-width: 380px; }
 .cz-felt[data-game] { touch-action: manipulation; }
 
