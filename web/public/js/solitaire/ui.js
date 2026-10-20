@@ -151,9 +151,9 @@ function renderStandard(box) {
   // Plan from the deal, not the current position, so the cards keep one size all game.
   const key = `${variant}:${state.seed}`;
   if (dealFor.key !== key) { dealFor.key = key; dealFor.state = newGame(variant, state.seed ?? 1); }
-  L = planStandard(dealFor.state, VARIANTS[variant].rules, { ...box, banner: pickBase ? 52 : 0, minW: innerWidth < 761 ? 22 : 40 });
+  L = planStandard(dealFor.state, VARIANTS[variant].rules, { ...box, banner: pickBase ? (box.W < 560 ? 76 : 54) : 0, minW: innerWidth < 761 ? 22 : 40 });
   // One line of top piles: foundations sit at the right-hand end, over the last columns.
-  const push = L.topLines === 1 ? top.findIndex((p, i) => p.type === 'foundation' && i > 0 && top[i - 1].type !== 'foundation') : -1;
+  const push = L.topLines === 1 && top.filter((p) => p.type === 'foundation').length > 1 ? top.findIndex((p, i) => p.type === 'foundation' && i > 0 && top[i - 1].type !== 'foundation') : -1;
   return `<div class="sol-board" style="--card-w:${L.w}px;--gap:${L.gap}px;width:${Math.ceil(L.boardW)}px">
     ${pickBase ? '<div class="banner-inline">First move a card to a foundation: its rank starts every foundation.</div>' : ''}
     ${top.length ? `<div class="sol-top">${top.map((p, i) => (i === push ? pileHTML(p).replace('class="sol-pile ', 'class="sol-pile push ') : pileHTML(p))).join('')}</div>` : ''}
@@ -178,17 +178,24 @@ function fitCustom(board, box) {
       }
     };
     walk(board);
-    return { w: Math.max(1, x1 - x0), h: Math.max(1, y1 - y0) };
+    const b = board.getBoundingClientRect();
+    return { w: Math.max(1, x1 - x0, b.width > box.W + 1 ? b.width : 0), h: Math.max(1, y1 - y0, b.height) };
   };
-  let z = 1;
+  // Search for the biggest zoom that fits; wrapping rows make the size jump, so keep a bracket.
+  const cap = phone ? 1 : 2.2;
+  let z = 1, fits = 0, fails = Infinity;
   board.style.zoom = '';
-  for (let k = 0; k < 6; k++) {
+  for (let k = 0; k < 10; k++) {
     const e = extent();
     const f = Math.min(box.W / e.w, box.H / e.h);
-    const next = Math.max(0.45, Math.min(phone ? 1 : 2.4, z * (f < 1 ? f * 0.995 : f)));
-    if (Math.abs(next - z) < 0.01) break;
+    if (f >= 1) fits = Math.max(fits, z); else fails = Math.min(fails, z);
+    if ((f >= 1 && (f < 1.03 || z >= cap)) ) break;
+    let next = Math.max(0.4, Math.min(cap, z * f * (f < 1 ? 0.99 : 0.995)));
+    if (next >= fails || next <= fits) next = (Math.max(fits, 0.4) + Math.min(fails, cap)) / 2;
+    if (Math.abs(next - z) < 0.004) break;
     z = next; board.style.zoom = String(z);
   }
+  if (z !== fits && fits) board.style.zoom = String(fits);
 }
 
 function render() {
@@ -203,14 +210,14 @@ function render() {
   const custom = isCustom();
   const felt = document.getElementById('sol-area');
   felt.classList.toggle('custom', custom);
-  const box = sizeFelt();
-  const body = custom ? mod().render(state) : renderStandard(box);
   const status = custom ? mod().status(state) : `${scoreName(state)}: ${scoreOf(state)}`;
   document.getElementById('sol-status').textContent = `${status} · moves ${state.moves}`;
   const timed = custom && mod().timed;
   document.querySelector('[data-cmd="undo"]').hidden = timed;
   document.querySelector('[data-cmd="auto"]').hidden = custom;
   document.querySelector('[data-cmd="restart"]').hidden = timed;
+  const box = sizeFelt(); // after the bar above it has its final text
+  const body = custom ? mod().render(state) : renderStandard(box);
   const finished = over();
   paintFelt(felt);
   // Keep keyboard focus on the same spot across the redraw.

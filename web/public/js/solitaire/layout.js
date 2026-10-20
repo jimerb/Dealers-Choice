@@ -82,7 +82,7 @@ export function planStandard(state, rules, { W, H, maxW = 190, minW = 22, banner
   }
   let rows = 1, w = fit(1);
   // Very wide layouts can split the tableau into two or three rows when that makes the cards much bigger.
-  if (n >= 9) for (const r of [2, 3]) { if (Math.ceil(n / r) < 4) break; const wr = fit(r); if (wr > w * 1.15) { w = wr; rows = r; } }
+  if (n >= 9) for (const r of [2, 3]) { if (Math.ceil(n / r) < 4) break; const wr = fit(r); if (wr > w * 1.1) { w = wr; rows = r; } }
   const m = measure(w, rows);
   // Give the columns any height left over, so long columns squeeze as late as possible.
   const spare = Math.max(0, H - m.h);
