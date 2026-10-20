@@ -3,7 +3,7 @@
 import { rk, up, freshDeck, clone, bump, cardBtn, emptySlot, backHTML, cardHTML } from './util.js';
 
 // ------------------------------------------------------------------ shared column games
-function colsRender(s, { reserve = false } = {}) {
+function colsRender(s, { reserve = false, perRow = s.cols.length } = {}) {
   const isSel = (key) => s.sel.includes(key);
   const cols = s.cols.map((col, ci) => {
     const n = col.length;
@@ -11,7 +11,7 @@ function colsRender(s, { reserve = false } = {}) {
       `<div class="sol-card" style="top:${i * 22}px">${i === n - 1 ? cardBtn(c, { c: 'pick', k: `c${ci}` }, { selected: isSel(`c${ci}`) }) : cardHTML(c)}</div>`).join('')}</div>`;
   }).join('');
   const res = reserve ? `<div class="sol-top">${s.reserve.map((c, i) => (c ? cardBtn(c, { c: 'pick', k: `r${i}` }, { selected: isSel(`r${i}`) }) : emptySlot())).join('')}</div>` : '';
-  return `${res}<div class="sol-tableau" style="--cols:${s.cols.length}">${cols}</div>`;
+  return `${res}<div class="sol-tableau${perRow < s.cols.length ? ' split' : ''}" style="--cols:${perRow}">${cols}</div>`;
 }
 const cardAt = (s, key) => (key[0] === 'c' ? s.cols[Number(key.slice(1))].at(-1) : s.reserve[Number(key.slice(1))]);
 function removeKey(s, key) {
@@ -119,7 +119,7 @@ const triplets = {
     tip: `Look at the card under each top card before choosing which run to take.`,
   },
   newGame(seed) { const d = freshDeck(seed); const counts = [...Array(16).fill(3), 2, 2]; let k = 0; return { variant: 'triplets', moves: 0, cols: counts.map((n) => { const c = up(d.slice(k, k + n)); k += n; return c; }), found: [], sel: [] }; },
-  render(s) { return `<div class="sol-board wide">${colsRender(s)}</div>`; },
+  render(s) { return `<div class="sol-board wide">${colsRender(s, { perRow: 9 })}</div>`; }, // two rows of nine
   click(s, d) { return pickWith(s, d.k, { max: 3, complete: (cs) => (cs.length === 3 ? (isTriplet(cs) ? 'remove' : 'bad') : 'wait') }); },
   isWon: (s) => s.found.length === 51,
   isOver: (s) => s.found.length >= 51,

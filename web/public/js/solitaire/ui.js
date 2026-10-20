@@ -8,6 +8,7 @@ import { mountChrome, esc } from '../header.js';
 import { play } from '../core/sound.js';
 import { SOLITAIRE } from '../catalog.js';
 import { howtoHTML, controlsFor } from './howto.js';
+import { planStandard, fanColumn } from './layout.js';
 
 mountChrome('solitaire');
 preloadSkin();
@@ -101,15 +102,9 @@ const RANK_OF = ['', 'A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q'
 function pileHTML(p) {
   const isSel = (i) => sel && sel.pile === p.id && i >= sel.i;
   if (p.type === 'tableau') {
-    let y = 0;
-    const n = p.cards.length;
-    const gapUp = n > 14 ? 16 : 24, gapDown = 8;
-    const cards = p.cards.map((c, i) => {
-      const html = `<button class="sol-card${isSel(i) ? ' sel' : ''}" style="top:${y}px" data-pile="${p.id}" data-i="${i}" aria-label="${c.up ? cardName(c) : 'face-down card'}">${c.up ? cardHTML(c) : backHTML()}</button>`;
-      y += c.up ? gapUp : gapDown;
-      return html;
-    }).join('');
-    return `<div class="sol-col" data-drop="${p.id}" style="height:${Math.max(120, y + 100)}px"><span class="sol-empty" data-drop="${p.id}"></span>${cards}</div>`;
+    const { tops, height } = fanColumn(p.cards, L.w, L.colRoom);
+    const cards = p.cards.map((c, i) => `<button class="sol-card${isSel(i) ? ' sel' : ''}" style="top:${tops[i]}px" data-pile="${p.id}" data-i="${i}" aria-label="${c.up ? cardName(c) : 'face-down card'}">${c.up ? cardHTML(c) : backHTML()}</button>`).join('');
+    return `<div class="sol-col" data-drop="${p.id}" style="height:${Math.ceil(height)}px"><span class="sol-empty" data-drop="${p.id}"></span>${cards}</div>`;
   }
   if (p.type === 'bouquet') return `<div class="sol-bouquet" data-drop="${p.id}">${p.cards.map((c, i) => `<button class="sol-flat${isSel(i) ? ' sel' : ''}" data-pile="${p.id}" data-i="${i}" aria-label="${cardName(c)}">${cardHTML(c)}</button>`).join('')}</div>`;
   if (p.type === 'guide') return `<div class="sol-pile">${cardHTML(p.cards[0])}<span class="sol-label">Sultan</span></div>`;
@@ -132,20 +127,75 @@ function pileHTML(p) {
   if (p.type === 'foundation' && (p.golf || p.acesup)) label = String(p.cards.length);
   if (p.type === 'reserve' && p.cards.length > 1) label = String(p.cards.length);
   const guide = p.guide ? `<span class="sol-guide" title="Builds by ${p.step}">+${p.step}</span>` : '';
-  return `<div class="sol-pile" data-drop="${p.id}">${guide}${inner}<span class="sol-label">${label}</span></div>`;
+  return `<div class="sol-pile is-${p.type}" data-drop="${p.id}">${guide}${inner}<span class="sol-label">${label}</span></div>`;
 }
 
-function renderStandard() {
+const dealFor = { key: '', state: null };
+let L = { w: 80, gap: 8, rows: 1, perRow: 7, colRoom: 600, boardW: 0, topLines: 1 }; // the current table plan
+
+/** The felt fills the window below its top edge, so a game never needs scrolling while you play. */
+function sizeFelt() {
+  const phone = innerWidth < 761;
+  const top = area.getBoundingClientRect().top + scrollY;
+  const min = innerHeight < 560 ? Math.max(240, innerHeight - 90) : phone ? 360 : 440; // short screens scroll once, to the felt
+  area.style.height = `${Math.round(Math.max(min, innerHeight - top - (phone ? 8 : 14)))}px`;
+  const cs = getComputedStyle(area);
+  return { W: area.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), H: area.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) };
+}
+
+function renderStandard(box) {
   const top = state.piles.filter((p) => p.type !== 'tableau' && p.type !== 'bouquet');
   const tabs = state.piles.filter((p) => p.type === 'tableau');
   const bouquet = state.piles.find((p) => p.type === 'bouquet');
-  const wide = tabs.length >= 10 || top.length >= 12;
   const pickBase = state.piles.some((p) => p.base === 'global') && !state.baseRank;
-  return `<div class="sol-board${wide ? ' wide' : ''}${tabs.length > 13 ? ' xwide' : ''}" style="--cols:${tabs.length}">
+  // Plan from the deal, not the current position, so the cards keep one size all game.
+  const key = `${variant}:${state.seed}`;
+  if (dealFor.key !== key) { dealFor.key = key; dealFor.state = newGame(variant, state.seed ?? 1); }
+  L = planStandard(dealFor.state, VARIANTS[variant].rules, { ...box, banner: pickBase ? (box.W < 560 ? 76 : 54) : 0, minW: innerWidth < 761 ? 22 : 40 });
+  // One line of top piles: foundations sit at the right-hand end, over the last columns.
+  const push = L.topLines === 1 && top.filter((p) => p.type === 'foundation').length > 1 ? top.findIndex((p, i) => p.type === 'foundation' && i > 0 && top[i - 1].type !== 'foundation') : -1;
+  return `<div class="sol-board" style="--card-w:${L.w}px;--gap:${L.gap}px;width:${Math.ceil(L.boardW)}px">
     ${pickBase ? '<div class="banner-inline">First move a card to a foundation: its rank starts every foundation.</div>' : ''}
-    <div class="sol-top">${top.map(pileHTML).join('')}</div>
+    ${top.length ? `<div class="sol-top">${top.map((p, i) => (i === push ? pileHTML(p).replace('class="sol-pile ', 'class="sol-pile push ') : pileHTML(p))).join('')}</div>` : ''}
     ${bouquet ? pileHTML(bouquet) : ''}
-    <div class="sol-tableau">${tabs.map(pileHTML).join('')}</div></div>`;
+    ${tabs.length ? `<div class="sol-tableau" style="--cols:${L.perRow}">${tabs.map(pileHTML).join('')}</div>` : ''}</div>`;
+}
+
+/** Custom layouts: scale the whole board so it fills the felt without spilling out of it. */
+function fitCustom(board, box) {
+  if (!board) return;
+  const phone = innerWidth < 761;
+  const extent = () => {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    const add = (r) => { if (!r.width && !r.height) return; x0 = Math.min(x0, r.left); y0 = Math.min(y0, r.top); x1 = Math.max(x1, r.right); y1 = Math.max(y1, r.bottom); };
+    const walk = (el) => {
+      for (const c of el.children) {
+        if (c.matches('.overlay, .toast')) continue;
+        if (c.matches('.card, button, table, .empty-slot, .card-panel, .pg-cell') || !c.children.length) {
+          if (c.children.length || c.matches('.card, button, table, .empty-slot, .pg-cell')) add(c.getBoundingClientRect());
+          else { const r = document.createRange(); r.selectNodeContents(c); add(r.getBoundingClientRect()); }
+        } else walk(c);
+      }
+    };
+    walk(board);
+    const b = board.getBoundingClientRect();
+    return { w: Math.max(1, x1 - x0, b.width > box.W + 1 ? b.width : 0), h: Math.max(1, y1 - y0, b.height) };
+  };
+  // Search for the biggest zoom that fits; wrapping rows make the size jump, so keep a bracket.
+  const cap = phone ? 1 : 2.2;
+  let z = 1, fits = 0, fails = Infinity;
+  board.style.zoom = '';
+  for (let k = 0; k < 10; k++) {
+    const e = extent();
+    const f = Math.min(box.W / e.w, box.H / e.h);
+    if (f >= 1) fits = Math.max(fits, z); else fails = Math.min(fails, z);
+    if ((f >= 1 && (f < 1.03 || z >= cap)) ) break;
+    let next = Math.max(0.4, Math.min(cap, z * f * (f < 1 ? 0.99 : 0.995)));
+    if (next >= fails || next <= fits) next = (Math.max(fits, 0.4) + Math.min(fails, cap)) / 2;
+    if (Math.abs(next - z) < 0.004) break;
+    z = next; board.style.zoom = String(z);
+  }
+  if (z !== fits && fits) board.style.zoom = String(fits);
 }
 
 function render() {
@@ -158,18 +208,31 @@ function render() {
   const c = controlsFor(v);
   document.getElementById('sol-hint').textContent = `${matchMedia('(pointer: coarse)').matches ? c.touch : c.mouse} Stuck? Open How to play.`;
   const custom = isCustom();
-  const body = custom ? mod().render(state) : renderStandard();
+  const felt = document.getElementById('sol-area');
+  felt.classList.toggle('custom', custom);
   const status = custom ? mod().status(state) : `${scoreName(state)}: ${scoreOf(state)}`;
   document.getElementById('sol-status').textContent = `${status} · moves ${state.moves}`;
   const timed = custom && mod().timed;
   document.querySelector('[data-cmd="undo"]').hidden = timed;
   document.querySelector('[data-cmd="auto"]').hidden = custom;
   document.querySelector('[data-cmd="restart"]').hidden = timed;
+  const box = sizeFelt(); // after the bar above it has its final text
+  const body = custom ? mod().render(state) : renderStandard(box);
   const finished = over();
-  const felt = document.getElementById('sol-area');
   paintFelt(felt);
-  felt.innerHTML = body + (finished ? `<div class="overlay sol-win"><div class="card-panel"><h3>${won() ? 'You won!' : 'Game over'}</h3><p>${esc(status)}.</p>
+  // Keep keyboard focus on the same spot across the redraw.
+  const f = document.activeElement && felt.contains(document.activeElement) ? document.activeElement : null;
+  const focusKey = f && ['pile', 'i', 'drop', 'stock', 'c', 'k', 'r', 'col', 'dir'].map((k) => (f.dataset[k] !== undefined ? `[data-${k}="${f.dataset[k]}"]` : '')).join('');
+  felt.innerHTML = body + (finished ? `<div class="overlay sol-win"><div class="card-panel"><h3>${won() ? 'You won!' : 'Game over'}</h3><p>${esc(status)} · ${state.moves} move${state.moves === 1 ? '' : 's'}.${winTally()}</p>
     <div class="row"><button class="btn primary" data-cmd="new">Deal again</button><button class="btn" data-cmd="menu">Choose another</button></div></div></div>` : '');
+  if (custom) fitCustom(felt.firstElementChild, box);
+  if (focusKey) (felt.querySelector(`button${focusKey}:not([disabled])`) ?? felt.querySelector('.sol-win .btn'))?.focus({ preventScroll: true });
+  else if (finished) felt.querySelector('.sol-win .btn')?.focus({ preventScroll: true });
+}
+
+function winTally() {
+  const st = readStats()[variant];
+  return st?.played ? `<br>You have won ${st.won} of ${st.played} ${esc(info(variant).name)} deal${st.played === 1 ? '' : 's'}.` : '';
 }
 
 function flash(msg) {
@@ -213,6 +276,70 @@ function sendHome(pile, i) {
   render();
 }
 
+// Drag and drop (rules-driven layouts): press on a card you could pick up, drag it (and the cards on
+// top of it) and let go over the spot where it should go. A short press is still an ordinary click.
+let drag = null, swallowClick = false;
+area.addEventListener('pointerdown', (e) => {
+  if (!variant || isCustom() || e.button !== 0 || !e.isPrimary) return;
+  const cardEl = e.target.closest('[data-pile]');
+  if (!cardEl || cardEl.closest('.sol-win')) return;
+  const pile = state.piles.find((p) => p.id === cardEl.dataset.pile);
+  const i = Number(cardEl.dataset.i);
+  if (!pile || !grab(state, pile, i)) return;
+  drag = { id: e.pointerId, pile: pile.id, i, x: e.clientX, y: e.clientY, el: cardEl, ghost: null };
+});
+function startDrag(e) {
+  const els = drag.el.classList.contains('sol-card') ? [...drag.el.parentElement.querySelectorAll(`.sol-card[data-pile="${drag.pile}"]`)].filter((b) => Number(b.dataset.i) >= drag.i) : [drag.el];
+  const r0 = els[0].getBoundingClientRect();
+  const ghost = document.createElement('div');
+  ghost.className = 'sol-ghost';
+  ghost.style.cssText = `left:${r0.left}px;top:${r0.top}px;--card-w:${r0.width}px`;
+  for (const b of els) {
+    const r = b.getBoundingClientRect();
+    const c = b.firstElementChild.cloneNode(true);
+    c.style.cssText = `position:absolute;left:0;top:${r.top - r0.top}px`;
+    ghost.append(c);
+    b.classList.add('dragging');
+  }
+  document.body.append(ghost);
+  drag.ghost = ghost; drag.els = els; drag.dx = e.clientX - r0.left; drag.dy = e.clientY - r0.top;
+  sel = null;
+  try { area.setPointerCapture(drag.id); } catch { /* ignore */ }
+}
+function dropTarget(x, y) {
+  const el = document.elementFromPoint(x, y);
+  const to = el?.closest('[data-pile]')?.dataset.pile ?? el?.closest('[data-drop]')?.dataset.drop;
+  if (to) return to;
+  // Below the bottom of a column still counts as that column.
+  for (const col of area.querySelectorAll('.sol-col')) {
+    const r = col.getBoundingClientRect();
+    if (x >= r.left && x <= r.right && y >= r.top) return col.dataset.drop;
+  }
+  return null;
+}
+area.addEventListener('pointermove', (e) => {
+  if (!drag || e.pointerId !== drag.id) return;
+  if (!drag.ghost) { if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 6) return; startDrag(e); }
+  e.preventDefault();
+  drag.ghost.style.left = `${e.clientX - drag.dx}px`;
+  drag.ghost.style.top = `${e.clientY - drag.dy}px`;
+});
+function endDrag(e, cancel) {
+  if (!drag || e.pointerId !== drag.id) return;
+  const d = drag;
+  drag = null;
+  if (!d.ghost) return; // just a click
+  swallowClick = true; setTimeout(() => { swallowClick = false; }, 0);
+  d.ghost.remove();
+  for (const b of d.els) b.classList.remove('dragging');
+  const to = cancel ? null : dropTarget(e.clientX, e.clientY);
+  if (to && to !== d.pile) { const n = move(state, d.pile, d.i, to); if (n) return set(n); play('error'); }
+  render();
+}
+area.addEventListener('pointerup', (e) => endDrag(e, false));
+area.addEventListener('pointercancel', (e) => endDrag(e, true));
+area.addEventListener('click', (e) => { if (swallowClick) { swallowClick = false; e.stopImmediatePropagation(); } }, true);
+
 function command(c) {
   if (c === 'new') return start(variant, true);
   if (c === 'restart') {
@@ -241,7 +368,21 @@ function showRules() {
 }
 document.getElementById('sol-howto-auto').addEventListener('change', (e) => { try { localStorage.setItem(AUTO, e.target.checked ? '1' : '0'); } catch { /* ignore */ } });
 board.addEventListener('click', (e) => { const b = e.target.closest('[data-cmd]'); if (b) command(b.dataset.cmd); });
+// Keys: Escape lets go of a selected card; Ctrl+Z (Cmd+Z) is Undo.
+document.addEventListener('keydown', (e) => {
+  if (!variant || document.getElementById('sol-rules').open || e.target.closest?.('input, textarea, select')) return;
+  if (e.key === 'Escape' && sel) { sel = null; render(); }
+  else if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z' && !(isCustom() && mod().timed)) { e.preventDefault(); command('undo'); }
+});
 chooser.addEventListener('click', (e) => { const t = e.target.closest('[data-v]'); if (t) { e.preventDefault(); start(t.dataset.v); } });
 window.addEventListener('dc:settings', () => (variant ? render() : renderChooser()));
+// A new window size (or a turned tablet) re-plans the table.
+let lastSize = '';
+let resizeQueued = false;
+window.addEventListener('resize', () => {
+  if (resizeQueued) return;
+  resizeQueued = true;
+  requestAnimationFrame(() => { resizeQueued = false; const size = `${innerWidth}x${innerHeight}`; if (variant && size !== lastSize) { lastSize = size; render(); } });
+});
 
 if (variant) start(variant); else render();
