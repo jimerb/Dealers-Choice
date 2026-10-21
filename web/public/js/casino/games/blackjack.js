@@ -388,6 +388,14 @@ export default {
   layout,
   howto,
   settings: engine.OPTIONS,
+  /** The Options form shows a rule set's own rules ... */
+  optionsShown: (o) => (engine.PRESETS[o.preset] ? { ...o, ...Object.fromEntries(engine.RULE_KEYS.map((k) => [k, engine.PRESETS[o.preset][k]])) } : o),
+  /** ... picking a rule set fills them in, and changing one of them makes the rules Custom. */
+  optionsInput(key, form) {
+    if (key === 'preset') return engine.PRESETS[form.preset] ? Object.fromEntries(engine.RULE_KEYS.map((k) => [k, engine.PRESETS[form.preset][k]])) : null;
+    if (engine.RULE_KEYS.includes(key) && form.preset !== 'custom') return { preset: 'custom' };
+    return null;
+  },
   css: 'css/casino/blackjack.css',
   minBuyIn: (stakes) => engine.minBuyIn(stakes),
 

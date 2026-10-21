@@ -11,6 +11,8 @@ import { ART, svgArt } from '../art.js';
 import { money } from '../../core/bank.js';
 import { howtoSections } from '../stub.js';
 
+/** "1 credit", "1,250 credits". */
+const cr = (n) => `${Number(n).toLocaleString('en-US')} credit${n === 1 ? '' : 's'}`;
 // The cabinet picture is 800 x 1200; its windows in those units.
 const W = 800, H = 1200;
 const GLASS = { x: 117, y: 86, w: 566, h: 305 };   // pay table
@@ -270,8 +272,8 @@ function reveal(r) {
     ctx.play('win');
     const big = r.won >= 20 * bet;
     ctx.message(`${words}: ${fmt(r.won)} credit${r.won > 1 ? 's' : ''} (${money(r.won * ctx.machine.denom)}).`);
-    if (big) ctx.banner(r.row === 'WWW' ? 'Three crowns!' : `You win ${fmt(r.won)} credits`, { tone: 'win', detail: `${words} on ${bet} coin${bet > 1 ? 's' : ''}: ${money(r.won * ctx.machine.denom)}` });
-    if (big && auto) { auto = 0; ctx.message(`${words}: ${fmt(r.won)} credits. Autoplay stopped on the big win.`); }
+    if (big) ctx.banner(r.row === 'WWW' ? 'Three crowns!' : `You win ${cr(r.won)}`, { tone: 'win', detail: `${words} on ${bet} coin${bet > 1 ? 's' : ''}: ${money(r.won * ctx.machine.denom)}` });
+    if (big && auto) { auto = 0; ctx.message(`${words}: ${cr(r.won)}. Autoplay stopped on the big win.`); }
     // count the win up onto the meters (quickly; at once under reduced motion)
     const from = shownCredits ?? after - r.won;
     const steps = ctx.reduced() ? 1 : Math.min(r.won, 24);
@@ -286,7 +288,7 @@ function reveal(r) {
     };
     step();
   } else {
-    ctx.message(auto > 0 ? `No win. Autoplay: ${auto} spin${auto > 1 ? 's' : ''} left.` : `No win. ${fmt(after)} credits left.`);
+    ctx.message(auto > 0 ? `No win. Autoplay: ${auto} spin${auto > 1 ? 's' : ''} left.` : `No win. ${cr(after)} left.`);
     settle();
   }
 }
@@ -350,7 +352,7 @@ export default {
     ctx.keys({ s: () => action() });
     setButtons();
     ctx.setTotal(coins * ctx.machine.denom);
-    ctx.message(credits() ? `${fmt(credits())} credits on the meter. Bet one to three coins and spin.` : `Insert bills to buy credits (${money(ctx.machine.denom)} each), then spin.`);
+    ctx.message(credits() ? `${cr(credits())} on the meter. Bet one to three coins and spin.` : `Insert bills to buy credits (${money(ctx.machine.denom)} each), then spin.`);
   },
   unmount() {
     // a spin in progress was paid when Spin was pressed: just drop the reveal

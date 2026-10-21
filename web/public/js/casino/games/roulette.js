@@ -44,43 +44,49 @@ const rowOf = (n) => (n % 3 === 0 ? 0 : n % 3 === 2 ? 1 : 2);
  * meet (corners), along the outer edge next to the dozens (streets) and where that edge meets a
  * line between columns (six lines), plus the zero bets beside 0 and 00. In (u, v) units like areas().
  */
-export function zones(wheel = 'american') {
-  const T = 0.24, h = T / 2;
+export function zones(wheel = 'american', { tu = 0.24, tv = 0.24, straddle = false } = {}) {
+  // tu: how thick a hit area is across a line between columns (along u), tv: across a line between
+  // rows (along v). Phones make them thicker, so a finger has 32 px or more to land on.
+  const hu = tu / 2, hv = tv / 2;
+  // the bets on the outer edge (streets, six lines, the basket or first four): inside the row by the
+  // dozens, or (phones) astride the edge, so they don't eat the row's own numbers
+  const ev = straddle ? 3 - hv : 3 - tv;
+  const su = Math.max(0.22, hu + 0.01), sv = Math.max(0.25, hv + 0.01); // where a split's area starts in its cell
   const out = [];
   const box = (key, u, v, du, dv) => out.push({ key, u, v, du, dv });
   for (let n = 1; n <= 36; n++) {
     const c = colOf(n), r = rowOf(n);
-    if (n % 3 !== 0) box(`split:${n}-${n + 1}`, c + 0.22, r - h, 0.56, T);                  // up a street
-    if (n <= 33) box(`split:${n}-${n + 3}`, c + 1 - h, r + 0.25, T, 0.5);                  // along a row
-    if (n % 3 !== 0 && n <= 32) box(`corner:${n}-${n + 1}-${n + 3}-${n + 4}`, c + 1 - h, r - h, T, T);
+    if (n % 3 !== 0) box(`split:${n}-${n + 1}`, c + su, r - hv, 1 - 2 * su, tv);              // up a street
+    if (n <= 33) box(`split:${n}-${n + 3}`, c + 1 - hu, r + sv, tu, 1 - 2 * sv);                 // along a row
+    if (n % 3 !== 0 && n <= 32) box(`corner:${n}-${n + 1}-${n + 3}-${n + 4}`, c + 1 - hu, r - hv, tu, tv);
   }
   for (let a = 1; a <= 34; a += 3) {
-    box(`street:${a}`, colOf(a) + 0.22, 3 - T, 0.56, T);
-    if (a <= 31) box(`line:${a}-${a + 5}`, colOf(a) + 1 - h, 3 - T, T, T);
+    box(`street:${a}`, colOf(a) + su, ev, 1 - 2 * su, tv);
+    if (a <= 31) box(`line:${a}-${a + 5}`, colOf(a) + 1 - hu, ev, tu, tv);
   }
   if (wheel === 'european') {
-    box('split:0-3', 1 - h, 0.25, T, 0.5);
-    box('split:0-2', 1 - h, 1.25, T, 0.5);
-    box('split:0-1', 1 - h, 2.25, T, 0.5);
-    box('street:0-2-3', 1 - h, 1 - h, T, T);
-    box('street:0-1-2', 1 - h, 2 - h, T, T);
-    box('first4', 1 - h, 3 - T, T, T);
+    box('split:0-3', 1 - hu, sv, tu, 1 - 2 * sv);
+    box('split:0-2', 1 - hu, 1 + sv, tu, 1 - 2 * sv);
+    box('split:0-1', 1 - hu, 2 + sv, tu, 1 - 2 * sv);
+    box('street:0-2-3', 1 - hu, 1 - hv, tu, tv);
+    box('street:0-1-2', 1 - hu, 2 - hv, tu, tv);
+    box('first4', 1 - hu, ev, tu, tv);
   } else {
-    box('split:0-00', 0.22, 1.5 - h, 0.56, T);
-    box('split:00-3', 1 - h, 0.25, T, 0.5);
-    box('street:00-2-3', 1 - h, 1 - h, T, T);
-    box('split:00-2', 1 - h, 1 + h + 0.02, T, 0.5 - T - 0.02);
-    box('split:0-2', 1 - h, 1.5 + 0.02, T, 0.5 - T - 0.02);
-    box('street:0-1-2', 1 - h, 2 - h, T, T);
-    box('split:0-1', 1 - h, 2.25, T, 0.5);
-    box('basket', 1 - h, 3 - T, T, T);
+    box('split:0-00', 0.22, 1.5 - hv, Math.min(0.56, 0.77 - hu), tv);
+    box('split:00-3', 1 - hu, sv, tu, 1 - 2 * sv);
+    box('street:00-2-3', 1 - hu, 1 - hv, tu, tv);
+    box('split:00-2', 1 - hu, 1 + hv + 0.02, tu, 0.47 - hv);
+    box('split:0-2', 1 - hu, 1.52, tu, 0.47 - hv);
+    box('street:0-1-2', 1 - hu, 2 - hv, tu, tv);
+    box('split:0-1', 1 - hu, 2 + sv, tu, 1 - 2 * sv);
+    box('basket', 1 - hu, ev, tu, tv);
   }
   return out;
 }
 
 const GEO = {
   wide: { sx: 68, sy: 68, w: U * 68, h: V * 68, place: (a, g) => ({ x: a.u * g.sx, y: a.v * g.sy, w: a.du * g.sx, h: a.dv * g.sy }) },
-  tall: { sx: 72, sy: 48, w: V * 72, h: U * 48, place: (a, g) => ({ x: (a.v >= 3 ? a.v : 3 - a.v - a.dv) * g.sx, y: a.u * g.sy, w: a.dv * g.sx, h: a.du * g.sy }) },
+  tall: { sx: 72, sy: 68, w: V * 72, h: U * 68, zones: { tu: 0.5, tv: 0.45, straddle: true }, place: (a, g) => ({ x: (a.v >= 3 ? a.v : 3 - a.v - a.dv) * g.sx, y: a.u * g.sy, w: a.dv * g.sx, h: a.du * g.sy }) },
 };
 
 /** The betting layout as SVG. bets: { key: dollars }; hit: the last winning pocket to ring. */
@@ -104,7 +110,7 @@ export function layout({ tall = false, bets = {}, hit = null, wheel = 'american'
       ${rect(x + P, y + P, w, h, { cls: `cz-cell${fillCls}` })}${face}${amount ? chipSVG(cx, cy, Math.min(20, Math.min(w, h) * 0.42), amount) : ''}</g>`;
   }).join('');
   // the line bets go on top of the cells (out of the tab order: there are over a hundred of them)
-  const lines = zones(wheel).map((z) => {
+  const lines = zones(wheel, g.zones).map((z) => {
     const { x, y, w, h } = g.place(z, g);
     const cx = x + w / 2 + P, cy = y + h / 2 + P;
     const amount = bets[z.key] ?? 0;
@@ -162,7 +168,7 @@ let armed = null;         // touch: the line bet tapped once, waiting for the se
 let lastPointer = 'mouse';
 const STEP = () => stepOf(wheel);
 
-const spinMs = () => (ctx?.reduced() ? 300 : 4200);
+const spinMs = () => (ctx?.reduced() ? 300 : ctx?.opts.quick ? 1300 : 3500);
 const easeOut = (u) => 1 - (1 - u) ** 3;
 
 /** Put the ball at angle `deg` (0 = top, clockwise) and radius `r` (wheel units). */
@@ -214,7 +220,9 @@ function draw() {
   const focused = root.ownerDocument.activeElement?.closest?.('[data-bet]')?.dataset.bet;
   root.querySelector('.cz-rl-grid').innerHTML = layout({ tall, bets: bets.amounts(), hit, wheel });
   if (focused) root.querySelector(`[data-bet="${focused}"]`)?.focus({ preventScroll: true });
-  root.querySelector('.cz-rl-history').innerHTML = history.length
+  const hist = root.querySelector('.cz-rl-history');
+  hist.hidden = ctx?.opts.history === false;
+  hist.innerHTML = history.length
     ? `<span class="cz-rl-hlabel">Last spins</span>${history.map((p) => `<span class="cz-rl-ball ${colorOf(p)}">${p}</span>`).join('')}`
     : '<span class="cz-rl-hlabel">Place your chips, then spin</span>';
 }
@@ -324,14 +332,19 @@ export default {
   id: 'roulette',
   name: 'Roulette',
   ready: true,
+  bannerAt: 'bottom', // over the outside bets, clear of the numbers and the wheel's result
   layout,
-  settings: OPTIONS,
+  settings: [
+    ...OPTIONS,
+    { key: 'history', label: 'Show the last numbers', type: 'check', default: true },
+    { key: 'quick', label: 'Quick spin', type: 'check', default: false },
+  ],
   howto: howtoSections([
     ['Placing bets', 'Choose a chip on the rack, then click or tap a number or box to put it there. Click again to add more. Right-click, shift-click or a long press takes a chip back off. Undo takes back the last chip, Clear removes everything, and Rebet repeats your last spin\'s bets (as much as your bank covers).'],
     ['Bets on the lines', '<ul><li><b>Split</b>: on the line between two numbers.</li><li><b>Street</b>: on the outer edge of a row of three (next to the dozens).</li><li><b>Corner</b>: where four numbers meet.</li><li><b>Six line</b>: on the outer edge where two rows of three meet.</li><li>Beside the zeros: 0-00, 0-1, 0-2, 00-2 and 00-3 splits, the 0-1-2 and 00-2-3 streets and the five-number bet (0, 00, 1, 2, 3) at the bottom corner. On the single-zero wheel: 0-1, 0-2 and 0-3 splits, the 0-1-2 and 0-2-3 streets and the first four (0, 1, 2, 3).</li></ul>Pointing at a line lights up the numbers it covers. On a touch screen, tap a line once to see them and again to bet.'],
     ['Payouts', '<ul><li>A single number (straight up) pays 35 to 1, a split 17 to 1, a street 11 to 1, a corner or the first four 8 to 1, the five-number bet 6 to 1, a six line 5 to 1.</li><li>A dozen or a column pays 2 to 1.</li><li>Red, black, odd, even, 1–18 and 19–36 pay even money.</li><li>0 and 00 lose every bet that doesn\'t cover them.</li></ul>'],
     ['The odds', 'On the double-zero wheel every bet gives the house 5.26%, except the five-number bet (7.89%). On the single-zero wheel it is 2.70%. With half back, even-money bets lose only half when a zero comes up, which halves their edge (1.35% on the single-zero wheel). Past numbers don\'t change the next spin.'],
-    ['Options', 'Wheel: double zero (0 and 00) or single zero. Half back: even-money bets get half their stake back when the ball lands in a zero. A new wheel comes in after the current spin.'],
+    ['Options', 'Wheel: double zero (0 and 00) or single zero. Half back: even-money bets get half their stake back when the ball lands in a zero. A new wheel comes in after the current spin. Show the last numbers: the row of recent results over the layout. Quick spin: the ball drops in about a second.'],
     ['Table limits', 'Your bets on numbers and lines together must reach the table minimum, each outside bet must reach it on its own, and no single bet may go over the table maximum.'],
     ['Keys', 'Number keys 1 to 8 pick a chip, Enter or Space spins, Backspace undoes, C clears, R rebets and Shift+R rebets double.'],
   ]),
@@ -374,6 +387,7 @@ export default {
   },
   optionsChanged(opts) {
     if (!root) return;
+    draw();
     const want = opts.wheel === 'european' ? 'european' : 'american';
     if (spinning) { pendingWheel = want; return; }
     setWheel(want);

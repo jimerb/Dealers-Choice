@@ -170,6 +170,10 @@ export function recordHandState(prev, game, net) {
 function defaultStorage() {
   try { return globalThis.localStorage ?? null; } catch { return null; }
 }
+function defaultSession() {
+  try { return globalThis.sessionStorage ?? null; } catch { return null; }
+}
+const VISIT_KEY = 'dc.bank.visit';
 function defaultName() {
   try { return globalThis.localStorage?.getItem('dc.name') || 'Guest'; } catch { return 'Guest'; }
 }
@@ -179,9 +183,13 @@ function defaultName() {
  * (private mode, blocked site data) the bank still works, in memory, for this page.
  * Listeners get (state, events) after every change, including changes made in another tab.
  */
-export function createBank({ storage = defaultStorage(), name = defaultName, now = () => Date.now(), win = globalThis.window } = {}) {
+export function createBank({ storage = defaultStorage(), session = defaultSession(), name = defaultName, now = () => Date.now(), win = globalThis.window } = {}) {
   const listeners = new Set();
-  let sessionNet = 0; // this page visit's winnings and losses at the tables (not saved)
+  // This visit's winnings and losses at the tables: kept per browser tab (sessionStorage), so it
+  // survives moving between pages and reloads but each tab counts its own, and it starts at 0 in a new tab.
+  let sessionNet = 0;
+  try { const v = Number(session?.getItem(VISIT_KEY)); if (Number.isSafeInteger(v)) sessionNet = v; } catch { /* memory only */ }
+  const addNet = (n) => { sessionNet += n; try { session?.setItem(VISIT_KEY, String(sessionNet)); } catch { /* memory only */ } };
 
   const notices = []; // news from loading (a corrupt save), for the page to show once it is listening
   // A save written by a newer version of the casino (another tab, after an update) is shown but never
@@ -237,7 +245,7 @@ export function createBank({ storage = defaultStorage(), name = defaultName, now
     /** Take a wager (whole dollars). Returns false, changing nothing, if the bank can't cover it. */
     debit(n, { game } = {}) {
       if (!amountOk(n) || n > state.bank) return false;
-      if (game) sessionNet -= n;
+      if (game) addNet(-n);
       commit(applyChange(state, -n, { game, name: name(), now: now() }));
       return true;
     },
@@ -246,7 +254,7 @@ export function createBank({ storage = defaultStorage(), name = defaultName, now
     credit(n, { game, refund = false } = {}) {
       if (n === 0) return true;
       if (!amountOk(n)) return false;
-      if (game) sessionNet += n;
+      if (game) addNet(n);
       commit(applyChange(state, n, { game, refund, name: name(), now: now() }));
       return true;
     },
@@ -255,7 +263,7 @@ export function createBank({ storage = defaultStorage(), name = defaultName, now
     recordRound(game, round) {
       if (readOnly) return;
       state = recordRoundState(state, game, round);
-      sessionNet += (round.won ?? 0) - (round.wagered ?? 0);
+      addNet((round.won ?? 0) - (round.wagered ?? 0));
       write();
       emit([{ type: 'hand', game, net: (round.won ?? 0) - (round.wagered ?? 0) }]);
     },
@@ -310,7 +318,7 @@ export function createBank({ storage = defaultStorage(), name = defaultName, now
       return true;
     },
     canRepay: () => !readOnly && state.loan > 0 && state.bank >= state.loan,
-    reset() { if (readOnly) return; sessionNet = 0; commit(resetState(state)); },
+    reset() { if (readOnly) return; addNet(-sessionNet); commit(resetState(state)); },
     /** News from loading the bank (e.g. { type: 'corrupt' }), handed over once. */
     drainNotices: () => notices.splice(0),
     /** Call fn(state, events) on every change; returns a function that stops listening. */

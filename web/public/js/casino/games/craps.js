@@ -225,6 +225,7 @@ let table = null;       // the engine's table: the bets that are up and the poin
 let shown = null;       // while the dice roll: the table as it was (the result isn't shown yet)
 let rolling = false, dice = null, hist = [], hits = {}, frame = 1, tumble = [6, 1];
 let tick = null, done = null, bannerT = null, pendingOpts = null, drawerOpen = false;
+let autoT = null;         // Auto roll: the next roll, waiting
 
 const tall = () => mq?.matches ?? false;
 const staged = () => bets?.amounts() ?? {};
@@ -452,7 +453,28 @@ function finish() {
   ctx.banner(title, { tone: net > 0 ? 'win' : net < 0 ? 'lose' : 'info', detail });
   bannerT = ctx.after(ctx.reduced() ? 2500 : 1800, () => ctx.banner(null));
   ctx.play(net > 0 ? 'win' : net < 0 ? 'lose' : 'chips');
-  ctx.checkBroke();
+  if (!ctx.checkBroke()) armAuto();
+}
+
+// ---- Auto roll (an option): while bets are working and nothing new is staged, the dice go again
+// by themselves; any click or key stops it
+const AUTO_MS = 1800;
+const working = () => Boolean(table && Object.keys(table.bets ?? {}).length);
+function stopAuto() {
+  if (autoT) { ctx?.cancel(autoT); autoT = null; ctx?.message('Auto roll paused. Roll when you\'re ready.'); }
+  removeEventListener('pointerdown', stopAuto, true);
+  removeEventListener('keydown', stopAuto, true);
+}
+function armAuto() {
+  if (!ctx?.opts.autoRoll || !working() || bets?.total()) return;
+  autoT = ctx.after(AUTO_MS, () => {
+    autoT = null;
+    removeEventListener('pointerdown', stopAuto, true);
+    removeEventListener('keydown', stopAuto, true);
+    if (!rolling && working() && !bets?.total()) action();
+  });
+  addEventListener('pointerdown', stopAuto, true);
+  addEventListener('keydown', stopAuto, true);
 }
 
 function rebet(times = 1) {
@@ -476,7 +498,7 @@ function toggleDrawer(on = !drawerOpen) {
 
 const onResize = () => { if (!tall()) drawerOpen = false; draw(); };
 
-const settings = E.OPTIONS;
+const settings = [...E.OPTIONS, { key: 'autoRoll', label: 'Auto roll: keep rolling while your bets are working (any click or key stops it)', type: 'check', default: false }];
 
 export default {
   id: 'craps',
@@ -494,7 +516,7 @@ export default {
     ['Place, buy and lay', '<ul><li><b>Place</b> a number to win when it rolls before a 7: 4 and 10 pay 9 to 5, 5 and 9 pay 7 to 5, 6 and 8 pay 7 to 6 (bet 6 and 8 in sixes so they pay in full).</li><li><b>Buy</b> (the strip above a number) pays the true odds, but costs a 5% commission when it goes down ($1 at least), which isn\'t handed back.</li><li><b>Lay</b> (the top strip) bets that a 7 comes before the number, at true odds, with a 5% commission on what it would win.</li></ul><p>These go down while a point is on and stay up after they win. Place and buy bets are off on the come-out roll (unless you change that in Options); lays always work.</p>'],
     ['The field and the center', '<ul><li><b>Field</b>: one roll. 3, 4, 9, 10 or 11 pay even money, 2 pays double, 12 pays double (or triple, in Options); 5, 6, 7 and 8 lose.</li><li><b>Big 6</b> and <b>Big 8</b> pay even money if that number comes before a 7.</li><li><b>Hardways</b>: hard 4 or 10 pays 7 to 1, hard 6 or 8 pays 9 to 1, when the number rolls as a pair before it rolls the easy way or a 7.</li><li>One-roll bets: <b>Any seven</b> 4 to 1, <b>Any craps</b> (2, 3 or 12) 7 to 1, <b>Two</b> and <b>Twelve</b> 30 to 1, <b>Three</b> and <b>Eleven</b> 15 to 1. <b>C</b> and <b>E</b> are quick spots for Any craps and Eleven. The <b>Horn</b> splits into four equal bets on 2, 3, 11 and 12 (bet in fours).</li></ul><p>On a phone the center bets are in the <b>Center bets</b> drawer.</p>'],
     ['Placing and taking down', '<p>Pick a chip, then click or tap a spot to add it; chips you add sit on the layout with a dashed ring until you roll. Right-click, shift-click, a long press or Remove mode takes a chip back off before the roll, and on a bet already up it <b>takes the bet down</b> and hands it back. Pass line and come bets can\'t be taken down once they have a number; everything else can. Each bet must reach the table minimum, except odds.</p><p>If you leave in the middle of a point, every bet that could be taken down comes back to you; Pass line and come bets that have a number are lost.</p>'],
-    ['Keys', 'Number keys 1 to 8 pick a chip. Tab moves through the betting spots; Enter or Space adds a chip, Shift+Enter takes one off (or takes the bet down). Enter or Space anywhere else rolls. <b>O</b> takes the most odds, <b>B</b> opens the center bets on a phone, Backspace undoes, C clears, R rebets and Shift+R rebets double.'],
+    ['Keys', 'Number keys 1 to 8 pick a chip. Tab moves through the betting spots; Enter or Space adds a chip, Shift+Enter takes one off (or takes the bet down). Enter or Space anywhere else rolls. <b>O</b> takes the most odds, <b>B</b> opens the center bets on a phone, Backspace undoes, C clears, R rebets and Shift+R rebets double. With <b>Auto roll</b> on (Options) the dice keep going while your bets are working; any click or key pauses it.'],
     ['Good bets', 'The Pass line and Come cost you about 1.4% of what you bet, and Don\'t pass about 1.4% too; odds cost nothing, so they are the best bets on the table. Place 6 and 8 are close behind at 1.5%. The one-roll bets in the center cost 11% to 17%.'],
   ]),
 
@@ -535,6 +557,7 @@ export default {
     // a roll in progress was settled when it started: just drop the reveal
     if (tick) ctx?.cancel(tick);
     if (bannerT) ctx?.cancel(bannerT);
+    stopAuto();
     done?.release?.();
     done = null; rolling = false;
     unbind?.(); unbind = null;

@@ -304,3 +304,16 @@ test('a save from a newer version is shown read-only and never overwritten', () 
   assert.equal(bank.balance, 12_345);
   assert.equal(storage.getItem(KEY), raw, 'the newer save is untouched');
 });
+
+test('"this visit" net is kept per tab: it survives a reload in the same tab and starts at 0 in another', () => {
+  const storage = memStorage();
+  const tab = memStorage();
+  const b = createBank({ storage, session: tab, win: null });
+  b.debit(100, { game: 'blackjack' });
+  b.credit(250, { game: 'blackjack' });
+  assert.equal(b.sessionNet, 150);
+  assert.equal(createBank({ storage, session: tab, win: null }).sessionNet, 150); // same tab, reloaded
+  assert.equal(createBank({ storage, session: memStorage(), win: null }).sessionNet, 0); // a new tab
+  b.reset();
+  assert.equal(createBank({ storage, session: tab, win: null }).sessionNet, 0);
+});

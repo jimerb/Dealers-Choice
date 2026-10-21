@@ -59,8 +59,9 @@ function draw() {
   if (bonus) out += chipSVG(...seatPoint(BONUS_R), 15, 1);
   const r = hand?.result;
   if (hand) out += text(342, 442, describe(evaluate(hand.player)), { size: 17, weight: 700, cls: 'cz-tx pk-hand' });
+  root.querySelector('.cz-stage > svg')?.classList.toggle('pk-dealt', Boolean(r));
   if (r) {
-    out += text(648, 90, `${r.dealerHand}${r.qualifies ? '' : ' · doesn\'t qualify'}`, { size: 16, anchor: 'start', weight: 700, cls: 'cz-tx pk-hand' });
+    out += text(500, 142, `${r.dealerHand}${r.qualifies ? '' : ' · doesn\'t qualify'}`, { size: 18, weight: 700, cls: 'cz-tx pk-hand' });
     out += betLines(r.lines, 590, 350);
   }
   g.innerHTML = out;
@@ -165,7 +166,9 @@ async function reveal(v, release) {
     r.outcome === 'win' ? `${r.playerHand} beats ${r.dealerHand.toLowerCase()}` : r.outcome === 'lose' ? `${r.dealerHand} beats ${r.playerHand.toLowerCase()}` : '',
     bonusWin ? `Bonus pays ${money(bonusWin.back - 1)}` : '',
   ].filter(Boolean).join(' · ');
-  showResult(ctx, r, titles[r.outcome], detail);
+  // the bonus can leave you up on a hand the dealer won: the headline follows the money
+  const title = r.net > 0 && (r.outcome === 'lose' || r.outcome === 'fold') ? `You win ${money(r.net)}` : titles[r.outcome];
+  showResult(ctx, r, title, title === titles[r.outcome] ? detail : [r.outcome === 'fold' ? 'You folded' : 'Dealer wins the hand', detail].join(' · '));
   setActions();
   ctx.checkBroke();
 }
@@ -195,6 +198,7 @@ export default {
   id: 'caribbean-stud',
   name: 'Caribbean Stud',
   ready: true,
+  bannerAt: 'top',      // over the crest, so the dealer's cards and yours stay in view
   layout,
   settings: E.OPTIONS,
   css: CSS,

@@ -9,6 +9,9 @@
 .pk-line.lose { fill: var(--ink-3); }
 .pk-hand { paint-order: stroke; stroke: rgba(0, 0, 0, .35); stroke-width: 3px; }
 
+/* once the dealer's hand is shown it takes the place of the house rule under the dealer's cards */
+.pk-dealt .pk-note { display: none; }
+
 /* the Caribbean Stud bonus slot */
 .pk-bonus { cursor: pointer; }
 .pk-bonus .pk-bonus-ring { fill: rgba(0, 0, 0, .18); stroke: var(--cz-line); stroke-width: 2; }
@@ -17,8 +20,12 @@
 .pk-bonus:focus-visible .pk-bonus-ring { stroke: var(--brass-2); stroke-width: 4; }
 
 /* phones: the one seat in use is in the middle of a table drawn for five, so the drawing runs wider
-   than the felt (its empty ends cut off) and the seat, the cards and the spots come out bigger */
+   than the felt (its empty ends cut off) and the seat, the cards and the spots come out bigger ... */
 @media (max-width: 640px) {
   .cz-stage.pk-table { overflow: hidden; }
-  .cz-stage.pk-table > .cz-svg { flex: none; width: 128%; max-width: none; margin: 0; }
+  /* ... and its crest (the game's name is in the bar above) is cut off too, so the betting spots
+     are on the first screen, above the bet bar */
+  .cz-stage.pk-table > .cz-svg { flex: none; width: 166%; max-width: none; max-height: none; margin: -24% 0 0; }
+  /* the pay table is too small to read here: How to play has it */
+  .pk-pays { display: none; }
 }
