@@ -26,8 +26,8 @@ export function pokerTable({ name, label, dealerCards = 3, dealerNote = '', spot
     const [x, y] = polar(cx, cy, s.r, a);
     return wrap(s, i, shape(x, y, s, a));
   }).join('') + extras(cx, cy, a, i))).join('');
-  const pays = payLines.map((t, i) => text(500, 168 + i * 21, t, { size: i === 0 ? 15 : 14, weight: i === 0 ? 700 : 500, cls: i === 0 ? 'cz-tx' : 'cz-tx dim' })).join('');
+  const pays = payLines.map((t, i) => text(500, 168 + i * 21, t, { size: i === 0 ? 15 : 14, weight: i === 0 ? 700 : 500, cls: i === 0 ? 'cz-tx pk-pays' : 'cz-tx dim pk-pays' })).join('');
   return svg(W, H, `${railBand(edge, d, W, H)}${path(d, { cls: 'cz-rail' })}${tableCrest(name)}${discardTray()}${shoe()}${dealer}
-    ${dealerNote ? text(500, 140, dealerNote, { size: 15, cls: 'cz-tx dim' }) : ''}
+    ${dealerNote ? text(500, 140, dealerNote, { size: 15, cls: 'cz-tx dim pk-note' }) : ''}
     ${pays}${arcLine ? arcText(cx, cy, 300, 160, 20, arcLine, { size: 18 }) : ''}${seats}`, { label, top: CREST_TOP });
 }

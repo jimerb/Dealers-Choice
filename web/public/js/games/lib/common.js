@@ -12,6 +12,8 @@ export const posFor = (n, seat) => POS_BY_N[n]?.[seat];
 export const clone = (x) => structuredClone(x);
 export function log(s, line) { s.log = [...(s.log ?? []), line].slice(-60); return s; }
 export function fx(s, ...names) { s.fx = [...(s.fx ?? []), ...names]; return s; }
+/** '1 book', '3 books'. */
+export const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 export const who = (s, seat) => (seat === 0 ? 'You' : s.names[seat]);
 export const whoVerb = (s, seat, you, other) => `${who(s, seat)} ${seat === 0 ? you : other}`;
 export const suitSpan = (su) => `<span class="trump-sym${su === 'H' || su === 'D' ? ' red-suit' : ''}">${SYM[su]}</span>`;

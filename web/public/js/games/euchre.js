@@ -1,8 +1,9 @@
 // Euchre: partners, 24-card deck (9–A), bowers, order up / name trump, going alone.
 import { deck, shuffle, rngOf, SUIT_TITLE } from '../core/cards.js';
-import { clone, log, fx, who, trickWinner, seatsVM, must, POS4, suitSpan } from './lib/common.js';
+import { clone, log, fx, who, trickWinner, seatsVM, must, POS4, suitSpan, plural } from './lib/common.js';
 import { trickHTML, panel, btn, scoreTable } from '../core/table.js';
 import { sortCards } from '../core/cards.js';
+import { cardHTML } from '../skin.js';
 
 const SAME_COLOR = { S: 'C', C: 'S', H: 'D', D: 'H' };
 const BASE = { 9: 9, 10: 10, J: 11, Q: 12, K: 13, A: 14 };
@@ -265,7 +266,8 @@ export default {
     let overlay = '', banner = '', center = '';
     if (s.phase === 'bid' && s.turn === 0) {
       if (s.round === 1) {
-        overlay = panel(`${suitSpan(s.up.suit)} ${SUIT_TITLE[s.up.suit]} turned up`, `<p>${s.dealer === 0 ? 'You are the dealer: pick it up, or turn it down.' : `Order it up to make ${SUIT_TITLE[s.up.suit]} trump (${s.dealer === 2 ? 'your partner' : s.names[s.dealer]} takes the card).`}</p>
+        // the turned card sits in the panel, since the panel takes the middle of the table
+        overlay = panel(`${suitSpan(s.up.suit)} ${SUIT_TITLE[s.up.suit]} turned up`, `<div class="row turn-up-row">${cardHTML(s.up)}<p>${s.dealer === 0 ? 'You are the dealer: pick it up, or turn it down.' : `Order it up to make ${SUIT_TITLE[s.up.suit]} trump (${s.dealer === 2 ? 'your partner' : s.names[s.dealer]} takes the card).`}</p></div>
           <div class="row">${btn('Pass', 'pass')}${btn(s.dealer === 0 ? 'Pick it up' : 'Order it up', 'order', '', true)}${btn('…and go alone', 'order', 'data-alone="1"')}</div>`);
       } else {
         const stuck = s.dealer === 0 && s.opts.stick === 'yes';
@@ -289,7 +291,7 @@ export default {
     return {
       subtitle: `Hand ${s.handNo} · to ${s.opts.target}`,
       scores: [{ label: 'Us', value: s.scores[0], us: true }, { label: 'Them', value: s.scores[1] }],
-      seats: seatsVM(s, 4, (i) => ({ tag: i === s.sitOut ? 'Sitting out' : i === s.maker ? `Maker${s.alone ? ' · alone' : ''}` : (s.phase === 'play' || s.phase === 'trickDone') && s.tricks[i] ? `${s.tricks[i]} tr` : '', tagMuted: i === s.sitOut })),
+      seats: seatsVM(s, 4, (i) => ({ tag: i === s.sitOut ? 'Sitting out' : i === s.maker ? `Maker${s.alone ? ' · alone' : ''}` : (s.phase === 'play' || s.phase === 'trickDone') && s.tricks[i] ? plural(s.tricks[i], 'trick') : '', tagMuted: i === s.sitOut })),
       hand: s.phase === 'discard' && s.turn === 0
         ? { cards: s.hands[0], legal: s.hands[0].map((c) => c.id), mode: 'select', maxSelect: 1 }
         : { cards: s.hands[0], legal: myTurn ? legal(s, 0).map((c) => c.id) : null },

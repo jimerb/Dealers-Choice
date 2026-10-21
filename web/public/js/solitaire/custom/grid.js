@@ -30,7 +30,7 @@ function lines(grid, size, scorer) {
   return out;
 }
 function gridHTML(s, size, ls, extraRight = '') {
-  let html = `<div class="poker-grid" style="grid-template-columns:repeat(${size}, var(--card-w)) 120px">`;
+  let html = `<div class="poker-grid" style="--size:${size}">`;
   for (let r = 0; r < size; r++) {
     for (let c = 0; c < size; c++) {
       const k = r * size + c, card = s.grid[k];

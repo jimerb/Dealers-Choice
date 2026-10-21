@@ -139,7 +139,7 @@ function paintButtons() {
   if (!ctx) return;
   const n = marks.length;
   ctx.setButtons({ action: drawing ? true : !run && n > 0, clear: !busy() && n > 0, undo: !busy() && n > 0, rebet: false, label: drawing ? 'Show all' : 'Play' });
-  ctx.setActions({ quick: !busy(), erase: !busy() && n > 0, stop: { hidden: !run || run.total < 2, disabled: !run || run.stop } });
+  ctx.setActions({ quick: !busy(), stop: { hidden: !run || run.total < 2, disabled: !run || run.stop } });
 }
 function paintAll() { paintBoard(); paintTicket(); paintDraw(); paintButtons(); }
 
@@ -330,7 +330,7 @@ export default {
       `<li>${n} spot${n > 1 ? 's' : ''}: ${Object.entries(t).map(([k, p]) => `catch ${k} pays ${p.toLocaleString('en-US')}`).join(', ')}</li>`).join('')}</ul>`],
     ['Odds', `Fewer spots win more often but pay less; the return is about the same either way: ${Object.keys(PAYS).map((n) => `${n} spot${n > 1 ? 's' : ''} ${pct(expectedReturn(Number(n)))}`).join(', ')}. A one-spot ticket catches one game in ${(1 / pCatch(1, 1)).toFixed(0)}; catching all ten of ten happens about once in ${Math.round(1 / pCatch(10, 10)).toLocaleString('en-US')} games.`],
     ['Games in a row', `Play up to ${MAX_GAMES} games with one ticket. Each game is paid for when it starts, so stopping or leaving between games costs nothing more. Changing the ticket or pressing Stop ends the run after the game being drawn.`],
-    ['Keys', 'Enter or Space plays (and, while balls are coming out, shows them all at once). Q quick picks, E erases the ticket, Backspace takes off the last number marked, S stops a run. On the board, arrow keys move and Enter or Space marks a number.'],
+    ['Keys', 'Enter or Space plays (and, while balls are coming out, shows them all at once). Q quick picks, C (or E, or the Clear button) clears the ticket, Backspace takes off the last number marked, S stops a run. On the board, arrow keys move and Enter or Space marks a number.'],
     ['Options', 'Drawing speed (relaxed, quick or instant) and how many numbers Quick pick marks on an empty ticket. Reduced motion shows the draw at once.'],
   ]),
 
@@ -347,9 +347,9 @@ export default {
     el.addEventListener('click', onClick);
     el.addEventListener('keydown', onKey);
     ctx.showRack(false);
+    ctx.keys({ e: erase }); // the bet bar's Clear (C) wipes the ticket; E does too
     ctx.actions([
       { id: 'quick', label: 'Quick pick', key: 'q', run: quick },
-      { id: 'erase', label: 'Erase', key: 'e', run: erase },
       { id: 'stop', label: 'Stop run', key: 's', hidden: true, run: () => { if (run && !run.stop) { run.stop = true; paintButtons(); ctx.message('The run stops after this game.'); } } },
     ]);
     paintAll();
@@ -366,5 +366,5 @@ export default {
   action,
   clear: erase,
   undo,
-  rebet() {},
+  hideButtons: ['rebet'], // a ticket is kept between games, so there is nothing to rebet
 };

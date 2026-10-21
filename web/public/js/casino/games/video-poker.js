@@ -12,6 +12,8 @@ import { svg, rect, text, cardSlot } from '../svg.js';
 import { ART, svgArt } from '../art.js';
 import { money } from '../../core/bank.js';
 
+/** "1 credit", "1,250 credits". */
+const cr = (n) => `${Number(n).toLocaleString('en-US')} credit${n === 1 ? '' : 's'}`;
 // ------------------------------------------------------------------ geometry (cabinet picture units)
 // The cabinet picture is 800 x 1200; its clear windows, where the code draws:
 const W = 800, H = 1200;
@@ -305,8 +307,8 @@ async function draw() {
   syncControls();
   if (res.credits) {
     ctx.play(res.row === 0 ? 'score' : 'win');
-    ctx.message(`${res.label}! You win ${res.credits.toLocaleString('en-US')} credits (${money(res.credits * ctx.machine.denom)}). Deal again or Cash out.`);
-    if (res.row === 0 || res.credits >= 100 * state.coins) ctx.banner(res.label, { tone: 'win', detail: `${res.credits.toLocaleString('en-US')} credits` });
+    ctx.message(`${res.label}! You win ${cr(res.credits)} (${money(res.credits * ctx.machine.denom)}). Deal again or Cash out.`);
+    if (res.row === 0 || res.credits >= 100 * state.coins) ctx.banner(res.label, { tone: 'win', detail: `${cr(res.credits)}` });
   } else {
     ctx.play('lose');
     ctx.message(ctx.machine.credits ? 'No win this time. Deal again.' : 'No win, and the meter is empty. Insert bills to keep playing.');
@@ -472,7 +474,7 @@ export default {
     ctx.machine.onChange(() => { if (root) { paintMeters(); if (state.phase !== 'hold' && !busy) paintStatus(statusText()); } });
     syncControls();
     ctx.message(ctx.machine.credits
-      ? `${machine().name}: ${ctx.machine.credits} credits on the meter. Bet One or Bet Max, then Deal.`
+      ? `${machine().name}: ${cr(ctx.machine.credits)} on the meter. Bet One or Bet Max, then Deal.`
       : `${machine().name} on a ${money(ctx.machine.denom)} machine. Insert bills to play.`);
     if (ctx.opts.hint) getWorker()?.postMessage({ warm: state.machine });
   },

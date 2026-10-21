@@ -40,13 +40,16 @@ const tableLabel = (t) => TABLE_LABEL[t] ?? t.replace(/-/g, ' ').replace(/^./, (
 
 export function mountChrome(active) {
   initAudio();
-  const nav = [['lobby', 'lobby.html', 'Lobby'], ['games', 'lobby.html#games', 'Card games'], ['solitaire', 'solitaire.html', 'Solitaire'], ['casino', 'casino.html', 'Casino']];
+  const nav = [['lobby', 'lobby.html', 'Lobby'], ['games', 'games.html', 'Card games'], ['solitaire', 'solitaire.html', 'Solitaire'], ['casino', 'casino.html', 'Casino']];
+  // A card game's own table (mountChrome('hearts'), mountChrome('pinochle') ...) sits under Card games;
+  // a page outside the three rooms (the sound board) passes '' and lights nothing.
+  const lit = !active || nav.some(([id]) => id === active) ? active : 'games';
   const header = document.getElementById('site-header');
   header.className = 'site-header';
   header.innerHTML = `<div class="bar">
     <a class="brand" href="lobby.html">${LOGO}<span class="brand-word">Dealers Choice</span></a>
     <nav class="site-nav" aria-label="Main">${nav.map(([id, href, label]) =>
-      `<a href="${href}"${id === active ? ' aria-current="page"' : ''}>${label}</a>`).join('')}</nav>
+      `<a href="${href}"${id === lit ? ` aria-current="${id === active ? 'page' : 'true'}"` : ''}>${label}</a>`).join('')}</nav>
     <div class="who">
       <div class="sound-ctl">
         <button class="icon-btn" type="button" id="sound-toggle" aria-expanded="false" aria-controls="sound-pop" aria-label="Sound settings">${SPEAKER(volumes.muted)}</button>

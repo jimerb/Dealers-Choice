@@ -40,7 +40,7 @@ button { font: inherit; }
 .brand-word { font-family: var(--font-display); font-size: 26px; letter-spacing: .2px; }
 .site-nav { display: flex; flex-wrap: wrap; gap: 4px; flex: 1 1 auto; }
 .site-nav a { padding: 10px 14px; border-radius: 8px; color: var(--ink-2); text-decoration: none; font-weight: 500; font-size: 15px; }
-.site-nav a[aria-current="page"] { background: var(--panel-2); color: var(--ink); font-weight: 600; }
+.site-nav a[aria-current="page"], .site-nav a[aria-current="true"] { background: var(--panel-2); color: var(--ink); font-weight: 600; }
 .site-nav a:hover { background: var(--panel-2); color: var(--ink); }
 .who { display: flex; align-items: center; gap: 10px; }
 .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--line); color: var(--brass-2); display: inline-flex; align-items: center; justify-content: center; font-weight: 700; }
@@ -320,4 +320,125 @@ dialog { max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overfl
 .sol-feature b { font-family: var(--font-display); font-weight: 400; font-size: clamp(28px, 4vw, 40px); line-height: 1.1; }
 .sol-feature > span:not(.sol-feature-eyebrow):not(.sol-feature-go) { color: var(--ink-2); font-size: 15px; }
 .sol-feature-go { justify-self: start; margin-top: 6px; padding: 8px 14px; border-radius: 999px; background: var(--brass-2); color: var(--on-brass); font-weight: 700; font-size: 14px; }
+
+/* ---------- the lobby (lobby.html): a welcome and the three rooms ----------
+   Everything here is scoped to main.lobby or an lb- class, so no other page changes. */
+html:has(main.lobby) { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html:has(main.lobby) { scroll-behavior: auto; } }
+.lobby .hero-copy { gap: 16px; }
+/* the rooms, as a short directory under the welcome */
+.lb-doors { display: grid; gap: 10px; margin-top: 6px; max-width: 540px; }
+.lb-door { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 9px 18px 9px 9px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line); color: var(--ink); text-decoration: none; transition: border-color .15s ease, transform .15s ease; }
+.lb-door:hover { border-color: var(--brass); color: var(--ink); transform: translateX(3px); }
+.lb-door img { width: 76px; height: 52px; border-radius: 10px; object-fit: cover; display: block; background: var(--felt); }
+.lb-door b { display: block; font-size: 17px; }
+.lb-door span span { display: block; font-size: 14px; color: var(--ink-3); }
+.lb-door-go { color: var(--brass-2); font-size: 18px; font-weight: 700; }
+
+.lb-room { margin-top: 56px; scroll-margin-top: 12px; }
+.lb-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 16px 24px; margin-bottom: 20px; }
+.lb-head > div { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1 1 320px; }
+.lb-head h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(30px, 3.4vw, 40px); line-height: 1.1; }
+.lb-head p { margin: 0; max-width: 600px; font-size: 16px; color: var(--ink-2); }
+/* solitaire and the casino sit in panels, under a felt banner that bleeds to the panel's edges */
+.lb-panel { background: var(--panel); border: 1px solid var(--line); border-radius: 22px; padding: 28px; overflow: hidden; }
+#solitaire .lb-banner { object-position: 50% 0; }
+.lb-banner { display: block; width: calc(100% + 56px); max-width: none; height: clamp(120px, 17vw, 230px); object-fit: cover; object-position: 50% 30%; margin: -28px -28px 4px; background: var(--felt);
+  -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent); mask-image: linear-gradient(to bottom, #000 62%, transparent); }
+
+/* featured games: one row on a desktop; the "more" tile ends the row */
+.lb-tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; }
+.lb-tiles-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.lb-tiles .tile-body { padding: 14px 16px 16px; }
+.lb-tiles .tile-body b { font-size: 18px; }
+.lb-go { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; margin-top: auto; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--brass); color: var(--brass-2); font-weight: 700; font-size: 14px; white-space: nowrap; }
+.lb-more { display: flex; flex-direction: column; gap: 8px; min-height: 100%; padding: 20px; border-radius: 16px; border: 2px solid var(--brass-2); background: linear-gradient(150deg, #1F6E57 0%, #0F3B30 80%); color: var(--ink); text-decoration: none; box-shadow: 0 10px 30px rgba(0,0,0,.3); transition: transform .15s ease; }
+.lb-more:hover { transform: translateY(-3px); color: var(--ink); }
+.lb-more-count { grid-area: count; font-size: 13px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--brass-2); }
+.lb-more-count b { display: block; font-family: var(--font-display); font-weight: 400; font-size: 52px; line-height: 1; letter-spacing: 0; color: var(--ink); }
+.lb-more-title { grid-area: title; font-size: 20px; font-weight: 700; }
+.lb-more-line { grid-area: line; font-size: 14px; color: var(--ink-2); }
+.lb-more .lb-go { grid-area: go; margin-top: auto; background: var(--brass-2); border-color: var(--brass-2); color: var(--on-brass); }
+.lb-more:hover .lb-go { background: var(--ink); border-color: var(--ink); }
+/* a solitaire layout: no art of its own, so a big faint suit sits in the corner */
+.lb-sol { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 6px; padding: 20px; border-radius: 16px; background: var(--ground); border: 1px solid var(--line-2); color: var(--ink); text-decoration: none; transition: transform .15s ease, border-color .15s ease; }
+.lb-sol:hover { transform: translateY(-3px); border-color: var(--brass); color: var(--ink); }
+.lb-sol::after { content: '♠'; position: absolute; right: -6px; top: -22px; font-size: 120px; line-height: 1; color: rgba(244,239,227,.06); pointer-events: none; }
+.lb-sol:nth-child(2)::after { content: '♥'; color: rgba(179,38,30,.16); }
+.lb-sol:nth-child(3)::after { content: '♣'; }
+.lb-sol-tag { font-size: 12px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--brass-2); }
+.lb-sol b { font-family: var(--font-display); font-weight: 400; font-size: 30px; line-height: 1.1; }
+.lb-sol > span:not(.lb-sol-tag):not(.lb-go) { font-size: 15px; color: var(--ink-2); margin-bottom: 10px; }
+/* the casino bank (read only): a pill in the tier's colour that opens the casino */
+.lb-bank { --tier: var(--brass); display: grid; grid-template-columns: auto auto; align-items: baseline; gap: 0 12px; padding: 10px 18px; border-radius: 16px; border: 2px solid var(--tier); background: var(--ground); color: var(--ink); text-decoration: none; }
+.lb-bank:hover { color: var(--ink); background: var(--panel-2); }
+.lb-bank-label { grid-column: 1 / -1; font-size: 12px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--ink-3); }
+.lb-bank b { font-family: var(--font-display); font-weight: 400; font-size: 28px; line-height: 1.15; }
+.lb-bank-tier { font-size: 14px; font-weight: 600; color: var(--brass-2); }
+
+/* tablets: four featured games in a row, and the "more" tile becomes a bar under them */
+@media (max-width: 1099px) {
+  .lb-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .lb-tiles-4 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .lb-more { grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: 'count title go' 'count line go'; align-items: center; gap: 2px 22px; padding: 16px 22px; }
+  .lb-more-count b { font-size: 44px; }
+  .lb-more .lb-go { margin: 0; }
+}
+@media (max-width: 760px) {
+  .lb-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .lb-tiles-4 { grid-template-columns: minmax(0, 1fr); }
+  .lb-tiles .tile-body { padding: 10px 12px 12px; gap: 2px; }
+  .lb-tiles .tile-body b { font-size: 16px; }
+  .lb-tiles .tile-body span { font-size: 13px; }
+  .lb-tiles .tile-body span:last-child { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+  .lb-tiles .tile-badge { right: 8px; top: 8px; font-size: 11px; padding: 4px 8px; }
+  /* a layout is a slim row: name and line on the left, Deal on the right */
+  .lb-sol { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'tag go' 'name go' 'line go'; align-items: center; gap: 2px 14px; padding: 14px 16px; }
+  .lb-sol-tag { grid-area: tag; }
+  .lb-sol b { grid-area: name; font-size: 24px; }
+  .lb-sol > span:not(.lb-sol-tag):not(.lb-go) { grid-area: line; margin: 0; font-size: 14px; }
+  .lb-sol .lb-go { grid-area: go; margin: 0; }
+  .lb-sol::after { font-size: 90px; top: -14px; right: 70px; }
+}
+@media (max-width: 520px) {
+  .lobby.wrap, .games-page.wrap { padding: 0 16px 48px; }
+  .lb-room { margin-top: 40px; }
+  .lb-panel { padding: 16px; border-radius: 18px; }
+  .lb-banner { width: calc(100% + 32px); margin: -16px -16px 4px; }
+  .lb-door { grid-template-columns: 64px minmax(0, 1fr) auto; gap: 12px; padding-right: 14px; }
+  .lb-door img { width: 64px; height: 46px; }
+  .lb-more { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'count title' 'count line' 'go go'; gap: 2px 16px; padding: 16px; }
+  .lb-more-count b { font-size: 40px; }
+  .lb-more .lb-go { margin-top: 10px; justify-self: start; }
+  .lb-head { margin-bottom: 14px; }
+  .lb-head p { font-size: 15px; }
+}
+@media (hover: none) {
+  .lb-door:hover, .lb-more:hover, .lb-sol:hover { transform: none; }
+}
+
+/* ---------- card games page (games.html) ---------- */
+.gp-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 20px 40px; padding: 36px 0 28px; }
+.gp-title { flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.gp-back { align-self: flex-start; font-size: 15px; font-weight: 600; text-decoration: none; }
+.gp-title h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 4.6vw, 56px); line-height: 1.05; }
+.gp-title p { margin: 0; max-width: 620px; font-size: 17px; color: var(--ink-2); }
+/* the house favorite: a slim card with Pinochle's art */
+.gp-pinochle { flex: 0 1 420px; min-width: 0; display: grid; grid-template-columns: 132px minmax(0, 1fr); align-items: center; gap: 16px; padding: 10px 18px 10px 10px; border-radius: 18px; border: 2px solid var(--brass-2); background: linear-gradient(150deg, #1F6E57 0%, #0F3B30 80%); color: var(--ink); text-decoration: none; box-shadow: 0 10px 30px rgba(0,0,0,.3); transition: transform .15s ease; }
+.gp-pinochle:hover { transform: translateY(-2px); color: var(--ink); }
+.gp-pinochle img { width: 132px; height: 84px; object-fit: cover; border-radius: 12px; display: block; background: var(--felt); }
+.gp-pinochle > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.gp-pinochle b { font-family: var(--font-display); font-weight: 400; font-size: 26px; line-height: 1.1; }
+.gp-pinochle > span > span:last-child { font-size: 14px; color: var(--ink-2); }
+.gp-filters { padding: 4px 0 10px; border-top: 1px solid var(--line); padding-top: 20px; }
+.games-page .games-note { margin: 4px 0 0; color: var(--ink-3); font-size: 15px; }
+@media (max-width: 520px) {
+  .gp-head { padding: 24px 0 20px; }
+  .gp-pinochle { grid-template-columns: 96px minmax(0, 1fr); gap: 12px; }
+  .gp-pinochle img { width: 96px; height: 62px; }
+  .gp-pinochle b { font-size: 22px; }
+  .gp-filters button { min-height: 40px; padding: 0 12px; }
+}
+@media (hover: none) { .gp-pinochle:hover { transform: none; } }
+.games-page .tile { scroll-margin-top: 24px; }
 

@@ -40,7 +40,7 @@ export const CASINO = [
     id: 'table', title: 'Table games', blurb: 'Pick your limits and buy in',
     games: [
       { id: 'blackjack', felt: '#1E5A46', name: 'Blackjack', blurb: 'Beat the dealer to 21 without going over. Blackjack pays 3 to 2.', action: 'Deal', icon: 'cards' },
-      { id: 'roulette', felt: '#6B2E2E', name: 'Roulette', blurb: 'Double-zero wheel. Straight up pays 35 to 1, red or black pays even.', action: 'Spin', icon: 'wheel' },
+      { id: 'roulette', felt: '#6B2E2E', name: 'Roulette', blurb: 'American or European wheel. Straight up pays 35 to 1, red or black pays even.', action: 'Spin', icon: 'wheel' },
       { id: 'craps', felt: '#2E5E3A', name: 'Craps', blurb: 'Pass line, come, field and place bets on two dice.', action: 'Roll', icon: 'dice' },
       { id: 'baccarat', felt: '#4A2E5E', name: 'Baccarat', blurb: 'Bet on Player, Banker or a Tie; the cards play themselves.', action: 'Deal', icon: 'cards' },
       { id: 'three-card-poker', felt: '#24506B', name: 'Three Card Poker', blurb: 'Ante and play against the dealer, with a Pair Plus side bet.', action: 'Deal', icon: 'cards' },

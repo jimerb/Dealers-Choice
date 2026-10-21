@@ -7,6 +7,7 @@ import { mountChrome, esc, playerName, playerAvatar, avatarHTML } from '../../he
 import { play } from '../../core/sound.js';
 import { pickOpponents, castByName, renamePlaceholders } from '../../core/cast.js';
 import { trumpPlaqueHTML } from '../../core/pieces.js';
+import { autoFit } from '../../core/table.js';
 import { setupHowto } from '../../core/howto.js';
 import { pinochleHowtoHTML } from './howto.js';
 
@@ -40,6 +41,7 @@ else if (asked && asked !== state.variant) {
 save(); // save at once so a reload keeps the same opponents (new, or renamed in an old save)
 let timer = null;
 let howto = null;
+const fit = autoFit(document.getElementById('felt'));
 
 /** A new game of `variant`: fresh opponents from the cast, or the same ones when playing again (`keep`). */
 function fresh(keep = null, variant = state?.variant ?? 'auction') {
@@ -320,6 +322,7 @@ function render() {
     <div class="center">${trickHTML()}${b ? `<div class="banner" role="status">${b}</div>` : ''}${ov ? `<div class="overlay">${ov}</div>` : ''}</div>
     <div class="seat south">${handHTML()}${plate(0)}</div>`;
   document.getElementById('side').innerHTML = sidePanel();
+  fit();
 }
 
 // ------------------------------------------------------------------ input

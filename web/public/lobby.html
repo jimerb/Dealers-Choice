@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Dealers Choice</title>
-<meta name="description" content="Dealers Choice: classic card games in your browser.">
+<meta name="description" content="Dealers Choice: classic card games, solitaire and a casino in your browser.">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/art/brand/logo-mark-32.png">
 <link rel="icon" type="image/png" sizes="64x64" href="assets/art/brand/logo-mark-64.png">
 <link rel="icon" type="image/png" sizes="512x512" href="assets/art/brand/logo-mark-512.png">
@@ -17,13 +17,15 @@
 </head>
 <body>
 <header id="site-header"></header>
-<main class="wrap" id="top">
-  <section class="hero" aria-labelledby="hero-title">
+<main class="wrap lobby" id="top">
+  <!-- The way in: a welcome, and the three rooms of the house. -->
+  <section class="hero lb-hero" aria-labelledby="hero-title">
     <div class="hero-copy">
-      <span class="eyebrow">Tonight's table</span>
+      <span class="eyebrow">Welcome to the card room</span>
       <p class="greeting" id="greeting"></p>
       <h1 id="hero-title">Pull up a chair.<br>Every table's open.</h1>
-      <p>17 card games. 51 solitaire layouts. 9 variants to try. Bid, meld, peg and bluff against a cast of twelve characters, or play a quiet hand on your own.</p>
+      <p id="hero-line"></p>
+      <nav class="lb-doors" aria-label="The rooms" id="doors"></nav>
     </div>
     <div class="feature">
       <a class="feature-art" href="pinochle.html" aria-label="Play Pinochle">
@@ -41,27 +43,40 @@
     </div>
   </section>
 
-  <section id="games" aria-labelledby="games-title">
-    <div class="section-head">
-      <h2 id="games-title">The card room</h2>
-      <div class="filters" role="group" aria-label="Filter games" id="filters"></div>
+  <section class="lb-room" id="games" aria-labelledby="games-title">
+    <div class="lb-head">
+      <div>
+        <span class="eyebrow">Room one</span>
+        <h2 id="games-title">Card games</h2>
+        <p>Bid, meld, peg and bluff against a cast of twelve characters who play to win.</p>
+      </div>
     </div>
-    <div id="groups"></div>
+    <div class="lb-tiles" id="games-tiles"></div>
   </section>
 
-  <section class="parlor" id="solitaire" aria-labelledby="sol-title">
-    <img class="parlor-banner" src="assets/art/lobby/solitaire-banner.webp" width="1536" height="480" alt="" loading="lazy" decoding="async">
-    <div class="section-head" style="margin:0">
-      <h2 id="sol-title" style="font-size:32px">Solitaire parlor</h2>
-      <a class="btn sm" href="solitaire.html">Open the parlor</a>
+  <section class="lb-room lb-panel" id="solitaire" aria-labelledby="sol-title">
+    <img class="lb-banner" src="assets/art/lobby/solitaire-banner.webp" width="1536" height="480" alt="" loading="lazy" decoding="async">
+    <div class="lb-head">
+      <div>
+        <span class="eyebrow">Room two</span>
+        <h2 id="sol-title">Solitaire parlor</h2>
+        <p>A quiet table for one. Deal a classic, or try a layout you have never heard of.</p>
+      </div>
     </div>
-    <a class="sol-feature" href="solitaire.html?v=klondike">
-      <span class="sol-feature-eyebrow">Start here · the classic</span>
-      <b>Klondike</b>
-      <span>Build down in alternating colors and draw one card at a time. The game that came with Windows.</span>
-      <span class="sol-feature-go">Play Klondike →</span>
-    </a>
-    <div class="parlor-cols" id="parlor"></div>
+    <div class="lb-tiles lb-tiles-4" id="sol-tiles"></div>
+  </section>
+
+  <section class="lb-room lb-panel lb-casino" id="casino" aria-labelledby="casino-title">
+    <img class="lb-banner" src="assets/art/casino/chooser/casino-banner.webp" width="1536" height="480" alt="" loading="lazy" decoding="async">
+    <div class="lb-head">
+      <div>
+        <span class="eyebrow">Room three</span>
+        <h2 id="casino-title">Casino</h2>
+        <p>One bankroll plays every table and machine. Win big enough and your credit goes up a tier.</p>
+      </div>
+      <a class="lb-bank" href="casino.html" id="bank" aria-label="Your casino bank"></a>
+    </div>
+    <div class="lb-tiles" id="casino-tiles"></div>
   </section>
 </main>
 <footer id="site-footer"></footer>

@@ -1,7 +1,7 @@
 // Go Fish (4 players): ask a player for a rank you hold; collect books of four.
 import { deck, shuffle, sortCards, rngOf, lo } from '../core/cards.js';
-import { clone, log, fx, who, must, seatsVM } from './lib/common.js';
-import { panel, btn, scoreTable } from '../core/table.js';
+import { clone, log, fx, who, must, seatsVM, plural } from './lib/common.js';
+import { panel, btn, scoreTable, cw } from '../core/table.js';
 import { backHTML } from '../skin.js';
 
 const RANK_PLURAL = (r) => ({ A: 'aces', K: 'kings', Q: 'queens', J: 'jacks', 6: 'sixes' })[r] ?? `${r}s`;
@@ -161,12 +161,12 @@ export default {
     } else if (myTurn) banner = sel ? `Ask someone for ${RANK_PLURAL(sel.rank)}` : 'Pick a card, then choose who to ask';
     else banner = `${who(s, s.turn)} is asking…`;
     const askBtn = (i) => (myTurn && s.hands[i].length ? `<button class="btn sm ${sel ? 'primary' : ''}" data-act="ask" data-target="${i}" data-with-sel ${sel ? '' : 'disabled'}>Ask ${s.names[i]}</button>` : '');
-    const center = `<div class="pile" style="--card-w:70px">${s.stock.length ? backHTML() : '<span class="empty-slot">Empty</span>'}<span>The pond · ${s.stock.length} cards</span>
+    const center = `<div class="pile" style="--card-w:${cw(70)}">${s.stock.length ? backHTML() : '<span class="empty-slot">Empty</span>'}<span>The pond · ${s.stock.length} cards</span>
       ${s.lastFish ? '<span>You fished a card.</span>' : ''}</div>`;
     return {
       subtitle: `${s.books.flat().length} of 13 books made`,
-      scores: s.names.map((n, i) => ({ label: i === 0 ? 'You' : n, value: `${s.books[i].length} books`, us: i === 0 })),
-      seats: seatsVM(s, 4, (i) => ({ partner: false, tag: `${s.books[i].length} books`, extra: i ? askBtn(i) : '' })),
+      scores: s.names.map((n, i) => ({ label: i === 0 ? 'You' : n, value: plural(s.books[i].length, 'book'), us: i === 0 })),
+      seats: seatsVM(s, 4, (i) => ({ partner: false, tag: plural(s.books[i].length, 'book'), extra: i ? askBtn(i) : '' })),
       hand: { cards: s.hands[0], legal: myTurn ? s.hands[0].map((c) => c.id) : [], mode: 'select', maxSelect: 1 },
       center, banner, overlay,
       side: [{ title: 'Books', html: s.names.map((n, i) => `<div>${i === 0 ? 'You' : n}: ${s.books[i].length ? s.books[i].map((r) => r).join(' ') : '—'}</div>`).join('') }],

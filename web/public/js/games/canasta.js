@@ -1,7 +1,7 @@
 // Canasta (4 players, partners). Two decks + 4 jokers. Wilds: jokers and 2s. Red 3s are bonus cards.
 import { deck, shuffle, rngOf, SYM } from '../core/cards.js';
 import { clone, log, fx, who, must, seatsVM } from './lib/common.js';
-import { panel, btn, scoreTable } from '../core/table.js';
+import { panel, btn, scoreTable, cw } from '../core/table.js';
 import { cardHTML, backHTML } from '../skin.js';
 
 const team = (p) => p % 2;
@@ -350,7 +350,7 @@ export default {
     const up = s.pile.at(-1);
     const center = `<div class="canasta-table">
       ${meldRow(1)}
-      <div class="row" style="gap:24px;--card-w:70px;justify-content:center">
+      <div class="row" style="gap:24px;--card-w:${cw(70)};justify-content:center">
         <div class="pile">${s.stock.length ? backHTML() : '<span class="empty-slot">Empty</span>'}<span>Stock · ${s.stock.length}</span></div>
         <div class="pile">${up ? cardHTML(up) : '<span class="empty-slot">Pile</span>'}<span>Pile · ${s.pile.length}${s.frozen ? ' · <b>frozen</b>' : ''}</span></div>
       </div>
@@ -360,7 +360,8 @@ export default {
       subtitle: `Hand ${s.handNo} · to 5,000 · your first meld needs ${t0req}`,
       scores: [{ label: 'Us', value: s.scores[0], us: true }, { label: 'Them', value: s.scores[1] }],
       seats: seatsVM(s, 4, (i) => ({ tag: s.red3[team(i)].length && (i < 2) ? `${s.red3[team(i)].length} red 3${s.red3[team(i)].length > 1 ? 's' : ''}` : '' })),
-      hand: { cards: s.hands[0], legal: my ? s.hands[0].map((c) => c.id) : null, mode: my ? 'select' : 'play', maxSelect: 20 },
+      // at the count the panel takes the table (your leftover cards are in its 'Cards in hand' line)
+      hand: overlay ? null : { cards: s.hands[0], legal: my ? s.hands[0].map((c) => c.id) : null, mode: my ? 'select' : 'play', maxSelect: 20 },
       center, banner, overlay,
       side: [{ title: 'Red 3s', html: `<div>Us: ${s.red3[0].length} · Them: ${s.red3[1].length}</div>` },
         { title: 'Card values', html: '<div style="font-size:13px">Joker 50 · A, 2: 20 · 8–K: 10 · 4–7, black 3: 5</div>' }],

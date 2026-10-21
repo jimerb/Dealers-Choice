@@ -1,19 +1,33 @@
 /* Solitaire parlor */
-.sol-felt { display: block; min-height: 560px; padding: 18px; position: relative; touch-action: manipulation; } /* no double-tap zoom: a second tap sends a card home */
+.sol-page { max-width: 2400px; }
+/* The felt is sized by ui.js to fill the window below it; rules-driven boards are planned to fit it
+   exactly (layout.js) and the custom layouts are scaled to fit it, so nothing ever spills out. */
+.sol-felt { display: flex; flex-direction: column; min-height: 0; padding: 18px; position: relative; overflow: hidden; touch-action: manipulation; } /* no double-tap zoom: a second tap sends a card home */
 .sol-intro { margin: 12px 0 0; max-width: 760px; color: var(--ink-2); font-size: 15px; }
-.sol-board { --card-w: clamp(52px, 6.6vw, 84px); display: flex; flex-direction: column; gap: 18px; }
+.sol-board { --card-w: clamp(52px, 6.6vw, 84px); display: flex; flex-direction: column; gap: calc(var(--gap, 12px) * 1.5); flex: none; margin: 0 auto; max-width: 100%; }
+.sol-felt.custom > .sol-board { width: 100%; margin: auto 0; align-items: center; gap: 18px; }
+@media (min-width: 761px) { .sol-felt.custom > .sol-board { --card-w: 72px; } } /* then scaled to fit */
 .sol-board.wide { --card-w: clamp(44px, 5.4vw, 72px); }
-.sol-top { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+.sol-top { display: flex; flex-wrap: wrap; gap: var(--gap, 10px); align-items: flex-start; }
 .sol-pile { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: var(--card-w); }
-.sol-label { font-size: 12px; color: var(--ink-3); min-height: 14px; }
-.sol-tableau { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, var(--card-w))); gap: 10px; justify-content: start; }
+.sol-pile.push { margin-left: auto; }
+.sol-pile.is-waste { min-width: calc(var(--card-w) * 1.6); align-items: flex-start; }
+.sol-pile.is-waste .sol-label { align-self: center; }
+.sol-label { font-size: 12px; line-height: 14px; color: var(--ink-3); min-height: 14px; }
+.sol-board .empty-slot { font-size: clamp(9px, calc(var(--card-w) * .15), 24px); overflow: hidden; text-align: center; }
+.sol-tableau { display: grid; grid-template-columns: repeat(var(--cols), var(--card-w)); gap: calc(var(--gap, 10px) * 1.5) var(--gap, 10px); justify-content: center; align-items: start; }
 .sol-col { position: relative; width: var(--card-w); }
 .sol-col .sol-empty { position: absolute; inset: 0 0 auto 0; width: var(--card-w); aspect-ratio: 5 / 7; border-radius: calc(var(--card-w) * .06); border: 2px dashed var(--mark, rgba(244,239,227,.25)); }
 .sol-card, .sol-flat { padding: 0; border: 0; background: none; cursor: pointer; display: block; border-radius: calc(var(--card-w) * .06); }
 .sol-card { position: absolute; left: 0; }
+.sol-card > .card, .sol-flat > .card, .sol-pile > .card, .sol-under > .card { display: block; } /* no line-box gap under a card */
 .sol-card.sel .card, .sol-flat.sel .card { box-shadow: 0 0 0 3px var(--brass-2), 0 6px 14px rgba(0,0,0,.4); }
 .sol-card.sel { transform: translateY(-4px); }
 .sol-flat.covered { cursor: default; }
+.sol-felt:not(.custom) [data-pile] { touch-action: none; } /* a finger drags the card instead of scrolling the page */
+.sol-card.dragging, .sol-flat.dragging { visibility: hidden; }
+.sol-ghost { position: fixed; z-index: 50; width: var(--card-w); pointer-events: none; filter: drop-shadow(0 10px 16px rgba(0,0,0,.45)); }
+.sol-card:focus-visible, .sol-flat:focus-visible, .slot-btn:focus-visible, .pile-btn:focus-visible { outline: 3px solid var(--brass-2); outline-offset: 2px; }
 .sol-flat.covered .card { filter: brightness(.7); }
 .sol-waste { display: flex; }
 .sol-waste .sol-under + .sol-under, .sol-waste .sol-under + .sol-flat { margin-left: calc(var(--card-w) * -.7); }
@@ -23,7 +37,7 @@
 .pyr-row { display: flex; gap: 6px; margin-top: calc(var(--card-w) * -.75); }
 .pyr-row:first-child { margin-top: 0; }
 .pyr-gap { width: var(--card-w); aspect-ratio: 5 / 7; }
-.poker-grid { display: grid; grid-template-columns: repeat(5, var(--card-w)) 120px; gap: 8px; align-items: center; --card-w: clamp(50px, 6vw, 72px); }
+.poker-grid { display: grid; grid-template-columns: repeat(var(--size, 5), var(--card-w)) 120px; gap: 8px; align-items: center; --card-w: clamp(50px, 6vw, 72px); }
 .pg-cell { width: var(--card-w); aspect-ratio: 5 / 7; display: block; }
 .pg-empty { border: 2px dashed var(--mark, rgba(244,239,227,.35)); border-radius: 8px; background: transparent; cursor: pointer; }
 .pg-empty:hover { border-color: var(--brass-2); }
@@ -63,7 +77,8 @@
 .arcade-time.low { color: #F08A80; }
 .tri-peaks { position: relative; height: calc(var(--card-w) * 3.3); width: calc(var(--card-w) * 10.9); margin: 0 auto 14px; --card-w: clamp(40px, 5.4vw, 64px); }
 .tp-card { position: absolute; }
-.bj-hands { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.sol-board.arcade > div:last-child { width: 100%; display: flex; flex-direction: column; align-items: center; }
+.bj-hands { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; width: min(100%, 940px); }
 .bj-hand { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; padding: 10px; border-radius: 12px; border: 1px solid var(--line-2); background: rgba(8,24,19,.55); color: var(--ink); cursor: pointer; min-height: 110px; }
 .bj-hand:hover { border-color: var(--brass); }
 .bj-hand b { font-size: 18px; color: var(--brass-2); }
@@ -71,28 +86,35 @@
 .bj-cards .card + .card { margin-left: calc(var(--card-w) * -.45); }
 .arcade-grid { display: grid; grid-template-columns: repeat(4, var(--card-w)); gap: 8px; }
 
+/* the toolbar's short labels are for phones */
+.t-short { display: none; }
+@media (max-width: 760px) {
+  .t-long { display: none; }
+  .t-short { display: inline; }
+  .sol-page .table-top { gap: 6px 8px; margin-bottom: 8px; }
+  .sol-page .table-top .spacer { display: none; }
+  #sol-tools { flex: 1 1 100%; gap: 6px; flex-wrap: nowrap; }
+  #sol-tools .btn { flex: 1 1 auto; padding: 0 8px; min-width: 0; }
+  #sol-status { flex: 1 1 100%; order: 3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* one line, so the felt never jumps */
+  #sol-tools { order: 4; }
+  #sol-sub { display: none; } /* the layout's one-liner is in How to play */
+}
 /* phones: size cards so a row of columns (--cols, or Pyramid's seven) fits the felt instead of overlapping */
 @media (max-width: 760px) {
   .sol-felt { container-type: inline-size; padding: 10px; }
-  .sol-board, .sol-board.wide, .sol-board.xwide { --card-w: min(56px, calc((100cqw - (var(--cols, 7) - 1) * 5px) / var(--cols, 7))); gap: 14px; }
-  .sol-top, .sol-tableau, .pyr-row { gap: 5px; }
+  .custom > .sol-board, .custom > .sol-board.wide { --card-w: 52px; gap: 14px; } /* then scaled to fit */
+  .custom .sol-tableau { --card-w: min(56px, calc((100cqw - (var(--cols, 7) - 1) * 5px) / var(--cols, 7))); }
+  .custom .sol-tableau.split { --cols: 6 !important; } /* Triplets: three rows of six */
+  .custom .sol-top, .custom .sol-tableau, .pyr-row { gap: 5px; }
   /* layouts with their own card sizes: fit their widest row to the felt too */
   .gaps .gaps-grid { --card-w: min(34px, calc((100cqw - 12 * 3px) / 13)); }
   .gaps-row { gap: 3px; }
   .tri-peaks { --card-w: min(40px, calc(100cqw / 10.9)); }
-  .poker-grid { grid-template-columns: repeat(5, var(--card-w)) 60px !important; gap: 5px; --card-w: min(50px, calc((100cqw - 60px - 25px) / 5)); } /* beats the inline 120px score column */
+  .clock { --card-w: 38px; aspect-ratio: 1 / 1.25; } /* taller, so the 8-9-10 and 2-3-4 piles clear each other */
+  .poker-grid { grid-template-columns: repeat(var(--size, 5), var(--card-w)) 60px; gap: 5px; --card-w: min(50px, calc((100cqw - 60px - var(--size, 5) * 5px) / var(--size, 5))); }
   .pg-score { font-size: 11px; line-height: 1.2; overflow-wrap: anywhere; }
   .slide-grid { --card-w: min(44px, calc((100cqw - 2 * 44px - 7 * 6px) / 6)); } /* six cards between two arrow buttons */
 }
-/* touch tablets: cards grow to fill the felt's width instead of following the window width */
-@media (pointer: coarse) and (min-width: 761px) and (min-height: 501px) {
-  .sol-felt { container-type: inline-size; }
-  .sol-board, .sol-board.wide, .sol-board.xwide { --card-w: min(84px, 8vh, calc((100cqw - (max(var(--cols, 7), 7) - 1) * 10px) / max(var(--cols, 7), 7))); }
-  .gaps .gaps-grid { --card-w: min(56px, calc((100cqw - 12 * 4px) / 13)); }
-  .poker-grid { --card-w: min(84px, calc((100cqw - 120px - 5 * 8px) / 5)); }
-  .clock { --card-w: 64px; }
-}
-
 /* Each section of the parlor has its own shade, so the groups stand apart. */
 .sol-group-0 .sol-tile { background: linear-gradient(160deg, #1F6E57 0%, var(--panel) 70%); }
 .sol-group-1 .sol-tile { background: linear-gradient(160deg, #2D6A5C 0%, var(--panel) 70%); }

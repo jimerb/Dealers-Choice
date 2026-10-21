@@ -38,6 +38,8 @@ const optsKey = (id) => `dc.casino.opts.${id}`;
 const howtoAuto = () => { try { return localStorage.getItem(HOWTO_AUTO) !== '0'; } catch { return true; } };
 
 const $ = (id) => document.getElementById(id);
+/** "1 credit", "1,250 credits". */
+const cr = (n) => `${Number(n).toLocaleString('en-US')} credit${n === 1 ? '' : 's'}`;
 const chooser = $('chooser');
 const room = $('room');
 const felt = $('cz-felt');
@@ -175,8 +177,10 @@ function flushBigWin() {
   o.setAttribute('role', 'status');
   o.innerHTML = `<div class="cz-bigwin-card"><span class="cz-bigwin-burst" aria-hidden="true"></span><b>${esc(title)}</b>${detail ? `<span>${esc(detail)}</span>` : ''}</div>`;
   document.body.append(o);
+  // the result banner gives way while the card is up, then comes back (it says what the card doesn't)
+  $('cz-result').classList.add('under-big');
   play('score');
-  const done = () => { o.classList.add('out'); setTimeout(() => o.remove(), 400); document.removeEventListener('pointerdown', done, true); document.removeEventListener('keydown', done, true); };
+  const done = () => { o.classList.add('out'); setTimeout(() => { o.remove(); if (!document.querySelector('.cz-bigwin')) unhideBanner(); }, 400); document.removeEventListener('pointerdown', done, true); document.removeEventListener('keydown', done, true); };
   setTimeout(() => { document.addEventListener('pointerdown', done, true); document.addEventListener('keydown', done, true); }, 250);
   setTimeout(done, reducedMotion() ? 2500 : 4000);
 }
@@ -391,11 +395,16 @@ async function openGame(id, stakesId, { push = false } = {}) {
   renderActions();
   clearBanner();
   setButtons({ action: false, clear: false, rebet: false, undo: false });
+  // buttons a game has no use for are not shown at all (a machine plays on credits: no Undo, Clear or Rebet)
+  const hide = new Set(mod.hideButtons ?? (current.machine ? ['undo', 'clear', 'rebet'] : []));
+  for (const b of ['undo', 'clear', 'rebet']) $(`cz-${b}`).hidden = hide.has(b);
   $('cz-erase').hidden = true;
   paintBank();
   current.ctx = makeCtx(current);
   current.mod.mount(felt, current.ctx);
   window.scrollTo(0, 0);
+  fitTable();
+  current.ctx.after(350, () => fitTable()); // pictures and fonts that arrived since
   if (!maybeShowHowto()) checkBroke();
 }
 
@@ -415,7 +424,7 @@ function closeGame() {
   if (c.machine) {
     c.machine.leave();
     const out = c.machine.cashOut();
-    if (out.credits) toast(`Cashed out ${out.credits.toLocaleString('en-US')} credits (${money(out.dollars)}).`);
+    if (out.credits) toast(`Cashed out ${cr(out.credits)} (${money(out.dollars)}).`);
   }
   for (const off of c.offs) off();
   felt.innerHTML = '';
@@ -425,6 +434,8 @@ function closeGame() {
   clearTimeout(bannerTimer);
   if (heldEvents.length) announce(heldEvents.splice(0));
   delete room.dataset.game;
+  room.classList.remove('cz-side');
+  room.style.removeProperty('--cz-fit');
   document.body.classList.remove('cz-playing');
   for (const d of document.querySelectorAll('#cz-dialog, #cz-rules')) if (d.open) d.close();
 }
@@ -623,6 +634,87 @@ $('cz-actions').addEventListener('click', (e) => {
   if (b && current) runAction(current.actions[Number(b.dataset.act)]);
 });
 
+// ---- fitting the table to the screen
+// On a tablet or a computer the table, its message line and the bet bar all fit on the screen
+// without scrolling, and the table takes all the room that is left: the shell works out the height
+// a drawing on the felt may take and hands it to the CSS as --cz-fit (px). Where the screen is wide
+// for its height the controls go beside the felt instead of under it (#room.cz-side), when that
+// gives the table more room. Phones scroll, with the controls docked at the bottom, and keep their
+// own sizes.
+const PHONE_MQ = matchMedia('(max-width: 640px)');
+const SIDE_MIN_W = 1100;
+let fitMode = 'bottom', fitTimer = 0, fitDockH = 0;
+const dockEl = room.querySelector('.cz-dock');
+/** The area of the biggest drawing on the felt, as drawn (a letterboxed SVG counts its drawing only). */
+function drawnArea() {
+  let best = 0;
+  for (const s of felt.querySelectorAll('svg[viewBox]')) {
+    const r = s.getBoundingClientRect();
+    const vb = s.viewBox?.baseVal;
+    if (!r.width || !r.height || !vb?.width || !vb?.height) continue;
+    const k = Math.min(r.width / vb.width, r.height / vb.height);
+    best = Math.max(best, vb.width * k * vb.height * k);
+  }
+  return best;
+}
+/** Lay the room out in `mode` and size --cz-fit so nothing runs past the bottom of the screen. */
+function applyFit(mode) {
+  fitMode = mode;
+  room.classList.toggle('cz-side', mode === 'side');
+  const vh = innerHeight;
+  const fr = felt.getBoundingClientRect();
+  const cs = getComputedStyle(felt);
+  const pads = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+  const bar = room.querySelector('.cz-betbar');
+  const below = mode === 'side' ? 0 : bar.getBoundingClientRect().bottom - fr.bottom;
+  let fit = Math.floor(vh - (fr.top + scrollY) - pads - below - 10);
+  for (let i = 0; i < 3; i++) {
+    room.style.setProperty('--cz-fit', `${Math.max(240, fit)}px`);
+    const bottom = mode === 'side'
+      ? Math.max(felt.getBoundingClientRect().bottom, dockEl.getBoundingClientRect().bottom)
+      : bar.getBoundingClientRect().bottom;
+    const over = Math.ceil(bottom + scrollY + 10 - vh);
+    if (over <= 1 || fit <= 240) break;
+    fit -= over;
+  }
+  fitDockH = dockEl.getBoundingClientRect().height;
+}
+/** Pick the layout (controls under the felt or beside it) and fit the table to the screen. */
+function fitTable({ pick = true } = {}) {
+  if (!current || room.hidden) return;
+  if (PHONE_MQ.matches) {
+    room.classList.remove('cz-side');
+    room.style.removeProperty('--cz-fit');
+    fitMode = 'bottom';
+    return;
+  }
+  const y = scrollY;
+  if (!pick || innerWidth < SIDE_MIN_W) { applyFit(pick ? 'bottom' : fitMode); scrollTo(0, y); return; }
+  applyFit('side');
+  const side = drawnArea();
+  const sideOK = dockEl.getBoundingClientRect().bottom + scrollY <= innerHeight;
+  applyFit('bottom');
+  if (sideOK && side > drawnArea() * 1.1) applyFit('side');
+  scrollTo(0, y);
+}
+const refit = (o) => { cancelAnimationFrame(fitTimer); fitTimer = requestAnimationFrame(() => fitTable(o)); };
+addEventListener('resize', () => refit());
+// the controls under the felt grow (a second row of buttons): the table makes room
+if (typeof ResizeObserver === 'function') {
+  new ResizeObserver(() => {
+    if (!current || fitMode === 'side' || Math.abs(dockEl.getBoundingClientRect().height - fitDockH) < 2) return;
+    refit({ pick: false });
+  }).observe(dockEl);
+  // the top bar wraps to another row (a longer figure in the bank pill): the table makes room
+  let topH = 0;
+  new ResizeObserver(([e]) => {
+    const h = e.contentRect.height;
+    if (!current || Math.abs(h - topH) < 2) return;
+    topH = h;
+    refit({ pick: false });
+  }).observe(room.querySelector('.table-top'));
+}
+
 // ---- result banner over the felt (aria-live), cleared by the next bet
 // Where it sits: `at` 'middle' (default), 'top' (over the crest) or 'bottom' (over the betting
 // area), per call or for the whole game with the module's `bannerAt`. It goes by itself after
@@ -643,6 +735,13 @@ function fadeBanner() {
   if (reducedMotion()) { clearBanner(); return; }
   b.classList.add('out');
   bannerTimer = setTimeout(clearBanner, 400);
+}
+/** After a big-win card: the banner shows again for a moment before it fades. */
+function unhideBanner() {
+  const b = $('cz-result');
+  if (!b.classList.contains('under-big')) return;
+  b.classList.remove('under-big');
+  if (!b.hidden) { clearTimeout(bannerTimer); bannerTimer = setTimeout(fadeBanner, 2500); }
 }
 function clearBanner() { clearTimeout(bannerTimer); const b = $('cz-result'); b.hidden = true; b.innerHTML = ''; b.classList.remove('out'); }
 $('cz-result').addEventListener('click', clearBanner);
@@ -779,7 +878,7 @@ function makeMachineCtx(c) {
       if (!m.held && bank.machine) { c.ctx.message('This machine was cashed out from another window. Insert bills to play.'); paintMeter(); return false; }
       if (m.bet(credits)) { paintMeter(); return true; }
       play('error');
-      c.ctx.message(m.credits ? `That needs ${credits} credits; the meter has ${m.credits}.` : 'Insert bills to play.');
+      c.ctx.message(m.credits ? `That needs ${cr(credits)}; the meter has ${m.credits}.` : 'Insert bills to play.');
       if (!m.credits) insertBills();
       return false;
     },
@@ -788,7 +887,7 @@ function makeMachineCtx(c) {
       if (!c.live) return null;
       const r = m.pay(won);
       paintMeter();
-      if (r.net >= 100) queueBigWin({ title: 'Big win!', detail: `${r.won.toLocaleString('en-US')} credits (${money(r.won * m.denom)})` });
+      if (r.net >= 100) queueBigWin({ title: 'Big win!', detail: `${cr(r.won)} (${money(r.won * m.denom)})` });
       return r;
     },
     /** Keep the shell's credit meter (and Cash out) on the figure it shows now while the game reveals
@@ -831,7 +930,12 @@ function paintMeter() {
   const n = c.meterShown ?? m.credits;
   $('cz-credits').textContent = n.toLocaleString('en-US');
   $('cz-credits-usd').textContent = `= ${money(n * m.denom)}`;
-  $('cz-cashout').disabled = !m.credits || m.betting > 0 || c.meterShown != null;
+  // mid-hand Cash out stays pressable and says why it can't pay out yet (a disabled button can't)
+  const out = $('cz-cashout'), busy = m.betting > 0;
+  out.disabled = c.meterShown != null || (!m.credits && !busy);
+  out.classList.toggle('cz-wait', busy);
+  out.setAttribute('aria-disabled', String(busy));
+  out.title = busy ? 'Finish this hand before cashing out' : '';
 }
 
 function insertBills() {
@@ -841,9 +945,9 @@ function insertBills() {
   if (m.blocked) {
     const other = bank.machine;
     const name = gameById(other.game)?.name ?? 'another machine';
-    dialog('Insert bills', `<p>${esc(name)} is holding ${other.credits.toLocaleString('en-US')} credits of your money. Cash out there first.</p>`, [
+    dialog('Insert bills', `<p>${esc(name)} is holding ${cr(other.credits)} of your money. Cash out there first.</p>`, [
       { label: 'Not now' },
-      { label: 'Cash it out now', primary: true, run: () => { const r = bank.machineOut(); toast(`Cashed out ${r.credits.toLocaleString('en-US')} credits (${money(r.dollars)}).`); paintMeter(); } },
+      { label: 'Cash it out now', primary: true, run: () => { const r = bank.machineOut(); toast(`Cashed out ${cr(r.credits)} (${money(r.dollars)}).`); paintMeter(); } },
     ]);
     return;
   }
@@ -865,7 +969,7 @@ function insertBills() {
       return;
     }
     play('chips');
-    current?.ctx.message(`${r.credits.toLocaleString('en-US')} credits added.`);
+    current?.ctx.message(`${cr(r.credits)} added.`);
     paintMeter();
   }
 }
@@ -873,14 +977,25 @@ function insertBills() {
 function cashOut() {
   const c = current;
   if (!c?.machine) return;
-  if (c.machine.betting) { c.ctx.message('Finish this hand before cashing out.'); return; }
+  if (c.machine.betting) { play('error'); c.ctx.message('Finish this hand before cashing out: the bet is still on the machine.'); return; }
   if (c.meterShown != null) return; // a result is still being revealed
   const r = c.machine.cashOut();
-  if (r.credits) { play('chips'); toast(`Cashed out ${r.credits.toLocaleString('en-US')} credits (${money(r.dollars)}).`); }
+  if (r.credits) { play('chips'); toast(`Cashed out ${cr(r.credits)} (${money(r.dollars)}).`); }
   paintMeter();
 }
 
 // ------------------------------------------------------------------ commands: buttons and keys
+/** Phones: when play starts, bring the whole table up between the top of the screen and the docked
+ *  bet bar (if it fits there), so the cards and the bets aren't under the bar. */
+function phoneToTable() {
+  if (!PHONE_MQ.matches) return;
+  const f = room.querySelector('.cz-feltwrap').getBoundingClientRect();
+  const dockH = dockEl.getBoundingClientRect().height;
+  if (f.height + dockH > innerHeight) return;
+  const y = scrollY + f.top - Math.max(4, innerHeight - dockH - f.height - 4);
+  if (y > scrollY + 2) scrollTo({ top: y, behavior: reducedMotion() ? 'auto' : 'smooth' });
+}
+
 function command(cmd, { times = 1 } = {}) {
   const c = current;
   if (!c) return;
@@ -891,7 +1006,7 @@ function command(cmd, { times = 1 } = {}) {
   if (cmd === 'stats') return showStats();
   if (cmd === 'insert') return insertBills();
   if (cmd === 'cashout') return cashOut();
-  if (cmd === 'action') return mod.action();
+  if (cmd === 'action') { phoneToTable(); return mod.action(); }
   if (cmd === 'clear') return mod.clear ? mod.clear() : c.bets?.clear();
   if (cmd === 'rebet') return mod.rebet ? mod.rebet(times) : c.bets?.rebet(times);
   if (cmd === 'undo') return mod.undo ? mod.undo() : c.bets?.undo();
@@ -904,6 +1019,21 @@ room.addEventListener('click', (e) => {
 
 /** A bet-bar button by its key, pressed only if it is there and enabled. */
 const press = (id, opts) => { const b = $(id); if (!b || b.disabled || b.closest('[hidden]')) return false; command(b.dataset.cmd, opts); return true; };
+
+// Enter and Space press the main button. A spot or card on the felt that has focus only because it
+// was clicked doesn't keep them: they go to the main button (Deal, Spin, Draw) as if nothing had
+// focus. Focus moved there with the keyboard (Tab, arrows) keeps them, so a spot can be bet by key.
+let pointerFocus = false;
+document.addEventListener('pointerdown', () => { pointerFocus = true; }, true);
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Tab' || e.key.startsWith('Arrow')) { pointerFocus = false; return; }
+  if ((e.key !== 'Enter' && e.key !== ' ') || !pointerFocus || !current || e.ctrlKey || e.metaKey || e.altKey) return;
+  const f = document.activeElement;
+  if (!f || f === felt || !felt.contains(f) || f.closest('input, select, textarea') || document.querySelector('dialog[open]')) return;
+  e.preventDefault();
+  e.stopPropagation();
+  press('cz-action');
+}, true);
 
 document.addEventListener('keydown', (e) => {
   const c = current;
@@ -932,6 +1062,16 @@ document.addEventListener('keydown', (e) => {
 
 // ------------------------------------------------------------------ dialogs
 const dlg = $('cz-dialog');
+// A closed dialog hands focus back to the button that opened it (How to play, Options, Stats), where
+// Enter would only open it again: at a table, focus goes to the play instead.
+function focusPlay() {
+  if (!current || room.hidden || document.querySelector('dialog[open]')) return;
+  const a = document.activeElement;
+  if (a && a !== document.body && !a.closest('.table-top, .site-header')) return;
+  const next = [$('cz-action'), ...$('cz-actions').querySelectorAll('button')].find((b) => !b.disabled && !b.hidden && !b.closest('[hidden]'));
+  (next ?? $('cz-msg')).focus({ preventScroll: true });
+}
+for (const d of [dlg, $('cz-rules')]) d.addEventListener('close', () => setTimeout(focusPlay, 0));
 /** Fill the shared dialog: title, body HTML and buttons [{ label, primary, run, disabled }]. */
 function dialog(title, body, buttons) {
   dlg.innerHTML = `<h2 id="cz-dialog-title">${esc(title)}</h2><div class="cz-dialog-body">${body}</div>
@@ -1015,7 +1155,8 @@ function showStats() {
   dialog('Your casino record', `<p>Bank <b>${money(s.bank)}</b> · ${tierBadge(t)}${s.loan ? ` · loan ${money(s.loan)}` : ''} · this visit <b>${bank.sessionNet > 0 ? '+' : ''}${money(bank.sessionNet)}</b></p>
     ${pct != null ? `<p class="cz-next">Next tier: ${TIERS[s.tier + 1].name} at ${money(t.next)} <span class="cz-meterbar" role="img" aria-label="${pct}% of the way"><span style="width:${pct}%"></span></span></p>` : ''}
     ${rows ? `<div class="cz-stats-wrap"><table class="score cz-stats"><thead><tr><th>Game</th><th>Hands</th><th>Bet</th><th>Paid</th><th>Net</th><th>Best</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="muted">No hands played yet.</p>'}`,
-  [{ label: 'Loan desk', run: () => loanDesk({ back: showStats }) }, { label: 'Hall of Fame', run: () => showHall() }, { label: 'Close', primary: true }]);
+  [{ label: 'Loan desk', run: () => loanDesk({ back: showStats }) }, { label: 'Hall of Fame', run: () => showHall() },
+    { label: 'Reset bank…', run: () => confirmReset({ back: showStats }) }, { label: 'Close', primary: true }]);
 }
 
 /** The Hall of Fame: a walnut board with a brass plate per player who reached a billion. */
@@ -1039,28 +1180,46 @@ function showOptions() {
       <ul>${(mod.options ?? []).map((o) => `<li>${esc(o)}</li>`).join('') || '<li>None yet.</li>'}</ul>`, [{ label: 'Close', primary: true }]);
     return;
   }
-  const o = c.ctx.opts;
+  // a game may show its options filled in (a rule set's own rules) and keep the form consistent
+  // while it is edited (picking a rule set fills in its rules; changing a rule makes it Custom)
+  const o = mod.optionsShown ? mod.optionsShown({ ...c.ctx.opts }) : c.ctx.opts;
   const field = (s) => (s.type === 'check'
     ? `<label class="choice"><input type="checkbox" data-opt="${esc(s.key)}" ${o[s.key] ? 'checked' : ''}> ${esc(s.label)}</label>`
     : `<label class="cz-opt">${esc(s.label)} <select data-opt="${esc(s.key)}">${s.options.map(([v, l]) => `<option value="${esc(String(v))}" ${v === o[s.key] ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`);
+  const input = (s) => dlg.querySelector(`[data-opt="${CSS.escape(s.key)}"]`);
+  const readForm = () => {
+    const next = {};
+    for (const s of settings) {
+      const el = input(s);
+      if (!el) continue;
+      next[s.key] = s.type === 'check' ? el.checked : s.options.find(([v]) => String(v) === el.value)?.[0] ?? s.default;
+    }
+    return next;
+  };
   dialog(`${mod.name} options`, `<div class="cz-opts">${settings.map(field).join('')}</div><p class="muted">Changes apply from the next round.</p>`, [
     { label: 'Cancel' },
     {
       label: 'Save', primary: true,
       run: () => {
         if (current !== c) return;
-        const next = {};
-        for (const s of settings) {
-          const el = dlg.querySelector(`[data-opt="${CSS.escape(s.key)}"]`);
-          if (!el) continue;
-          next[s.key] = s.type === 'check' ? el.checked : s.options.find(([v]) => String(v) === el.value)?.[0] ?? s.default;
-        }
-        writeJSON(optsKey(mod.id), next);
+        writeJSON(optsKey(mod.id), readForm());
         c.ctx.opts = readOpts(mod);
         mod.optionsChanged?.(c.ctx.opts);
       },
     },
   ]);
+  if (mod.optionsInput) {
+    dlg.querySelector('.cz-opts').addEventListener('change', (e) => {
+      const key = e.target.closest('[data-opt]')?.dataset.opt;
+      const patch = key ? mod.optionsInput(key, readForm()) : null;
+      for (const [k, v] of Object.entries(patch ?? {})) {
+        const s = settings.find((x) => x.key === k);
+        const el = s && input(s);
+        if (!el) continue;
+        if (s.type === 'check') el.checked = Boolean(v); else el.value = String(v);
+      }
+    });
+  }
 }
 
 function howtoBody(mod) {
@@ -1100,7 +1259,7 @@ announce(bank.drainNotices());
 // tier reached that way gets its dialog: everything it needs is defined by now).
 if (bank.machine) {
   const r = bank.machineOut();
-  if (r.credits) toast(`Cashed out ${r.credits.toLocaleString('en-US')} credits (${money(r.dollars)}) left in a machine.`);
+  if (r.credits) toast(`Cashed out ${cr(r.credits)} (${money(r.dollars)}) left in a machine.`);
 }
 const params = new URLSearchParams(location.search);
 const deep = params.get('g') || location.hash.slice(1);

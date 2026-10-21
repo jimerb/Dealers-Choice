@@ -1,7 +1,7 @@
 // French Tarot (4 players): 78 cards, 21 trumps + the Excuse; one taker against three defenders.
 import { shuffle, rngOf } from '../core/cards.js';
 import { clone, log, fx, who, must, POS4 } from './lib/common.js';
-import { trickHTML, panel, btn, scoreTable } from '../core/table.js';
+import { trickHTML, panel, btn, scoreTable, cw } from '../core/table.js';
 import { cardHTML } from '../skin.js';
 
 const SUITS = ['S', 'H', 'C', 'D'];
@@ -335,7 +335,7 @@ export default {
     if (s.phase === 'bid' && my) {
       overlay = panel('Your bid', `<p>${s.high ? `Highest: ${BIDS[s.high]} by ${who(s, s.taker)}.` : 'No bids yet.'} You hold ${s.hands[0].filter(isTrump).length} trumps and ${s.hands[0].filter(isBout).length} bout(s).</p>
         <div class="row">${btn('Pass', 'bid', 'data-v="0"')}${[1, 2, 3, 4].filter((v) => v > s.high).map((v) => btn(BIDS[v], 'bid', `data-v="${v}"`)).join('')}</div>`);
-    } else if (s.phase === 'chien' && my) overlay = panel('The chien', `<div class="row" style="--card-w:48px">${s.chien.map((c) => cardHTML(c)).join('')}</div><div class="row" style="margin-top:10px">${btn('Take the chien', 'chien', '', true)}</div>`);
+    } else if (s.phase === 'chien' && my) overlay = panel('The chien', `<div class="row" style="--card-w:${cw(48)}">${s.chien.map((c) => cardHTML(c)).join('')}</div><div class="row" style="margin-top:10px">${btn('Take the chien', 'chien', '', true)}</div>`);
     else if (s.phase === 'ecart' && my) overlay = panel('Set aside six cards', `<p>No trumps, kings or the Excuse. Their points count for you. (${ui.selected.size}/6)</p><div class="row">${btn('Set aside', 'ecart', `data-with-sel ${ui.selected.size === 6 ? '' : 'disabled'}`, true)}</div>`);
     else if (s.phase === 'handOver' || s.phase === 'gameOver') {
       const r = s.result;

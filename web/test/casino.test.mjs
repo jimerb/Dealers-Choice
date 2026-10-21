@@ -195,3 +195,17 @@ test('roulette: every bet on the lines has its own hit area, on both wheels and 
   }
   assert.equal((wheelHTML(0, 'european').match(/data-pocket=/g) ?? []).length, 37);
 });
+
+test('roulette on a phone: the bets on the lines are big enough for a finger and still never overlap', () => {
+  const phone = { tu: 0.5, tv: 0.45, straddle: true }; // as the tall layout draws them (68 px rows, 72 px columns)
+  for (const wheel of ['american', 'european']) {
+    const z = zones(wheel, phone);
+    for (let i = 0; i < z.length; i++) for (let j = i + 1; j < z.length; j++) {
+      const a = z[i], b = z[j];
+      const apart = a.u + a.du <= b.u + 1e-9 || b.u + b.du <= a.u + 1e-9 || a.v + a.dv <= b.v + 1e-9 || b.v + b.dv <= a.v + 1e-9;
+      assert.ok(apart, `${a.key} overlaps ${b.key}`);
+    }
+    // every line bet but the two beside 0 and 00 (squeezed between them) gives a finger 32 px each way
+    for (const a of z.filter((x) => !/^split:(00?-2)$/.test(x.key))) assert.ok(a.du * 68 >= 32 && a.dv * 72 >= 32, `${wheel} ${a.key} ${(a.du * 68).toFixed(1)} x ${(a.dv * 72).toFixed(1)}`);
+  }
+});
