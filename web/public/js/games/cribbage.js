@@ -312,7 +312,7 @@ export default {
       const x = s.show[s.showIdx];
       const picks = Array.from({ length: 30 }, (_, n) => n).filter((n) => ![19, 25, 26, 27].includes(n)); // scores no hand can make
       overlay = panel(`Count your ${x.kind}`, `${s.show.slice(0, s.showIdx).map(counts).join('')}<div style="margin-bottom:8px"><b>Your ${x.kind}</b>${cardsOf(x)}</div>
-        <p>How many points? Any you miss go to ${opp}.</p><div class="row" style="max-width:440px;gap:4px">${picks.map((n) => btn(String(n), 'claim', `data-n="${n}"`)).join('')}</div>`, 'max-width:520px');
+        <p>How many points? Any you miss go to ${opp}.</p><div class="count-picks">${picks.map((n) => btn(String(n), 'claim', `data-n="${n}"`)).join('')}</div>`, 'max-width:520px');
     } else if (s.phase === 'gameDone') overlay = panel(s.winner === 0 ? `You win game ${s.match.gameNo}!` : `${opp} wins game ${s.match.gameNo}`, `<div style="max-height:50vh;overflow:auto">${ended}</div><div class="row" style="justify-content:flex-end">${btn('Next game', 'nextgame', '', true)}</div>`, 'max-width:520px');
     else if (s.phase === 'gameOver') overlay = panel(s.match ? (s.winner === 0 ? 'You win the match!' : `${opp} wins the match`) : s.winner === 0 ? 'You win!' : `${opp} wins`, `<div style="max-height:50vh;overflow:auto">${ended}</div><div class="row" style="justify-content:flex-end">${btn(s.match ? 'New match' : 'Play again', 'again', '', true)}</div>`);
     else banner = s.turn === 0 ? `Count is ${s.count}: play a card` : `${opp} is playing…`;

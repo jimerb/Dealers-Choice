@@ -300,7 +300,8 @@ export default {
       subtitle: `Hand ${s.handNo}${Number(s.opts.hands) ? ` of ${s.opts.hands}` : ''} · ante ${ANTE} · bets ${SMALL}/${BIG}`,
       scores: [{ label: 'Your chips', value: s.chips[0], us: true }],
       seats,
-      hand: s.inHand[0] ? (s.phase === 'draw' && my ? { cards: s.hands[0], legal: s.hands[0].map((c) => c.id), mode: 'select', maxSelect: 3 } : { cards: s.hands[0], legal: null }) : null,
+      // a results panel takes your hand's place (the showdown lists your cards)
+      hand: overlay ? null : s.inHand[0] ? (s.phase === 'draw' && my ? { cards: s.hands[0], legal: s.hands[0].map((c) => c.id), mode: 'select', maxSelect: 3 } : { cards: s.hands[0], legal: null }) : null,
       center, banner, overlay,
       side: [{ title: 'Your hand', html: s.inHand[0] && s.hands[0].length ? `<div class="big">${describe(evaluate(s.hands[0]))}</div>` : 'Sitting out' },
         { title: 'Chips', html: scoreTable(['Chips'], s.names.map((nm, i) => [i === 0 ? 'You' : nm, s.chips[i]])) }],

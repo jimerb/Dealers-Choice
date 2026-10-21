@@ -440,6 +440,9 @@ table.auction td, table.auction th { text-align: center !important; }
 .crib-count { margin-bottom: 8px; }
 .crib-count-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-top: 2px; }
 .crib-count-items { flex: 1 1 140px; font-size: 13px; color: var(--ink-2); }
+/* Cribbage: the points you claim, a compact keypad */
+.count-picks { display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 4px; max-width: 460px; }
+.count-picks .btn { min-height: 36px; padding: 0; }
 /* Gin's count: each player's melds side by side, the deadwood set apart */
 .meld-spread { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px 14px; }
 .meld-spread .row { flex-wrap: nowrap; gap: 2px !important; }
