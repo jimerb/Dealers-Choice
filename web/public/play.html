@@ -17,15 +17,15 @@
 </head>
 <body>
 <header id="site-header"></header>
-<main class="table-page">
+<main class="table-page cardgame">
   <div class="table-top">
-    <a class="btn sm" href="lobby.html#games">← Lobby</a>
+    <a class="btn sm" href="games.html"><span class="btn-label-long">← Card games</span><span class="btn-label-short">← Games</span></a>
     <h1 id="game-title">Loading…</h1>
     <span class="sub" id="sub"></span>
     <span class="spacer"></span>
     <span id="scores" class="row"></span>
-    <button class="btn sm" type="button" id="btn-howto">How to play</button>
-    <button class="btn sm" type="button" id="btn-new">New game</button>
+    <button class="btn sm" type="button" id="btn-howto"><span class="btn-label-long">How to play</span><span class="btn-label-short">Rules</span></button>
+    <button class="btn sm" type="button" id="btn-new"><span class="btn-label-long">New game</span><span class="btn-label-short">New</span></button>
   </div>
   <div class="table-layout">
     <section class="felt generic" id="felt" aria-label="Card table"></section>
@@ -57,7 +57,7 @@
   const id = new URLSearchParams(location.search).get('g');
   const entry = GAMES.find((g) => g.id === id && g.module);
   if (!entry) {
-    location.replace('lobby.html#games');
+    location.replace('games.html');
   } else {
     const mod = await import(`./js/games/${entry.module}.js`);
     mountTable(mod.default);

@@ -279,7 +279,7 @@ export default {
       banner = 'Select up to three cards to replace';
     } else if (s.phase === 'handOver' || s.phase === 'gameOver') {
       const r = s.result;
-      const rows = r.showdown ? s.names.map((nm, i) => (r.vals[i] ? `<div style="margin-bottom:6px"><b>${i === 0 ? 'You' : nm}</b>: ${describe(r.vals[i])}${cardsRow(s.hands[i], 36)}</div>` : '')).join('') : '';
+      const rows = r.showdown ? `<div class="showdown">${s.names.map((nm, i) => (r.vals[i] ? `<div class="showdown-row${r.winners.some((w) => w.seat === i) ? ' won' : ''}"><b>${i === 0 ? 'You' : nm}</b><span>${describe(r.vals[i])}</span>${cardsRow(s.hands[i], 36)}</div>` : '')).join('')}</div>` : '';
       const title = s.phase === 'gameOver' ? (s.chips[0] === Math.max(...s.chips) ? 'You finish on top!' : s.chips[0] <= 0 ? 'You’re out of chips' : 'Game over') : `Hand ${s.handNo}`;
       overlay = panel(title, `<div class="verdict ${r.winners.some((w) => w.seat === 0) ? 'good' : ''}">${r.winners.map((w) => `${w.seat === 0 ? 'You win' : `${s.names[w.seat]} wins`} ${w.amount}`).join(' · ')}</div>
         <div style="max-height:44vh;overflow:auto">${rows}</div>
@@ -300,7 +300,8 @@ export default {
       subtitle: `Hand ${s.handNo}${Number(s.opts.hands) ? ` of ${s.opts.hands}` : ''} · ante ${ANTE} · bets ${SMALL}/${BIG}`,
       scores: [{ label: 'Your chips', value: s.chips[0], us: true }],
       seats,
-      hand: s.inHand[0] ? (s.phase === 'draw' && my ? { cards: s.hands[0], legal: s.hands[0].map((c) => c.id), mode: 'select', maxSelect: 3 } : { cards: s.hands[0], legal: null }) : null,
+      // a results panel takes your hand's place (the showdown lists your cards)
+      hand: overlay ? null : s.inHand[0] ? (s.phase === 'draw' && my ? { cards: s.hands[0], legal: s.hands[0].map((c) => c.id), mode: 'select', maxSelect: 3 } : { cards: s.hands[0], legal: null }) : null,
       center, banner, overlay,
       side: [{ title: 'Your hand', html: s.inHand[0] && s.hands[0].length ? `<div class="big">${describe(evaluate(s.hands[0]))}</div>` : 'Sitting out' },
         { title: 'Chips', html: scoreTable(['Chips'], s.names.map((nm, i) => [i === 0 ? 'You' : nm, s.chips[i]])) }],

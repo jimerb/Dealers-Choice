@@ -39,8 +39,85 @@ export function trickHTML(plays, winPos = null) {
 }
 export const panel = (title, body, style = '') => `<div class="card-panel" style="${style}"><h3>${title}</h3>${body}</div>`;
 export const btn = (label, act, extra = '', primary = false) => `<button class="btn ${primary ? 'primary' : ''}" data-act="${act}" ${extra}>${label}</button>`;
-export const cardsRow = (cards, w = 54) => `<div class="row" style="--card-w:${w}px;gap:4px">${cards.map((c) => cardHTML(c)).join('')}</div>`;
+export const cardsRow = (cards, w = 54) => `<div class="row" style="--card-w:${cw(w)};gap:4px">${cards.map((c) => cardHTML(c)).join('')}</div>`;
 export const scoreTable = (heads, rows) => `<table class="score"><thead><tr><th></th>${heads.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr><td>${r[0]}</td>${r.slice(1).map((v) => `<td>${v}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+
+/** A card width that grows and shrinks with the table: `px` is its size beside the old 84px card. */
+export const cw = (px) => `calc(${px}px * var(--k, 1))`;
+
+// -------- fitting the table to the screen (card-game pages: main.cardgame; see table.css)
+const BASE_CW = 84; // the card width the px sizes in the games were drawn for
+/**
+ * Sizes the felt to the rest of the screen and picks the largest cards that keep everything on it in
+ * view: the hand, the other seats, the trick or panel in the middle. Long hands overlap more instead
+ * of running off the side. When even the smallest cards do not fit, the felt grows and the page scrolls.
+ */
+export function fitTable(felt) {
+  const main = felt.closest('.cardgame');
+  if (!main || !felt.isConnected) return;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const phone = vw <= 760;
+  felt.classList.remove('overfull');
+  const top = felt.getBoundingClientRect().top + window.scrollY;
+  const minH = vh < 560 ? 300 : phone ? 420 : 460;
+  const h = Math.max(minH, Math.floor(vh - top - (phone ? 6 : 14)));
+  main.style.setProperty('--felt-h', `${h}px`);
+  const cs = getComputedStyle(felt);
+  const iw = felt.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  const ih = felt.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+  const minCw = phone ? 40 : vh < 560 ? 44 : 58;
+  const fits = (c) => {
+    applyCw(felt, c, minCw);
+    return felt.scrollHeight <= felt.clientHeight + 1 && felt.scrollWidth <= felt.clientWidth + 1;
+  };
+  // The largest card width that fits, to within a pixel or two: a few layout passes, no repaint.
+  let hi = Math.max(minCw, Math.min(200, ih / 3.3, iw / 4.2));
+  if (fits(hi)) return;
+  let lo = minCw;
+  if (!fits(lo)) { felt.classList.add('overfull'); return; }
+  while (hi - lo > 1.5) {
+    const mid = (lo + hi) / 2;
+    if (fits(mid)) lo = mid; else hi = mid;
+  }
+  applyCw(felt, lo, minCw);
+}
+function applyCw(felt, c, minCw) {
+  felt.style.setProperty('--cw', `${c.toFixed(1)}px`);
+  felt.style.setProperty('--k', (c / BASE_CW).toFixed(3));
+  for (const hand of felt.querySelectorAll('.hand')) fitHand(hand, c * 1.06, minCw);
+}
+/** One row of cards: as big as the table allows, overlapping just enough to fit the width. */
+function fitHand(hand, want, minCw) {
+  const n = hand.children.length;
+  if (!n) return;
+  const avail = (hand.parentElement?.clientWidth ?? 600) - 8;
+  const MIN_VIS = 0.27, MAX_VIS = 0.62;
+  let w = want, vis = n > 1 ? (avail - w) / ((n - 1) * w) : 1;
+  if (vis < MIN_VIS) { vis = MIN_VIS; w = Math.max(Math.min(minCw, want), avail / (1 + (n - 1) * MIN_VIS)); }
+  hand.style.setProperty('--card-w', `${w.toFixed(1)}px`);
+  hand.style.setProperty('--vis', Math.min(MAX_VIS, vis).toFixed(3));
+}
+/** Keeps a felt fitted: after each render (call fit()), on resize, and once the fonts arrive. */
+export function autoFit(felt) {
+  let raf = 0;
+  const fit = () => { cancelAnimationFrame(raf); fitTable(felt); };
+  const later = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => fitTable(felt)); };
+  window.addEventListener('resize', later);
+  window.addEventListener('orientationchange', later);
+  document.fonts?.ready.then(later);
+  // the top bar can change height on its own (a note shown or dismissed, scores wrapping)
+  const bar = document.querySelector('.cardgame .table-top');
+  if (bar && 'ResizeObserver' in window) new ResizeObserver(later).observe(bar);
+  const main = felt.closest('.cardgame');
+  if (main) new MutationObserver(later).observe(main, { childList: true });
+  // A frame can learn its new size after the resize event (rotating a tablet, the shell's frame
+  // resizing): watch the page box too, and refit whenever the window's size has really changed.
+  let seen = '';
+  const sized = () => { const k = `${window.innerWidth}x${window.innerHeight}`; if (k !== seen) { seen = k; later(); } };
+  if ('ResizeObserver' in window) new ResizeObserver(sized).observe(document.documentElement);
+  window.addEventListener('resize', () => setTimeout(sized, 120));
+  return fit;
+}
 
 export function mountTable(game) {
   mountChrome(game.id);
@@ -74,6 +151,7 @@ export function mountTable(game) {
   const ui = { selected: new Set() };
   let timer = null;
   let howto = null;
+  const fit = autoFit(document.getElementById('felt'));
 
   function set(next) {
     state = next;
@@ -104,7 +182,7 @@ export function mountTable(game) {
     let cards = '';
     if (st.faceUp?.length) {
       const pl = new Set(st.playable ?? []);
-      cards = `<div class="faceup" style="--card-w:${st.faceUpWidth ?? 44}px" aria-label="${esc(st.faceUpLabel ?? 'Face-up cards')}">${st.faceUp.map((c) =>
+      cards = `<div class="faceup" style="--card-w:${cw(st.faceUpWidth ?? 44)}" aria-label="${esc(st.faceUpLabel ?? 'Face-up cards')}">${st.faceUp.map((c) =>
         pl.size ? cardButton(c, { legal: pl.has(c.id), from: st.seat, dim: !pl.has(c.id) }) : cardHTML(c)).join('')}</div>`;
     } else if (st.count) {
       const vertical = st.pos === 'west' || st.pos === 'east';
@@ -145,6 +223,7 @@ export function mountTable(game) {
     const side = (vm.side ?? []).map((p) => `<section class="panel"><h2>${p.title}</h2>${p.html}</section>`).join('');
     const log = (state.log ?? []).slice(-14).reverse().map((l) => `<div>${esc(l)}</div>`).join('');
     document.getElementById('side').innerHTML = `${side}<section class="panel"><h2>Table talk</h2><div class="log" aria-live="polite">${log}</div></section>`;
+    fit();
   }
 
   // -------- input
