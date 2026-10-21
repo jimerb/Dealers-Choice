@@ -705,6 +705,14 @@ if (typeof ResizeObserver === 'function') {
     if (!current || fitMode === 'side' || Math.abs(dockEl.getBoundingClientRect().height - fitDockH) < 2) return;
     refit({ pick: false });
   }).observe(dockEl);
+  // the top bar wraps to another row (a longer figure in the bank pill): the table makes room
+  let topH = 0;
+  new ResizeObserver(([e]) => {
+    const h = e.contentRect.height;
+    if (!current || Math.abs(h - topH) < 2) return;
+    topH = h;
+    refit({ pick: false });
+  }).observe(room.querySelector('.table-top'));
 }
 
 // ---- result banner over the felt (aria-live), cleared by the next bet
