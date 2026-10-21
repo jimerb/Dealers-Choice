@@ -6,7 +6,8 @@
 
 <p align="center">
   <b>A warm, old-fashioned card room in your browser.</b><br>
-  Seventeen classic card games, a fifty-one-layout solitaire parlor, and a table full of friendly opponents.
+  Seventeen classic card games, a fifty-one-layout solitaire parlor, eleven casino games on one
+  shared bankroll, and a table full of friendly opponents.
 </p>
 
 <p align="center">
@@ -16,6 +17,8 @@
   &nbsp;&nbsp;·&nbsp;&nbsp;
   <a href="#the-solitaire-parlor">Solitaire parlor</a>
   &nbsp;&nbsp;·&nbsp;&nbsp;
+  <a href="#the-casino">The casino</a>
+  &nbsp;&nbsp;·&nbsp;&nbsp;
   <a href="#play-it-on-your-own-computer">Run it locally</a>
 </p>
 
@@ -23,7 +26,8 @@
 
 Pull up a chair, pick a table and play the card games you grew up with: bid a Pinochle hand with
 your partner, shoot the moon in Hearts, peg your way to 121 in Cribbage, or settle into the
-solitaire parlor for a quiet hand on your own. No sign-up, no downloads, nothing to install.
+solitaire parlor for a quiet hand on your own. Or step into the casino, place your chips and let
+the wheel, the dice or the cards decide. No sign-up, no downloads, nothing to install.
 Open the page and the cards are dealt.
 
 Dealer's Choice has its own look and sound throughout: the **Parlor** card deck and table felts,
@@ -56,12 +60,12 @@ effects, all made for this game.
 | **Cribbage** | 2 | Fifteen-two, fifteen-four… pegging your way around the board to 121 |
 | **Crazy Eights** | 2–4 | Eights are wild, with a *very* crazy mode |
 
-### 🎲 Casino
+### 🎲 Poker
 *Chips on the felt.*
 
 | Game | Players | What you're in for |
 |---|---|---|
-| **Poker** | 2–6 | Five-card draw: ante up, bet, raise, draw and bluff |
+| **Poker** | 2–6 | Five-card draw against the table: ante up, bet, raise, draw and bluff |
 
 ### 🐟 Family table
 *Quick games for every age.*
@@ -84,11 +88,53 @@ fresh deal whenever you want one.
 | **Two decks** | Aces and Kings · Alhambra · Batsford · Colorado · Forty Thieves · Mount Olympus · Red and Black · Spider · Sultan · Terrace |
 | **Arcade** | 3 Towers · Best 21 · Fast 21 · Pick 2 · Sum 11 *(timed, scored rounds)* |
 
+## The casino
+
+*Step up to the tables.* Eleven games, one bankroll. Everything is play money, and every game uses the
+same bank, so a win at the blackjack table pays for your next spin at the slots.
+
+### Table games
+
+| Game | Players | What you're in for |
+|---|---|---|
+| **Blackjack** | 1 | Beat the dealer to 21. Six decks, blackjack pays 3 to 2, with insurance, doubles, splits, surrender and a basic-strategy hint |
+| **Roulette** | 1 | American or European wheel. Inside bets, splits, streets, corners, six lines, the zero bets, and the half-back rule |
+| **Craps** | 1 | Pass, don't pass, come and don't come, with odds. Place, buy and lay bets, hardways, the field and the one-roll bets |
+| **Baccarat** | 1 | Player, Banker or tie, with the full third-card rules and a scorecard of recent results |
+| **Three Card Poker** | 1 | Ante and play against the dealer, with a Pair Plus side bet and an ante bonus |
+| **Let It Ride** | 1 | Three bets on the same hand. Pull back the first two as the cards come, and let the rest ride |
+| **Caribbean Stud** | 1 | Five-card stud against the dealer, with a raise decision and an optional $1 bonus bet |
+| **Pai Gow Poker** | 1 | Set your seven cards into a high hand and a low hand, or let the house way do it for you |
+
+### Machines
+
+| Game | Players | What you're in for |
+|---|---|---|
+| **Video Poker** | 1 | Jacks or Better, Bonus Poker and Deuces Wild, with a hint that shows the best hold |
+| **Slots** | 1 | *Brass Crown*: three reels, one pay line, one to three coins, and autoplay |
+| **Keno** | 1 | Mark up to ten numbers on a ticket and watch the balls come out of the blower |
+
+### Your bankroll
+
+- **One bank for everything.** You start with $5,000 and the bank follows you from game to game.
+- **Tiers.** Your credit card rises from Brass through Silver, Gold, Emerald, Sapphire and Onyx as
+  your bank grows. Each tier has its own medallion and card.
+- **Loans.** If you run dry, the loan desk will lend you money based on your tier. It is repaid
+  automatically once you're winning again.
+- **Stakes.** Table games come in four stake levels, from $5–$1,000 up to a no-limit table. Machines
+  take $1, $5 or $25 at a time.
+- **Hall of Fame.** Reach a billion dollars on Onyx and your name goes on the wall. Your bank then
+  starts again at $5,000.
+- **Stats.** Every game keeps its own record of hands played, money wagered, won and net.
+
 ## Step into the card room
 
 <p align="center">
   <img src="docs/images/lobby.jpg" alt="The Dealer's Choice lobby: tonight's table and the card room" width="640">
 </p>
+
+The lobby is the front door to the three rooms: **Card games**, the **Solitaire parlor** and the
+**Casino**. Each room shows a few featured games, and a *More* tile takes you to the full list.
 
 - **A cast of characters.** Twelve computer partners and opponents, each with a portrait and a
   personality, who bid, meld and play by each game's real rules: careful Mabel, flashy Dex, the
@@ -138,14 +184,19 @@ web/server.mjs                 local server
 web/public/index.html          site shell: hosts the music player and shows every screen in a frame
 web/public/lobby.html          the lobby
 web/public/play.html           the shared table that runs most of the card games
+web/public/games.html          every card game, with filters
 web/public/pinochle.html       the Pinochle table
 web/public/solitaire.html      the solitaire parlor
-web/public/js/games/           one rules engine and computer player per game
+web/public/casino.html         the casino: table games, machines and the shared bank
+web/public/js/games/           one rules engine and computer player per card game
 web/public/js/solitaire/       the solitaire engine and layouts
+web/public/js/casino/          the casino shell, the game modules and their rules engines
+web/public/js/casino/kit/      the shared pieces: random numbers, the shoe, poker hands, bets and money
+web/public/js/core/bank.js     the casino bank: balance, tiers, loans and stats
 web/public/js/core/            cards, table, cast, table pieces, sound and music
 web/public/js/skin.js          card styles, backs and table surfaces
-web/public/assets/             card art, felts, portraits, table pieces, sounds and music
-web/test/                      rules and engine tests
+web/public/assets/             card art, felts, portraits, table pieces, casino art, sounds and music
+web/test/                      rules, engine and payout tests
 art/parlor/                    source art, print-quality card masters and proof sheets
 tools/art/                     scripts that build the card deck, the table art and the sound effects
 ```
